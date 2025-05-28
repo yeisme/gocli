@@ -1,0 +1,141 @@
+name: gocli
+version: "1"
+
+project:
+  name: gocli
+  version: "1.0.0"
+  description: "A comprehensive CLI tool for Go ecosystem integration"
+  author: "yeisme"
+  license: "MIT"
+  go_version: "1.24" # minimum Go version required
+  repository: "github.com/yeisme/gocli"
+
+  src: "."
+  manager:
+    # make:
+    #   - name: makefile
+    #     dir: .
+    tasks:
+      - name: taskfile
+        dir: .
+    # just:
+    #   - name: justfile
+    #     dir: .
+    # vscode:
+    #   - name: vscode-tasks
+    #     dir: .
+
+# gocli build (name=default)
+build:
+  - name: default
+    description: "Build the project"
+    cmd:
+      - task build
+  - name: release
+    description: "Build the project for release"
+    cmd:
+      - goreleaser build --snapshot --rm-dist
+
+# gocli run (name=default)
+run:
+  - name: default
+    description: "Run the project"
+    cmd:
+      - task run
+
+# gocli dev (name=default)
+dev:
+  - name: default
+    description: "Run the project in development mode (hot reload)"
+    cmd:
+      - task dev
+
+# gocli clean (name=default)
+clean:
+  - name: default
+    description: "Clean the project"
+    cmd:
+      - go clean -cache -modcache -testcache
+
+# gocli lint (name=default)
+lint:
+  - name: default
+    description: "Run linters"
+    cmd:
+      - golangci-lint run --config .golangci.yml
+
+# gocli help (name=default)
+help:
+  - name: default
+    description: "Show help"
+    cmd:
+      - task --list
+
+# gocli release (name=default)
+release:
+  - name: default
+    description: "Release the project"
+    cmd:
+      - task release
+
+# gocli test (name=default)
+test:
+  - name: default
+    description: "Run tests"
+    cmd:
+      - task test
+
+# gocli deps (name=default)
+deps:
+  - name: default
+    description: "Manage project dependencies"
+    cmd:
+      - go mod tidy
+      - go mod vendor
+
+tools:
+  # if you want to develop this tool, you need to install these tools
+  # panic if any of these tools are not installed (search PATH)
+  dev:
+    - name: git
+      version: ">=2.30" # empty means any version
+    - name: jq
+      version: ""
+    - name: make
+      version: ""
+
+  # use go install to install these tools
+  go:
+    # go install <flag> <url>@<version>
+    - name: goreleaser
+      url: github.com/goreleaser/goreleaser/v2@latest
+      bin: goreleaser
+      flags: []
+    - name: go-task
+      url: github.com/go-task/task/v3/cmd/task@latest
+      bin: task
+      flags: []
+    - name: golangci-lint
+      url: github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      bin: golangci-lint
+      flags: []
+
+  # use git to clone these tools and build them
+  # some tools may require additional steps to build (build with tags)
+  git:
+    - name: docker compose
+      description: "Define and run multi-container Docker applications"
+      url: https://github.com/docker/compose.git
+      type: make
+      recipe: build
+
+  # custom:
+  #   - name: uv
+  #     cmd: "pip install uv"
+  #     needs:
+  #       - python
+  #       - pip
+
+plugins:
+  enable: true
+  dir: "{{ .ProjectDir }}/.gocli/plugins"
