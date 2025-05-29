@@ -1,2 +1,17 @@
 # Added by goreleaser init:
 dist/
+# binary files
+*.a
+*.so
+*.dll
+*.lib
+*.dylib
+*.o
+*.lo
+*.exe
+*.out
+*.ilk
+*.pdb
+*.exp
+
+.env
