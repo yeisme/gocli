@@ -12,15 +12,6 @@ var (
 	userConfig    *types.Config
 )
 
-func ParseYAML(data []byte) (map[string]any, error) {
-	var result map[string]any
-	err := yaml.Unmarshal(data, &result)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
 // ParseConfig parses YAML configuration file to Config struct
 func ParseConfig(data []byte) (*types.Config, error) {
 	var config types.Config

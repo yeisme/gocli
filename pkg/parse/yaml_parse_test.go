@@ -7,33 +7,6 @@ import (
 	"testing"
 )
 
-// TestParseYAML demonstrates basic YAML parsing functionality
-func TestParseYAML(t *testing.T) {
-	fmt.Println("=== YAML Parsing Demo ===")
-
-	// Sample YAML data
-	yamlData := `
-name: demo-project
-version: "1.0.0"
-settings:
-  debug: true
-  port: 8080
-  features:
-    - feature1
-    - feature2
-`
-
-	result, err := ParseYAML([]byte(yamlData))
-	if err != nil {
-		t.Fatalf("Failed to parse YAML: %v", err)
-	}
-
-	fmt.Printf("Parse result:\n")
-	for key, value := range result {
-		fmt.Printf("  %s: %v\n", key, value)
-	}
-}
-
 // TestParseConfig demonstrates configuration file parsing
 func TestParseConfig(t *testing.T) {
 	fmt.Println("\n=== Configuration File Parsing Demo ===")
@@ -148,31 +121,5 @@ func TestParseConfigFromFile(t *testing.T) {
 		t.Error("Failed to get project configuration")
 	} else {
 		fmt.Printf("\n✓ Configuration successfully stored and retrieved\n")
-	}
-}
-
-// TestYAMLParseError demonstrates error handling
-func TestYAMLParseError(t *testing.T) {
-	fmt.Println("\n=== Error Handling Demo ===")
-
-	invalidYAML := `
-name: invalid
-version: 1.0.0
-  invalid_indent: true
-`
-
-	_, err := ParseYAML([]byte(invalidYAML))
-	if err != nil {
-		fmt.Printf("✓ Correctly caught YAML syntax error: %v\n", err)
-	} else {
-		t.Error("Should return YAML syntax error")
-	}
-
-	// Test non-existent file
-	_, err = ParseConfigFromFile("not_exist.yaml")
-	if err != nil {
-		fmt.Printf("✓ Correctly caught file not found error: %v\n", err)
-	} else {
-		t.Error("Should return file not found error")
 	}
 }

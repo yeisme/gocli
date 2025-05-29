@@ -4,15 +4,26 @@ var (
 	verbose  bool
 	useColor bool
 	quiet    bool
+	user     bool
+	configfile string
 )
 
-func SetGlobalFlags(v, c, q bool) {
+func SetConfigFile(cf string) {
+	configfile = cf
+}
+
+func GetConfigFile() string {
+	return configfile
+}
+
+func SetGlobalFlags(v, c, q, u bool) {
 	verbose = v
 	useColor = c
 	quiet = q
+	user = u
 }
-func GetGlobalFlags() (bool, bool, bool) {
-	return verbose, useColor, quiet
+func GetGlobalFlags() (bool, bool, bool, bool) {
+	return verbose, useColor, quiet, user
 }
 
 func IsVerbose() bool {
@@ -23,4 +34,7 @@ func IsColor() bool {
 }
 func IsQuiet() bool {
 	return quiet
+}
+func IsUser() bool {
+	return user
 }

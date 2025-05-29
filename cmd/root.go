@@ -13,6 +13,8 @@ var (
 	color   bool
 	quiet   bool
 	version string = "0.1.0"
+	user    bool
+	configfile string
 
 	rootCmd = &cobra.Command{
 		Use:   "gocli",
@@ -21,7 +23,8 @@ var (
 			cmd.Help()
 		},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			utils.SetGlobalFlags(verbose, color, quiet)
+			utils.SetGlobalFlags(verbose, color, quiet, user)
+			utils.SetConfigFile(configfile)
 		},
 		Version: fmt.Sprintf("%s (%s)", version, time.Now().Format("2006-01-02")),
 	}
@@ -37,4 +40,6 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
 	rootCmd.PersistentFlags().BoolVarP(&color, "color", "c", true, "Enable colored output")
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all output except errors")
+	rootCmd.PersistentFlags().BoolVarP(&user, "user", "u", false, "Set the user config for the command")
+	rootCmd.PersistentFlags().StringVarP(&configfile, "config", "f", "", "Path to the configuration file")
 }
