@@ -1,6 +1,11 @@
 package types
 
 type (
+	UserConfig struct {
+		*Config
+		
+	}
+
 	Config struct {
 		Name    string    `json:"name"`
 		Version string    `json:"version"`

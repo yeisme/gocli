@@ -1,10 +1,10 @@
 package utils
 
 var (
-	verbose  bool
-	useColor bool
-	quiet    bool
-	user     bool
+	verbose    bool
+	useColor   bool
+	quiet      bool
+	user       bool
 	configfile string
 )
 
@@ -21,6 +21,9 @@ func SetGlobalFlags(v, c, q, u bool) {
 	useColor = c
 	quiet = q
 	user = u
+	if verbose && quiet {
+		Error("Cannot use both --verbose and --quiet flags together.")
+	}
 }
 func GetGlobalFlags() (bool, bool, bool, bool) {
 	return verbose, useColor, quiet, user

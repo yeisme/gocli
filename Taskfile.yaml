@@ -7,3 +7,7 @@ tasks:
     desc: "help"
     cmds:
       - task --list
+  build:
+    desc: "Build the project"
+    cmds:
+      - go build .

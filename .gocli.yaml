@@ -2,15 +2,15 @@ name: gocli
 version: "1"
 
 project:
-  name: gocli
+  name: "yeisme"
   version: "1.0.0"
-  description: "A comprehensive CLI tool for Go ecosystem integration"
-  author: "yeisme"
+  description: ""
+  author: "yefun2004@gmail.com"
   license: "MIT"
-  go_version: "1.24" # minimum Go version required
-  repository: "github.com/yeisme/gocli"
+  go_version: "1.24"
+  repository: "github.com/yeisme"
 
-  src: "."
+  src: ""
   manager:
     # make:
     #   - name: makefile
@@ -72,7 +72,7 @@ lint:
   - name: default
     description: "Run linters"
     cmd:
-      - golangci-lint run --config .golangci.yml
+      - golangci-lint run --config .golangci.yaml
     silent: true
     condition: ""
 
@@ -141,12 +141,12 @@ tools:
 
   # use git to clone these tools and build them
   # some tools may require additional steps to build (build with tags)
-  git:
-    - name: docker compose
-      description: "Define and run multi-container Docker applications"
-      url: https://github.com/docker/compose.git
-      type: make
-      recipe: build
+  # git:
+  #   - name: docker compose
+  #     description: "Define and run multi-container Docker applications"
+  #     url: https://github.com/docker/compose.git
+  #     type: make
+  #     recipe: build
 
   # custom:
   #   - name: uv

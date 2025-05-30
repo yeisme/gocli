@@ -57,8 +57,13 @@ func SetEditor(e string) error {
 
 // Editor returns the editor command name to use for editing files.
 func Editor() (string, error) {
-	err := SetEditor("")
-	return editor, err
+	if editor == "" {
+		err := SetEditor("")
+		if err != nil {
+			return "", err
+		}
+	}
+	return editor, nil
 }
 
 // HasEditor returns true if an editor is available.
