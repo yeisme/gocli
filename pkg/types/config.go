@@ -3,7 +3,6 @@ package types
 type (
 	UserConfig struct {
 		*Config
-		
 	}
 
 	Config struct {
@@ -27,9 +26,6 @@ type (
 		Name        string   `json:"name"`
 		Description string   `json:"description"`
 		Cmd         []string `json:"cmd"`
-		WorkDir     string   `json:"work_dir,omitempty"`
-		Condition   string   `json:"condition,omitempty"`
-		Silent      bool     `json:"silent,omitempty"`
 	}
 
 	Project struct {
@@ -46,7 +42,7 @@ type (
 
 	Manager struct {
 		Make   []ManagerItem `json:"make,omitempty"`
-		Tasks  []ManagerItem `json:"tasks,omitempty"`
+		Task   []ManagerItem `json:"task,omitempty"`
 		Just   []ManagerItem `json:"just,omitempty"`
 		VSCode []ManagerItem `json:"vscode,omitempty"`
 	}

@@ -15,7 +15,7 @@ project:
     # make:
     #   - name: makefile
     #     dir: .
-    tasks:
+    task:
       - name: taskfile
         dir: .
     # just:
@@ -31,14 +31,10 @@ build:
     description: "Build the project"
     cmd:
       - task build
-    silent: true
-    condition: ""
   - name: release
     description: "Build the project for release"
     cmd:
       - goreleaser build --snapshot --clean --single-target
-    silent: true
-    condition: ""
 
 # gocli run (name=default)
 run:
@@ -46,8 +42,6 @@ run:
     description: "Run the project"
     cmd:
       - task run
-    silent: true
-    condition: ""
 
 # gocli dev (name=default)
 dev:
@@ -55,8 +49,6 @@ dev:
     description: "Run the project in development mode (hot reload)"
     cmd:
       - task dev
-    silent: true
-    condition: ""
 
 # gocli clean (name=default)
 clean:
@@ -64,8 +56,6 @@ clean:
     description: "Clean the project"
     cmd:
       - go clean -cache -modcache -testcache
-    silent: true
-    condition: ""
 
 # gocli lint (name=default)
 lint:
@@ -73,8 +63,6 @@ lint:
     description: "Run linters"
     cmd:
       - golangci-lint run --config .golangci.yaml
-    silent: true
-    condition: ""
 
 # gocli help (name=default)
 help:
@@ -82,8 +70,6 @@ help:
     description: "Show help"
     cmd:
       - task --list
-    silent: true
-    condition: ""
 
 # gocli release (name=default)
 release:
@@ -91,8 +77,6 @@ release:
     description: "Release the project"
     cmd:
       - task release
-    silent: true
-    condition: ""
 
 # gocli test (name=default)
 test:
@@ -100,8 +84,6 @@ test:
     description: "Run tests"
     cmd:
       - task test
-    silent: true
-    condition: ""
 
 # gocli deps (name=default)
 deps:
@@ -109,7 +91,6 @@ deps:
     description: "Manage project dependencies"
     cmd:
       - go mod tidy
-      - go mod vendor
 
 # gocli tools (--dev, etc.)
 tools:

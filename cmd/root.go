@@ -50,9 +50,15 @@ build automation, and various utilities to enhance your development workflow.`,
 						projectConfig = config
 					}
 				}
+			} else {
+				// When --user flag is set, use userConfig as projectConfig
+				projectConfig = userConfig
 			}
 
-			projectConfig = parse.ProjectConfig()
+			// Fallback: if no project config and not using --user flag, try to load from parse
+			if projectConfig == nil && !user {
+				projectConfig = parse.ProjectConfig()
+			}
 		},
 		Version: fmt.Sprintf("%s (%s)", version, time.Now().Format("2006-01-02")),
 	}

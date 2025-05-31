@@ -13,6 +13,7 @@ var (
 	devCmd = &cobra.Command{
 		Use:   "dev [name]",
 		Short: "Run development mode",
+		Aliases: []string{"d", "hot"},
 		Long:  "Run the project in development mode with hot reload and other development features.",
 		Run: func(cmd *cobra.Command, args []string) {
 			if utils.IsVerbose() {

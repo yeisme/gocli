@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -25,6 +26,36 @@ var (
 	BoldMagenta = color.New(color.FgMagenta, color.Bold).SprintFunc()
 	BoldCyan    = color.New(color.FgCyan, color.Bold).SprintFunc()
 	BoldWhite   = color.New(color.FgWhite, color.Bold).SprintFunc()
+
+	// Italic colors
+	ItalicRed     = color.New(color.FgRed, color.Italic).SprintFunc()
+	ItalicGreen   = color.New(color.FgGreen, color.Italic).SprintFunc()
+	ItalicYellow  = color.New(color.FgYellow, color.Italic).SprintFunc()
+	ItalicBlue    = color.New(color.FgBlue, color.Italic).SprintFunc()
+	ItalicMagenta = color.New(color.FgMagenta, color.Italic).SprintFunc()
+	ItalicCyan    = color.New(color.FgCyan, color.Italic).SprintFunc()
+	ItalicWhite   = color.New(color.FgWhite, color.Italic).SprintFunc()
+
+	// Underlined colors
+	UnderlineRed     = color.New(color.FgRed, color.Underline).SprintFunc()
+	UnderlineGreen   = color.New(color.FgGreen, color.Underline).SprintFunc()
+	UnderlineYellow  = color.New(color.FgYellow, color.Underline).SprintFunc()
+	UnderlineBlue    = color.New(color.FgBlue, color.Underline).SprintFunc()
+	UnderlineMagenta = color.New(color.FgMagenta, color.Underline).SprintFunc()
+	UnderlineCyan    = color.New(color.FgCyan, color.Underline).SprintFunc()
+	UnderlineWhite   = color.New(color.FgWhite, color.Underline).SprintFunc()
+
+	// Combined styles
+	BoldItalicGreen  = color.New(color.FgGreen, color.Bold, color.Italic).SprintFunc()
+	BoldItalicRed    = color.New(color.FgRed, color.Bold, color.Italic).SprintFunc()
+	BoldItalicYellow = color.New(color.FgYellow, color.Bold, color.Italic).SprintFunc()
+	BoldItalicCyan   = color.New(color.FgCyan, color.Bold, color.Italic).SprintFunc()
+
+	// Faint colors for subtle text
+	FaintWhite   = color.New(color.FgWhite, color.Faint).SprintFunc()
+	FaintCyan    = color.New(color.FgCyan, color.Faint).SprintFunc()
+	FaintYellow  = color.New(color.FgYellow, color.Faint).SprintFunc()
+	FaintMagenta = color.New(color.FgMagenta, color.Faint).SprintFunc()
 )
 
 // Initialize color settings
@@ -63,7 +94,7 @@ func Print(c func(a ...any) string, args ...any) {
 
 // Convenient output functions
 func Success(msg string, args ...any) {
-	Printf(BoldGreen, "[SUCCESS] "+msg+"\n", args...)
+	Printf(BoldItalicGreen, "[SUCCESS] "+msg+"\n", args...)
 }
 
 func Error(msg string, args ...any) {
@@ -71,16 +102,16 @@ func Error(msg string, args ...any) {
 }
 
 func Warning(msg string, args ...any) {
-	Printf(BoldYellow, "[WARN] "+msg+"\n", args...)
+	Printf(ItalicYellow, "[WARNING] "+msg+"\n", args...)
 }
 
 func Info(msg string, args ...any) {
-	Printf(BoldBlue, "[INFO] "+msg+"\n", args...)
+	Printf(Blue, "[INFO] "+msg+"\n", args...)
 }
 
 func Debug(msg string, args ...any) {
 	if IsVerbose() {
-		Printf(Cyan, "[DEBUG] "+msg+"\n", args...)
+		Printf(FaintCyan, "[DEBUG] "+msg+"\n", args...)
 	}
 }
 
@@ -88,44 +119,55 @@ func Debug(msg string, args ...any) {
 func Header(msg string, args ...any) {
 	if !IsQuiet() {
 		updateColorSettings()
-		line := "============================================"
-		fmt.Println(BoldCyan(line))
-		fmt.Printf(BoldWhite(msg+"\n"), args...)
-		fmt.Println(BoldCyan(line))
+		width := 50
+		
+		// Top border
+		topBorder := "╔" + strings.Repeat("═", width-2) + "╗"
+		fmt.Println(BoldCyan(topBorder))
+		
+		// Title
+		title := fmt.Sprintf(msg, args...)
+		titleLine := fmt.Sprintf("║ %-*s ║", width-4, title)
+		fmt.Println(BoldItalicCyan(titleLine))
+		
+		// Bottom border
+		bottomBorder := "╚" + strings.Repeat("═", width-2) + "╝"
+		fmt.Println(BoldCyan(bottomBorder))
 	}
 }
 
 func SubHeader(msg string, args ...any) {
 	if !IsQuiet() {
 		updateColorSettings()
-		fmt.Printf(BoldYellow(""+msg+":\n"), args...)
+		fmt.Printf(UnderlineYellow("> "+msg+":\n"), args...)
 	}
 }
 
 // Progress and status output functions
 func Progress(msg string, args ...any) {
-	Printf(Yellow, "⏳ "+msg+"\n", args...)
+	Printf(ItalicYellow, "[PROGRESS] "+msg+"\n", args...)
 }
 
 func Complete(msg string, args ...any) {
-	Printf(BoldGreen, "[✓] "+msg+"\n", args...)
+	Printf(FaintWhite, "[COMPLETE] "+msg+"\n", args...)
 }
 
 // Error output to stderr
 func ErrorToStderr(msg string, args ...any) {
 	if !IsQuiet() {
 		updateColorSettings()
-		fmt.Fprintf(os.Stderr, BoldRed("[✗] "+msg+"\n"), args...)
+		fmt.Fprintf(os.Stderr, BoldItalicRed("[FATAL] "+msg+"\n"), args...)
 	}
 }
 
 // List output functions
 func ListItem(msg string, args ...any) {
-	Printf(White, "• "+msg+"\n", args...)
+	Printf(FaintWhite, "- "+msg+"\n", args...)
 }
 
 func NumberedItem(num int, msg string, args ...any) {
-	Printf(White, "%d. "+msg+"\n", append([]any{num}, args...)...)
+	Printf(FaintMagenta, "%d. ", num)
+	Printf(White, msg+"\n", args...)
 }
 
 // Colored box output
@@ -133,29 +175,29 @@ func Box(title string, content string) {
 	if !IsQuiet() {
 		updateColorSettings()
 		width := 50
-		border := "+" + fmt.Sprintf("%*s", width-2, "") + "+"
-		for i := 1; i < width-1; i++ {
-			border = border[:i] + "-" + border[i+1:]
-		}
+		
+		// Top border
+		topBorder := "┌" + strings.Repeat("─", width-2) + "┐"
+		fmt.Println(BoldCyan(topBorder))
+		
+		// Title
+		titleLine := fmt.Sprintf("│ %-*s │", width-4, title)
+		fmt.Println(BoldItalicYellow(titleLine))
 
-		fmt.Println(BoldCyan(border))
-		titleLine := fmt.Sprintf("| %-*s |", width-4, title)
-		fmt.Println(BoldWhite(titleLine))
-
-		separator := "|" + fmt.Sprintf("%*s", width-2, "") + "|"
-		for i := 1; i < width-1; i++ {
-			separator = separator[:i] + "-" + separator[i+1:]
-		}
+		// Separator
+		separator := "├" + strings.Repeat("─", width-2) + "┤"
 		fmt.Println(BoldCyan(separator))
 
-		// Output content, may need line break handling
-		contentLines := []string{content} // Simplified handling, can be enhanced later
+		// Content
+		contentLines := []string{content}
 		for _, line := range contentLines {
-			contentLine := fmt.Sprintf("| %-*s |", width-4, line)
-			fmt.Println(White(contentLine))
+			contentLine := fmt.Sprintf("│ %-*s │", width-4, line)
+			fmt.Println(ItalicWhite(contentLine))
 		}
 
-		fmt.Println(BoldCyan(border))
+		// Bottom border
+		bottomBorder := "└" + strings.Repeat("─", width-2) + "┘"
+		fmt.Println(BoldCyan(bottomBorder))
 	}
 }
 
@@ -168,7 +210,7 @@ func EnableColor() {
 	color.NoColor = false
 }
 
-// Check if color is supported
+// Check if color is supported/ Check if color is supported
 func IsColorSupported() bool {
 	return !color.NoColor
 }

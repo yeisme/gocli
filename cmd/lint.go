@@ -13,6 +13,7 @@ var (
 	lintCmd = &cobra.Command{
 		Use:   "lint [name]",
 		Short: "Run linters",
+		Aliases: []string{"l"},
 		Long:  "Run code linters and static analysis tools on the project.",
 		Run: func(cmd *cobra.Command, args []string) {
 			if utils.IsVerbose() {
