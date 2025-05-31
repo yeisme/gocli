@@ -109,7 +109,6 @@ deps:
     description: "Manage project dependencies"
     cmd:
       - go mod tidy
-      - go mod vendor
 
 # gocli tools (--dev, etc.)
 tools:

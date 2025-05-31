@@ -63,19 +63,19 @@ func Print(c func(a ...any) string, args ...any) {
 
 // Convenient output functions
 func Success(msg string, args ...any) {
-	Printf(BoldGreen, "✓ "+msg+"\n", args...)
+	Printf(BoldGreen, "[SUCCESS] "+msg+"\n", args...)
 }
 
 func Error(msg string, args ...any) {
-	Printf(BoldRed, "✗ "+msg+"\n", args...)
+	Printf(BoldRed, "[ERROR] "+msg+"\n", args...)
 }
 
 func Warning(msg string, args ...any) {
-	Printf(BoldYellow, "⚠ "+msg+"\n", args...)
+	Printf(BoldYellow, "[WARN] "+msg+"\n", args...)
 }
 
 func Info(msg string, args ...any) {
-	Printf(BoldBlue, "ℹ "+msg+"\n", args...)
+	Printf(BoldBlue, "[INFO] "+msg+"\n", args...)
 }
 
 func Debug(msg string, args ...any) {
@@ -98,7 +98,7 @@ func Header(msg string, args ...any) {
 func SubHeader(msg string, args ...any) {
 	if !IsQuiet() {
 		updateColorSettings()
-		fmt.Printf(BoldYellow("--- "+msg+" ---\n"), args...)
+		fmt.Printf(BoldYellow(""+msg+":\n"), args...)
 	}
 }
 
@@ -108,14 +108,14 @@ func Progress(msg string, args ...any) {
 }
 
 func Complete(msg string, args ...any) {
-	Printf(BoldGreen, "✅ "+msg+"\n", args...)
+	Printf(BoldGreen, "[✓] "+msg+"\n", args...)
 }
 
 // Error output to stderr
 func ErrorToStderr(msg string, args ...any) {
 	if !IsQuiet() {
 		updateColorSettings()
-		fmt.Fprintf(os.Stderr, BoldRed("✗ "+msg+"\n"), args...)
+		fmt.Fprintf(os.Stderr, BoldRed("[✗] "+msg+"\n"), args...)
 	}
 }
 

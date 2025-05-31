@@ -11,14 +11,19 @@ import (
 )
 
 var (
-	verbose    bool
-	color      bool
-	quiet      bool
-	version    string = "0.1.0"
-	user       bool
-	configfile string
-	userConfig *types.Config
+
+	// Global flags
+	verbose       bool
+	color         bool
+	quiet         bool
+	version       string = "0.1.0"
+	user          bool
+	configfile    string
+	userConfig    *types.Config
 	projectConfig *types.Config
+
+	// Global variables
+	targetName = "default"
 
 	rootCmd = &cobra.Command{
 		Use:   "gocli",
@@ -32,7 +37,21 @@ build automation, and various utilities to enhance your development workflow.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			utils.SetGlobalFlags(verbose, color, quiet, user)
 			utils.SetConfigFile(configfile)
+
+			// Load user configuration
 			userConfig = parse.UserConfig()
+
+			// Load and set project configuration
+			if !user {
+				configPath := utils.ProjectConfigPath(utils.GetConfigFile())
+				if configPath != "" {
+					if config, err := parse.ParseConfigFromFile(configPath); err == nil {
+						parse.SetProjectConfig(config)
+						projectConfig = config
+					}
+				}
+			}
+
 			projectConfig = parse.ProjectConfig()
 		},
 		Version: fmt.Sprintf("%s (%s)", version, time.Now().Format("2006-01-02")),

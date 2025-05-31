@@ -4,15 +4,91 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/yeisme/gocli/pkg/parse"
+	"github.com/yeisme/gocli/pkg/types"
+	"github.com/yeisme/gocli/pkg/utils"
 )
 
-var buildCmd = &cobra.Command{
-	Use:   "build",
-	Short: "",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("build called")
-	},
-}
+var (
+	buildCmd = &cobra.Command{
+		Use:   "build [name]",
+		Short: "Build the project",
+		Long:  "Build the project using the specified build configuration.",
+		Run: func(cmd *cobra.Command, args []string) {
+			if utils.IsVerbose() {
+				utils.Info("Starting build process...")
+			}
+
+			config := parse.GetProjectConfig()
+			if config == nil {
+				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
+				return
+			}
+
+			if utils.IsVerbose() {
+				utils.Info(fmt.Sprintf("Loaded project configuration: %s v%s", config.Project.Name, config.Project.Version))
+				utils.Info(fmt.Sprintf("Go version: %s", config.Project.GoVersion))
+				utils.Info(fmt.Sprintf("Found %d build configurations", len(config.Build)))
+			}
+
+			targetName := "default"
+			if len(args) > 0 {
+				targetName = args[0]
+				if utils.IsVerbose() {
+					utils.Info(fmt.Sprintf("Target build configuration specified: %s", targetName))
+				}
+			} else if utils.IsVerbose() {
+				utils.Info("Using default build configuration")
+			}
+
+			var targetBuild *types.Command
+			for _, build := range config.Build {
+				if build.Name == targetName {
+					targetBuild = &build
+					break
+				}
+			}
+
+			if targetBuild == nil {
+				utils.Error(fmt.Sprintf("Build configuration '%s' not found", targetName))
+				if utils.IsVerbose() {
+					utils.Info("Available build configurations:")
+					for _, build := range config.Build {
+						utils.Info(fmt.Sprintf("  - %s: %s", build.Name, build.Description))
+					}
+				}
+				return
+			}
+
+			if utils.IsVerbose() {
+				utils.Info(fmt.Sprintf("Found build configuration: %s", targetBuild.Name))
+				utils.Info(fmt.Sprintf("Description: %s", targetBuild.Description))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetBuild.Cmd)))
+			}
+
+			utils.Info(fmt.Sprintf("Executing build: %s - %s", targetBuild.Name, targetBuild.Description))
+
+			for i, cmdStr := range targetBuild.Cmd {
+				if utils.IsVerbose() {
+					utils.Info(fmt.Sprintf("Executing build command %d/%d: %s", i+1, len(targetBuild.Cmd), cmdStr))
+				}
+
+				if err := utils.GoExec(cmdStr); err != nil {
+					utils.Error(fmt.Sprintf("Build failed at command '%s': %v", cmdStr, err))
+					return
+				}
+
+				if utils.IsVerbose() {
+					utils.Info(fmt.Sprintf("Successfully executed build command %d/%d", i+1, len(targetBuild.Cmd)))
+				}
+			}
+
+			if utils.IsVerbose() {
+				utils.Info("Build process completed successfully")
+			}
+		},
+	}
+)
 
 func init() {
 	rootCmd.AddCommand(buildCmd)
