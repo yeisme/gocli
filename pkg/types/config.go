@@ -73,10 +73,11 @@ type (
 
 	GitTool struct {
 		Name        string `json:"name"`
-		Description string `json:"description"`
+		Description string `json:"description,omitempty"`
 		URL         string `json:"url"`
 		Type        string `json:"type"`
-		Recipe      string `json:"recipe"`
+		Recipe      string `json:"recipe,omitempty"`
+		Path        string `json:"path"`
 	}
 
 	CustomTool struct {

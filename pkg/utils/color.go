@@ -111,7 +111,7 @@ func Info(msg string, args ...any) {
 
 func Debug(msg string, args ...any) {
 	if IsVerbose() {
-		Printf(FaintCyan, "[DEBUG] "+msg+"\n", args...)
+		Printf(White, "[DEBUG] "+msg+"\n", args...)
 	}
 }
 
@@ -120,16 +120,16 @@ func Header(msg string, args ...any) {
 	if !IsQuiet() {
 		updateColorSettings()
 		width := 50
-		
+
 		// Top border
 		topBorder := "╔" + strings.Repeat("═", width-2) + "╗"
 		fmt.Println(BoldCyan(topBorder))
-		
+
 		// Title
 		title := fmt.Sprintf(msg, args...)
 		titleLine := fmt.Sprintf("║ %-*s ║", width-4, title)
 		fmt.Println(BoldItalicCyan(titleLine))
-		
+
 		// Bottom border
 		bottomBorder := "╚" + strings.Repeat("═", width-2) + "╝"
 		fmt.Println(BoldCyan(bottomBorder))
@@ -171,33 +171,39 @@ func NumberedItem(num int, msg string, args ...any) {
 }
 
 // Colored box output
-func Box(title string, content string) {
+func Box(title string, content string, width int) {
+	if width == 0 {
+		width = 50
+	}
 	if !IsQuiet() {
 		updateColorSettings()
-		width := 50
-		
+
 		// Top border
 		topBorder := "┌" + strings.Repeat("─", width-2) + "┐"
-		fmt.Println(BoldCyan(topBorder))
-		
+		fmt.Println(ItalicWhite(topBorder))
+
 		// Title
 		titleLine := fmt.Sprintf("│ %-*s │", width-4, title)
-		fmt.Println(BoldItalicYellow(titleLine))
+		fmt.Println(ItalicWhite(titleLine))
 
 		// Separator
 		separator := "├" + strings.Repeat("─", width-2) + "┤"
-		fmt.Println(BoldCyan(separator))
+		fmt.Println(ItalicWhite(separator))
 
-		// Content
-		contentLines := []string{content}
+		// Content - split by newlines
+		contentLines := strings.Split(content, "\n")
 		for _, line := range contentLines {
+			// Handle long lines by truncating if necessary
+			if len(line) > width-4 {
+				line = line[:width-7] + "..."
+			}
 			contentLine := fmt.Sprintf("│ %-*s │", width-4, line)
 			fmt.Println(ItalicWhite(contentLine))
 		}
 
 		// Bottom border
 		bottomBorder := "└" + strings.Repeat("─", width-2) + "┘"
-		fmt.Println(BoldCyan(bottomBorder))
+		fmt.Println(ItalicWhite(bottomBorder))
 	}
 }
 

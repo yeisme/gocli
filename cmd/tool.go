@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -31,6 +32,7 @@ var (
 		Use:   "check",
 		Short: "Check tool availability",
 		Long:  "Check if required development tools are installed and available.",
+		Aliases: []string{"c"},
 		Run: func(cmd *cobra.Command, args []string) {
 			// Use global projectConfig from root
 			config := projectConfig
@@ -62,8 +64,9 @@ var (
 
 	toolInstallCmd = &cobra.Command{
 		Use:   "install",
-		Short: "Install Go tools",
-		Long:  "Install Go tools defined in the configuration using 'go install'.",
+		Short: "Install tools",
+		Long:  "Install tools defined in the configuration. Supports Go tools (via 'go install') and Git tools (via git clone + build).",
+		Aliases: []string{"i"},
 		Run: func(cmd *cobra.Command, args []string) {
 			// Use global projectConfig from root
 			config := projectConfig
@@ -72,27 +75,77 @@ var (
 				os.Exit(1)
 			}
 
-			// Only Go tools can be installed automatically
-			if !_go && !_all {
-				utils.Warning("Only Go tools can be installed automatically. Use --go or --all flag.")
-				return
+			utils.Debug("Tool installation flags - dev: %v, go: %v, git: %v, custom: %v", _dev, _go, _git, _custom)
+
+			// Handle --all flag
+			if _all {
+				_dev, _go, _git, _custom = true, true, true, true
+				utils.Debug("All tools flag enabled, installing all tool categories")
 			}
 
-			if len(config.Tools.Go) == 0 {
-				utils.Info("No Go tools configured for installation.")
-				return
+			hasAnyInstallation := false
+
+			// Install Go tools
+			if _go && len(config.Tools.Go) > 0 {
+				utils.Debug("Found %d Go tools configured for installation", len(config.Tools.Go))
+				utils.Info("Installing Go tools...")
+
+				err := tools.InstallGoTools(config.Tools.Go)
+				if err != nil {
+					utils.Error("Go tools installation failed: %v", err)
+					os.Exit(1)
+				}
+
+				utils.Success("Go tools installation completed")
+				hasAnyInstallation = true
 			}
 
-			utils.Debug("Found %d Go tools configured for installation", len(config.Tools.Go))
-			utils.Info("Installing Go tools...")
+			// Install Git tools
+			if _git && len(config.Tools.Git) > 0 {
+				utils.Debug("Found %d Git tools configured for installation", len(config.Tools.Git))
+				utils.Info("Installing Git tools...")
 
-			err := tools.InstallGoTools(config.Tools.Go)
-			if err != nil {
-				utils.Error("Tool installation failed: %v", err)
-				os.Exit(1)
+				err := tools.InstallGitTools(config.Tools.Git)
+				if err != nil {
+					utils.Error("Git tools installation failed: %v", err)
+					os.Exit(1)
+				}
+				utils.Success("Git tools installation completed")
+				hasAnyInstallation = true
 			}
 
-			utils.Success("Go tools installation completed")
+			// Dev and Custom tools are not installable automatically
+			if _dev && len(config.Tools.Dev) > 0 {
+				if !utils.IsQuiet() {
+					utils.Warning("Development tools need to be installed manually")
+					utils.Info("Run 'gocli tool check --dev' to see required development tools")
+				}
+			}
+			if _custom && len(config.Tools.Custom) > 0 {
+				if !utils.IsQuiet() {
+					utils.Warning("Custom tools need to be installed manually")
+					utils.Info("Run 'gocli tool list --custom' to see custom tool commands")
+				}
+			}
+
+			if !hasAnyInstallation {
+				if !_dev && !_go && !_git && !_custom && !_all {
+					// Default to Go tools if no flags specified
+					if len(config.Tools.Go) > 0 {
+						utils.Info("No tool type specified, installing Go tools by default...")
+						err := tools.InstallGoTools(config.Tools.Go)
+						if err != nil {
+							utils.Error("Go tools installation failed: %v", err)
+							os.Exit(1)
+						}
+						utils.Success("Go tools installation completed")
+					} else {
+						utils.Info("No Go tools configured for installation.")
+					}
+				} else {
+					utils.Info("No tools were installed. Use --go or --git flags to specify tool types.")
+				}
+			}
 		},
 	}
 
@@ -151,12 +204,12 @@ var (
 				utils.Debug("Found %d Git tools", len(config.Tools.Git))
 				utils.SubHeader("Git Tools")
 				for _, tool := range config.Tools.Git {
-					utils.ListItem("%s - %s", tool.Name, tool.Description)
-					utils.ListItem("  Repository: %s", tool.URL)
-					utils.ListItem("  Build type: %s", tool.Type)
+					content := fmt.Sprintf("Repository: %s\nBuild type: %s", tool.URL, tool.Type)
 					if tool.Recipe != "" {
-						utils.ListItem("  Recipe: %s", tool.Recipe)
+						content += fmt.Sprintf("\nRecipe: %s", tool.Recipe)
 					}
+					utils.Box(fmt.Sprintf("%s - %s", tool.Name, tool.Description), content, len(tool.Description)+len(tool.Name)+10)
+					utils.Print(utils.White, "\n")
 				}
 				hasAnyTools = true
 				utils.Print(utils.White, "\n")
@@ -216,8 +269,8 @@ func init() {
 			_go = true
 		}
 	}
-
 	toolListCmd.PreRun = func(cmd *cobra.Command, args []string) {
+		// 如果没有指定任何工具类型 flag，则默认列出所有类型cobra.Command, args []string) {
 		// 如果没有指定任何工具类型 flag，则默认列出所有类型
 		if !_dev && !_go && !_git && !_custom && !_all {
 			_dev, _go, _git, _custom = true, true, true, true

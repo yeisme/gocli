@@ -107,10 +107,6 @@ tools:
   # use go install to install these tools
   go:
     # go install <flag> <url>@<version>
-    - name: goreleaser
-      url: github.com/goreleaser/goreleaser/v2@latest
-      bin: goreleaser
-      flags: []
     - name: go-task
       url: github.com/go-task/task/v3/cmd/task@latest
       bin: task
@@ -122,12 +118,13 @@ tools:
 
   # use git to clone these tools and build them
   # some tools may require additional steps to build (build with tags)
-  # git:
-  #   - name: docker compose
-  #     description: "Define and run multi-container Docker applications"
-  #     url: https://github.com/docker/compose.git
-  #     type: make
-  #     recipe: build
+  git:
+    - name: docker compose
+      description: "Define and run multi-container Docker applications"
+      url: https://github.com/docker/compose.git
+      type: make
+      recipe: build
+      path: bin/build
 
   # custom:
   #   - name: uv
