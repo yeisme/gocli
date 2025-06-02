@@ -25,7 +25,7 @@ type (
 	Command struct {
 		Name        string   `json:"name"`
 		Description string   `json:"description"`
-		Cmd         []string `json:"cmd"`
+		Cmds         []string `json:"cmds"`
 	}
 
 	Project struct {
@@ -82,7 +82,7 @@ type (
 
 	CustomTool struct {
 		Name  string   `json:"name"`
-		Cmd   string   `json:"cmd"`
+		Cmds  string   `json:"cmds"`
 		Needs []string `json:"needs,omitempty"`
 	}
 

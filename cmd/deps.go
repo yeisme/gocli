@@ -75,14 +75,14 @@ var (
 			if utils.IsVerbose() {
 				utils.Info(fmt.Sprintf("Found dependency configuration: %s", targetDeps.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetDeps.Description))
-				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetDeps.Cmd)))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetDeps.Cmds)))
 			}
 
 			utils.Info(fmt.Sprintf("Executing deps: %s - %s", targetDeps.Name, targetDeps.Description))
 
-			for i, cmdStr := range targetDeps.Cmd {
+			for i, cmdStr := range targetDeps.Cmds {
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Executing command %d/%d: %s", i+1, len(targetDeps.Cmd), cmdStr))
+					utils.Info(fmt.Sprintf("Executing command %d/%d: %s", i+1, len(targetDeps.Cmds), cmdStr))
 				}
 
 				if err := utils.GoExec(cmdStr); err != nil {
@@ -91,7 +91,7 @@ var (
 				}
 
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Successfully executed command %d/%d", i+1, len(targetDeps.Cmd)))
+					utils.Info(fmt.Sprintf("Successfully executed command %d/%d", i+1, len(targetDeps.Cmds)))
 				}
 			}
 

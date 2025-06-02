@@ -52,7 +52,7 @@ test:
 	fmt.Printf("\nBuild configuration:\n")
 	for _, build := range config.Build {
 		fmt.Printf("  - %s: %s\n", build.Name, build.Description)
-		for _, cmd := range build.Cmd {
+		for _, cmd := range build.Cmds {
 			fmt.Printf("    Command: %s\n", cmd)
 		}
 	}

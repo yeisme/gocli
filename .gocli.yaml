@@ -29,67 +29,67 @@ project:
 build:
   - name: default
     description: "Build the project"
-    cmd:
+    cmds:
       - task build
   - name: release
     description: "Build the project for release"
-    cmd:
+    cmds:
       - goreleaser build --snapshot --clean --single-target
 
 # gocli run (name=default)
 run:
   - name: default
     description: "Run the project"
-    cmd:
+    cmds:
       - task run
 
 # gocli dev (name=default)
 dev:
   - name: default
     description: "Run the project in development mode (hot reload)"
-    cmd:
+    cmds:
       - task dev
 
 # gocli clean (name=default)
 clean:
   - name: default
     description: "Clean the project"
-    cmd:
+    cmds:
       - go clean -cache -modcache -testcache
 
 # gocli lint (name=default)
 lint:
   - name: default
     description: "Run linters"
-    cmd:
+    cmds:
       - golangci-lint run --config .golangci.yaml
 
 # gocli help (name=default)
 help:
   - name: default
     description: "Show help"
-    cmd:
+    cmds:
       - task --list
 
 # gocli release (name=default)
 release:
   - name: default
     description: "Release the project"
-    cmd:
+    cmds:
       - task release
 
 # gocli test (name=default)
 test:
   - name: default
     description: "Run tests"
-    cmd:
+    cmds:
       - task test
 
 # gocli deps (name=default)
 deps:
   - name: default
     description: "Manage project dependencies"
-    cmd:
+    cmds:
       - go mod tidy
 
 # gocli tools (--dev, etc.)
@@ -128,7 +128,7 @@ tools:
 
   # custom:
   #   - name: uv
-  #     cmd: "pip install uv"
+  #     cmds: "pip install uv"
   #     needs:
   #       - python
   #       - pip

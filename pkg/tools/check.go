@@ -143,7 +143,7 @@ func isWindows() bool {
 func checkCustomTools(tools []types.CustomTool) error {
 	for _, tool := range tools {
 		utils.Info("🔧 %s", tool.Name)
-		utils.ListItem("Command: %s", tool.Cmd)
+		utils.ListItem("Command: %s", tool.Cmds)
 		if len(tool.Needs) > 0 {
 			utils.ListItem("Dependencies: %s", strings.Join(tool.Needs, ", "))
 		}

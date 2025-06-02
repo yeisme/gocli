@@ -63,14 +63,14 @@ var (
 			if utils.IsVerbose() {
 				utils.Info(fmt.Sprintf("Found lint configuration: %s", targetLint.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetLint.Description))
-				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetLint.Cmd)))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetLint.Cmds)))
 			}
 
 			utils.Info(fmt.Sprintf("Executing lint: %s - %s", targetLint.Name, targetLint.Description))
 
-			for i, cmdStr := range targetLint.Cmd {
+			for i, cmdStr := range targetLint.Cmds {
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Executing lint command %d/%d: %s", i+1, len(targetLint.Cmd), cmdStr))
+					utils.Info(fmt.Sprintf("Executing lint command %d/%d: %s", i+1, len(targetLint.Cmds), cmdStr))
 				}
 
 				if err := utils.GoExec(cmdStr); err != nil {
@@ -79,7 +79,7 @@ var (
 				}
 
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Successfully executed lint command %d/%d", i+1, len(targetLint.Cmd)))
+					utils.Info(fmt.Sprintf("Successfully executed lint command %d/%d", i+1, len(targetLint.Cmds)))
 				}
 			}
 

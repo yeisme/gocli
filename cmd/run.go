@@ -62,14 +62,14 @@ var (
 			if utils.IsVerbose() {
 				utils.Info(fmt.Sprintf("Found run configuration: %s", targetRun.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetRun.Description))
-				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetRun.Cmd)))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetRun.Cmds)))
 			}
 
 			utils.Info(fmt.Sprintf("Executing run: %s - %s", targetRun.Name, targetRun.Description))
 
-			for i, cmdStr := range targetRun.Cmd {
+			for i, cmdStr := range targetRun.Cmds {
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Executing run command %d/%d: %s", i+1, len(targetRun.Cmd), cmdStr))
+					utils.Info(fmt.Sprintf("Executing run command %d/%d: %s", i+1, len(targetRun.Cmds), cmdStr))
 				}
 
 				if err := utils.GoExec(cmdStr); err != nil {
@@ -78,7 +78,7 @@ var (
 				}
 
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Successfully executed run command %d/%d", i+1, len(targetRun.Cmd)))
+					utils.Info(fmt.Sprintf("Successfully executed run command %d/%d", i+1, len(targetRun.Cmds)))
 				}
 			}
 

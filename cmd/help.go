@@ -62,14 +62,14 @@ var (
 			if utils.IsVerbose() {
 				utils.Info(fmt.Sprintf("Found help configuration: %s", targetHelp.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetHelp.Description))
-				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetHelp.Cmd)))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetHelp.Cmds)))
 			}
 
 			utils.Info(fmt.Sprintf("Executing help: %s - %s", targetHelp.Name, targetHelp.Description))
 
-			for i, cmdStr := range targetHelp.Cmd {
+			for i, cmdStr := range targetHelp.Cmds {
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Executing help command %d/%d: %s", i+1, len(targetHelp.Cmd), cmdStr))
+					utils.Info(fmt.Sprintf("Executing help command %d/%d: %s", i+1, len(targetHelp.Cmds), cmdStr))
 				}
 
 				if err := utils.GoExec(cmdStr); err != nil {
@@ -78,7 +78,7 @@ var (
 				}
 
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Successfully executed help command %d/%d", i+1, len(targetHelp.Cmd)))
+					utils.Info(fmt.Sprintf("Successfully executed help command %d/%d", i+1, len(targetHelp.Cmds)))
 				}
 			}
 

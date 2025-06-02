@@ -219,7 +219,7 @@ var (
 				utils.Debug("Found %d custom tools", len(config.Tools.Custom))
 				utils.SubHeader("Custom Tools")
 				for _, tool := range config.Tools.Custom {
-					utils.ListItem("%s: %s", tool.Name, tool.Cmd)
+					utils.ListItem("%s: %s", tool.Name, tool.Cmds)
 					if len(tool.Needs) > 0 {
 						utils.ListItem("  Dependencies: %s", joinStringSlice(tool.Needs))
 					}

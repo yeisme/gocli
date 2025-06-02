@@ -63,15 +63,15 @@ var (
 			if utils.IsVerbose() {
 				utils.Info(fmt.Sprintf("Found dev configuration: %s", targetDev.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetDev.Description))
-				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetDev.Cmd)))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetDev.Cmds)))
 				utils.Info("Development mode may run continuously - use Ctrl+C to stop")
 			}
 
 			utils.Info(fmt.Sprintf("Executing dev: %s - %s", targetDev.Name, targetDev.Description))
 
-			for i, cmdStr := range targetDev.Cmd {
+			for i, cmdStr := range targetDev.Cmds {
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Executing dev command %d/%d: %s", i+1, len(targetDev.Cmd), cmdStr))
+					utils.Info(fmt.Sprintf("Executing dev command %d/%d: %s", i+1, len(targetDev.Cmds), cmdStr))
 				}
 
 				if err := utils.GoExec(cmdStr); err != nil {
@@ -80,7 +80,7 @@ var (
 				}
 
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Successfully executed dev command %d/%d", i+1, len(targetDev.Cmd)))
+					utils.Info(fmt.Sprintf("Successfully executed dev command %d/%d", i+1, len(targetDev.Cmds)))
 				}
 			}
 

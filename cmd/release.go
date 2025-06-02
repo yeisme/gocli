@@ -63,14 +63,14 @@ var (
 			if utils.IsVerbose() {
 				utils.Info(fmt.Sprintf("Found release configuration: %s", targetRelease.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetRelease.Description))
-				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetRelease.Cmd)))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetRelease.Cmds)))
 			}
 
 			utils.Info(fmt.Sprintf("Executing release: %s - %s", targetRelease.Name, targetRelease.Description))
 
-			for i, cmdStr := range targetRelease.Cmd {
+			for i, cmdStr := range targetRelease.Cmds {
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Executing release command %d/%d: %s", i+1, len(targetRelease.Cmd), cmdStr))
+					utils.Info(fmt.Sprintf("Executing release command %d/%d: %s", i+1, len(targetRelease.Cmds), cmdStr))
 				}
 
 				if err := utils.GoExec(cmdStr); err != nil {
@@ -79,7 +79,7 @@ var (
 				}
 
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Successfully executed release command %d/%d", i+1, len(targetRelease.Cmd)))
+					utils.Info(fmt.Sprintf("Successfully executed release command %d/%d", i+1, len(targetRelease.Cmds)))
 				}
 			}
 

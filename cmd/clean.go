@@ -62,14 +62,14 @@ var (
 			if utils.IsVerbose() {
 				utils.Info(fmt.Sprintf("Found clean configuration: %s", targetClean.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetClean.Description))
-				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetClean.Cmd)))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetClean.Cmds)))
 			}
 
 			utils.Info(fmt.Sprintf("Executing clean: %s - %s", targetClean.Name, targetClean.Description))
 
-			for i, cmdStr := range targetClean.Cmd {
+			for i, cmdStr := range targetClean.Cmds {
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Executing clean command %d/%d: %s", i+1, len(targetClean.Cmd), cmdStr))
+					utils.Info(fmt.Sprintf("Executing clean command %d/%d: %s", i+1, len(targetClean.Cmds), cmdStr))
 				}
 
 				if err := utils.GoExec(cmdStr); err != nil {
@@ -78,7 +78,7 @@ var (
 				}
 
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Successfully executed clean command %d/%d", i+1, len(targetClean.Cmd)))
+					utils.Info(fmt.Sprintf("Successfully executed clean command %d/%d", i+1, len(targetClean.Cmds)))
 				}
 			}
 

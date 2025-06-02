@@ -63,14 +63,14 @@ var (
 			if utils.IsVerbose() {
 				utils.Info(fmt.Sprintf("Found build configuration: %s", targetBuild.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetBuild.Description))
-				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetBuild.Cmd)))
+				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetBuild.Cmds)))
 			}
 
 			utils.Info(fmt.Sprintf("Executing build: %s - %s", targetBuild.Name, targetBuild.Description))
 
-			for i, cmdStr := range targetBuild.Cmd {
+			for i, cmdStr := range targetBuild.Cmds {
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Executing build command %d/%d: %s", i+1, len(targetBuild.Cmd), cmdStr))
+					utils.Info(fmt.Sprintf("Executing build command %d/%d: %s", i+1, len(targetBuild.Cmds), cmdStr))
 				}
 
 				if err := utils.GoExec(cmdStr); err != nil {
@@ -79,7 +79,7 @@ var (
 				}
 
 				if utils.IsVerbose() {
-					utils.Info(fmt.Sprintf("Successfully executed build command %d/%d", i+1, len(targetBuild.Cmd)))
+					utils.Info(fmt.Sprintf("Successfully executed build command %d/%d", i+1, len(targetBuild.Cmds)))
 				}
 			}
 
