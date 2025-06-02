@@ -10,19 +10,41 @@ import (
 )
 
 var (
-	cleanCmd = &cobra.Command{
+	cleanList bool
+	cleanCmd  = &cobra.Command{
 		Use:   "clean [name]",
 		Short: "Clean the project",
 		Long:  "Clean build artifacts, cache, and other temporary files from the project.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting clean process...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
+			}
+
+			// Handle --list flag
+			if cleanList {
+				utils.Header("Available Clean Configurations")
+				if len(config.Clean) == 0 {
+					utils.Info("No clean configurations found.")
+					return
+				}
+
+				for _, clean := range config.Clean {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s",
+							clean.Name, clean.Description),
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(clean.Cmds)),
+							len(clean.Name)+len(clean.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", clean.Name, clean.Description)
+					}
+				}
+				return
+			}
+
+			if utils.IsVerbose() {
+				utils.Info("Starting clean process...")
 			}
 
 			if utils.IsVerbose() {
@@ -90,5 +112,6 @@ var (
 )
 
 func init() {
+	cleanCmd.Flags().BoolVarP(&cleanList, "list", "l", false, "List available clean configurations")
 	rootCmd.AddCommand(cleanCmd)
 }

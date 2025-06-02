@@ -10,24 +10,41 @@ import (
 )
 
 var (
-	helpCmd = &cobra.Command{
+	helpList bool
+	helpCmd  = &cobra.Command{
 		Use:   "help [name]",
 		Short: "Show help information",
 		Long:  "Show help information for the project or specific commands.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting help process...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
 			}
 
+			// Handle --list flag
+			if helpList {
+				utils.Header("Available Help Configurations")
+				if len(config.Help) == 0 {
+					utils.Info("No help configurations found.")
+					return
+				}
+
+				for _, help := range config.Help {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s",
+							help.Name, help.Description),
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(help.Cmds)),
+							len(help.Name)+len(help.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", help.Name, help.Description)
+					}
+				}
+				return
+			}
+
 			if utils.IsVerbose() {
-				utils.Info(fmt.Sprintf("Loaded project configuration: %s v%s", config.Project.Name, config.Project.Version))
-				utils.Info(fmt.Sprintf("Found %d help configurations", len(config.Help)))
+				utils.Info("Starting help process...")
 			}
 
 			targetName := "default"
@@ -90,5 +107,6 @@ var (
 )
 
 func init() {
+	helpCmd.Flags().BoolVarP(&helpList, "list", "l", false, "List available help configurations")
 	rootCmd.AddCommand(helpCmd)
 }

@@ -29,9 +29,9 @@ var (
 	}
 
 	toolCheckCmd = &cobra.Command{
-		Use:   "check",
-		Short: "Check tool availability",
-		Long:  "Check if required development tools are installed and available.",
+		Use:     "check",
+		Short:   "Check tool availability",
+		Long:    "Check if required development tools are installed and available.",
 		Aliases: []string{"c"},
 		Run: func(cmd *cobra.Command, args []string) {
 			// Use global projectConfig from root
@@ -63,9 +63,9 @@ var (
 	}
 
 	toolInstallCmd = &cobra.Command{
-		Use:   "install",
-		Short: "Install tools",
-		Long:  "Install tools defined in the configuration. Supports Go tools (via 'go install') and Git tools (via git clone + build).",
+		Use:     "install",
+		Short:   "Install tools",
+		Long:    "Install tools defined in the configuration. Supports Go tools (via 'go install') and Git tools (via git clone + build).",
 		Aliases: []string{"i"},
 		Run: func(cmd *cobra.Command, args []string) {
 			// Use global projectConfig from root
@@ -234,18 +234,6 @@ var (
 		},
 	}
 )
-
-// joinStringSlice joins string slice with commas
-func joinStringSlice(slice []string) string {
-	if len(slice) == 0 {
-		return ""
-	}
-	result := slice[0]
-	for i := 1; i < len(slice); i++ {
-		result += ", " + slice[i]
-	}
-	return result
-}
 
 func init() {
 	// Add persistent flags that apply to all subcommands - defaults to false

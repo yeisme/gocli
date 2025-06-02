@@ -10,20 +10,42 @@ import (
 )
 
 var (
-	lintCmd = &cobra.Command{
-		Use:   "lint [name]",
-		Short: "Run linters",
+	lintList bool
+	lintCmd  = &cobra.Command{
+		Use:     "lint [name]",
+		Short:   "Run linters",
 		Aliases: []string{"l"},
-		Long:  "Run code linters and static analysis tools on the project.",
+		Long:    "Run code linters and static analysis tools on the project.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting lint process...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
+			}
+
+			// Handle --list flag
+			if lintList {
+				utils.Header("Available Lint Configurations")
+				if len(config.Lint) == 0 {
+					utils.Info("No lint configurations found.")
+					return
+				}
+
+				for _, lint := range config.Lint {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s",
+							lint.Name, lint.Description),
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(lint.Cmds)),
+							len(lint.Name)+len(lint.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", lint.Name, lint.Description)
+					}
+				}
+				return
+			}
+
+			if utils.IsVerbose() {
+				utils.Info("Starting lint process...")
 			}
 
 			if utils.IsVerbose() {
@@ -91,5 +113,6 @@ var (
 )
 
 func init() {
+	lintCmd.Flags().BoolVarP(&lintList, "list", "l", false, "List available lint configurations")
 	rootCmd.AddCommand(lintCmd)
 }

@@ -10,22 +10,41 @@ import (
 )
 
 var (
+	runList bool
 	runCmd = &cobra.Command{
 		Use:   "run [name]",
 		Short: "Run the project",
 		Long:  "Run the project using the specified run configuration.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting run process...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
 			}
 
+			// Handle --list flag
+			if runList {
+				utils.Header("Available Run Configurations")
+				if len(config.Run) == 0 {
+					utils.Info("No run configurations found.")
+					return
+				}
+
+				for _, run := range config.Run {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s",
+							run.Name, run.Description),
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(run.Cmds)),
+							len(run.Name)+len(run.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", run.Name, run.Description)
+					}
+				}
+				return
+			}
+
 			if utils.IsVerbose() {
+				utils.Info("Starting run process...")
 				utils.Info(fmt.Sprintf("Loaded project configuration: %s v%s", config.Project.Name, config.Project.Version))
 				utils.Info(fmt.Sprintf("Found %d run configurations", len(config.Run)))
 			}
@@ -90,5 +109,6 @@ var (
 )
 
 func init() {
+	runCmd.Flags().BoolVarP(&runList, "list", "l", false, "List available run configurations")
 	rootCmd.AddCommand(runCmd)
 }

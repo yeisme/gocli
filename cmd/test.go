@@ -10,19 +10,41 @@ import (
 )
 
 var (
-	testCmd = &cobra.Command{
+	testList bool
+	testCmd  = &cobra.Command{
 		Use:   "test [name]",
 		Short: "Run tests",
 		Long:  "Run unit tests, integration tests, and other test suites for the project.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting test process...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
+			}
+
+			// Handle --list flag
+			if testList {
+				utils.Header("Available Test Configurations")
+				if len(config.Test) == 0 {
+					utils.Info("No test configurations found.")
+					return
+				}
+
+				for _, test := range config.Test {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s",
+							test.Name, test.Description),
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(test.Cmds)),
+							len(test.Name)+len(test.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", test.Name, test.Description)
+					}
+				}
+				return
+			}
+
+			if utils.IsVerbose() {
+				utils.Info("Starting test process...")
 			}
 
 			if utils.IsVerbose() {
@@ -90,5 +112,6 @@ var (
 )
 
 func init() {
+	testCmd.Flags().BoolVarP(&testList, "list", "l", false, "List available test configurations")
 	rootCmd.AddCommand(testCmd)
 }

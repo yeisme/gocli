@@ -10,7 +10,7 @@ project:
   go_version: "1.24"
   repository: "github.com/yeisme"
 
-  src: ""
+  src: "."
   manager:
     # make:
     #   - name: makefile

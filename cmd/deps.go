@@ -10,19 +10,41 @@ import (
 )
 
 var (
-	depsCmd = &cobra.Command{
+	depsList bool
+	depsCmd  = &cobra.Command{
 		Use:   "deps [name]",
 		Short: "List dependencies",
 		Long:  "List all dependencies of the current project, including their versions and any additional information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting dependency management...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
+			}
+
+			// Handle --list flag
+			if depsList {
+				utils.Header("Available Deps Configurations")
+				if len(config.Deps) == 0 {
+					utils.Info("No deps configurations found.")
+					return
+				}
+
+				for _, deps := range config.Deps {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s",
+							deps.Name, deps.Description),
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(deps.Cmds)),
+							len(deps.Name)+len(deps.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", deps.Name, deps.Description)
+					}
+				}
+				return
+			}
+
+			if utils.IsVerbose() {
+				utils.Info("Starting dependency management...")
 			}
 
 			if utils.IsVerbose() {
@@ -103,5 +125,6 @@ var (
 )
 
 func init() {
+	depsCmd.Flags().BoolVarP(&depsList, "list", "l", false, "List available deps configurations")
 	rootCmd.AddCommand(depsCmd)
 }

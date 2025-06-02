@@ -10,19 +10,41 @@ import (
 )
 
 var (
-	buildCmd = &cobra.Command{
+	buildList bool
+	buildCmd  = &cobra.Command{
 		Use:   "build [name]",
 		Short: "Build the project",
 		Long:  "Build the project using the specified build configuration.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting build process...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
+			}
+
+			// Handle --list flag
+			if buildList {
+				utils.Header("Available Build Configurations")
+				if len(config.Build) == 0 {
+					utils.Info("No build configurations found.")
+					return
+				}
+
+				for _, build := range config.Build {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s",
+							build.Name, build.Description),
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(build.Cmds)),
+							len(build.Name)+len(build.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", build.Name, build.Description)
+					}
+				}
+				return
+			}
+
+			if utils.IsVerbose() {
+				utils.Info("Starting build process...")
 			}
 
 			if utils.IsVerbose() {
@@ -91,6 +113,7 @@ var (
 )
 
 func init() {
+	buildCmd.Flags().BoolVarP(&buildList, "list", "l", false, "List available build configurations")
 	rootCmd.AddCommand(buildCmd)
 
 }

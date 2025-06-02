@@ -10,7 +10,7 @@ project:
   go_version: "1.24"
   repository: ""
 
-  src: ""
+  src: "."
   manager: []
 
 # gocli build (name=default)

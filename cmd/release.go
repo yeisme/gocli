@@ -10,25 +10,41 @@ import (
 )
 
 var (
-	releaseCmd = &cobra.Command{
+	releaseList bool
+	releaseCmd  = &cobra.Command{
 		Use:   "release [name]",
 		Short: "Release the project",
 		Long:  "Create a release build and publish the project using the specified release configuration.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting release process...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
 			}
 
+			// Handle --list flag
+			if releaseList {
+				utils.Header("Available Release Configurations")
+				if len(config.Release) == 0 {
+					utils.Info("No release configurations found.")
+					return
+				}
+
+				for _, release := range config.Release {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s",
+							release.Name, release.Description),
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(release.Cmds)),
+							len(release.Name)+len(release.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", release.Name, release.Description)
+					}
+				}
+				return
+			}
+
 			if utils.IsVerbose() {
-				utils.Info(fmt.Sprintf("Loaded project configuration: %s v%s", config.Project.Name, config.Project.Version))
-				utils.Info(fmt.Sprintf("Found %d release configurations", len(config.Release)))
-				utils.Info("Release process may take some time...")
+				utils.Info("Starting release process...")
 			}
 
 			targetName := "default"
@@ -91,5 +107,6 @@ var (
 )
 
 func init() {
+	releaseCmd.Flags().BoolVarP(&releaseList, "list", "l", false, "List available release configurations")
 	rootCmd.AddCommand(releaseCmd)
 }

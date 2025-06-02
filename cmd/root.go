@@ -77,3 +77,15 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&user, "user", "u", false, "Set the user config for the command")
 	rootCmd.PersistentFlags().StringVarP(&configfile, "config", "f", "", "Path to the configuration file")
 }
+
+// joinStringSlice joins string slice with commas
+func joinStringSlice(slice []string) string {
+	if len(slice) == 0 {
+		return ""
+	}
+	result := slice[0]
+	for i := 1; i < len(slice); i++ {
+		result += ", " + slice[i]
+	}
+	return result
+}

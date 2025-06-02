@@ -10,20 +10,41 @@ import (
 )
 
 var (
+	devList bool
 	devCmd = &cobra.Command{
 		Use:   "dev [name]",
 		Short: "Run development mode",
 		Aliases: []string{"d", "hot"},
 		Long:  "Run the project in development mode with hot reload and other development features.",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.IsVerbose() {
-				utils.Info("Starting development mode...")
-			}
-
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
 				return
+			}
+
+			// Handle --list flag
+			if devList {
+				utils.Header("Available Dev Configurations")
+				if len(config.Dev) == 0 {
+					utils.Info("No dev configurations found.")
+					return
+				}
+				
+				for _, dev := range config.Dev {
+					if utils.IsVerbose() {
+						utils.Box(fmt.Sprintf("%s - %s", dev.Name, dev.Description), 
+							fmt.Sprintf("Commands:\n%s", joinStringSlice(dev.Cmds)), 
+							len(dev.Name)+len(dev.Description)+10)
+					} else {
+						utils.ListItem("%s - %s", dev.Name, dev.Description)
+					}
+				}
+				return
+			}
+
+			if utils.IsVerbose() {
+				utils.Info("Starting development mode...")
 			}
 
 			if utils.IsVerbose() {
@@ -92,5 +113,6 @@ var (
 )
 
 func init() {
+	devCmd.Flags().BoolVarP(&devList, "list", "l", false, "List available dev configurations")
 	rootCmd.AddCommand(devCmd)
 }
