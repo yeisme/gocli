@@ -162,7 +162,7 @@ func ErrorToStderr(msg string, args ...any) {
 
 // List output functions
 func ListItem(msg string, args ...any) {
-	Printf(FaintWhite, "- "+msg+"\n", args...)
+	Printf(White, " • "+msg+"\n", args...)
 }
 
 func NumberedItem(num int, msg string, args ...any) {
@@ -173,7 +173,7 @@ func NumberedItem(num int, msg string, args ...any) {
 // Colored box output
 func Box(title string, content string, width int) {
 	if width == 0 {
-		width = 50
+		width = len(title) + 10
 	}
 	if !IsQuiet() {
 		updateColorSettings()

@@ -1,0 +1,83 @@
+version: '3'
+
+vars:
+  BINARY_NAME: "{{ .ProjectName }}"
+  BUILD_DIR: "./bin"
+  MAIN_PATH: "."
+  GO_VERSION: "{{ .GoVersion }}"
+
+tasks:
+  default:
+    desc: "Show available tasks"
+    cmd: task --list
+
+  build:
+    desc: "Build the application"
+    cmds:
+      - mkdir -p {{ .BUILD_DIR }}
+      - go build -o {{ .BUILD_DIR }}/{{ .BINARY_NAME }} {{ .MAIN_PATH }}
+    sources:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+    generates:
+      - "{{ .BUILD_DIR }}/{{ .BINARY_NAME }}"
+
+  run:
+    desc: "Run the application"
+    deps: [build]
+    cmd: "{{ .BUILD_DIR }}/{{ .BINARY_NAME }}"
+
+  dev:
+    desc: "Run the application in development mode with hot reload"
+    cmd: go run {{ .MAIN_PATH }}
+    watch: true
+    sources:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+
+  test:
+    desc: "Run tests"
+    cmd: go test -v ./...
+
+  test-cover:
+    desc: "Run tests with coverage"
+    cmds:
+      - go test -v -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+
+  lint:
+    desc: "Run linter"
+    cmd: golangci-lint run
+
+  fmt:
+    desc: "Format code"
+    cmds:
+      - go fmt ./...
+
+  clean:
+    desc: "Clean build artifacts"
+    cmds:
+      - rm -rf {{ .BUILD_DIR }}
+      - rm -f coverage.out coverage.html
+      - go clean -cache -modcache -testcache
+
+  deps:
+    desc: "Download and tidy dependencies"
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  release:
+    desc: "Build release version"
+    cmd: goreleaser build --snapshot --clean --single-target
+
+  docker-build:
+    desc: "Build Docker image"
+    cmd: docker build -t {{ .BINARY_NAME }}:latest .
+
+  docker-run:
+    desc: "Run Docker container"
+    deps: [docker-build]
+    cmd: docker run --rm -p 8080:8080 {{ .BINARY_NAME }}:latest

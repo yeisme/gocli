@@ -1,0 +1,83 @@
+# Project variables
+binary_name := env_var_or_default("BINARY_NAME", "app")
+build_dir := "./bin"
+main_path := "."
+go_version := "1.21"
+
+# Default recipe
+default: list
+
+# List all available recipes
+list:
+	just --list
+
+# Build the application
+build:
+	@mkdir -p {{build_dir}}
+	go build -o {{build_dir}}/{{binary_name}} {{main_path}}
+
+# Run the application
+run: build
+	{{build_dir}}/{{binary_name}}
+
+# Run in development mode with hot reload
+dev:
+	#!/usr/bin/env bash
+	if ! command -v air > /dev/null; then
+		go install github.com/cosmtrek/air@latest
+	fi
+	air
+
+# Run tests
+test:
+	go test -v ./...
+
+# Run tests with coverage
+test-cover:
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+# Run linter
+lint:
+	#!/usr/bin/env bash
+	if ! command -v golangci-lint > /dev/null; then
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	fi
+	golangci-lint run
+
+# Format code
+fmt:
+	go fmt ./...
+
+# Clean build artifacts
+clean:
+	rm -rf {{build_dir}}
+	rm -f coverage.out coverage.html
+	go clean -cache -modcache -testcache
+
+# Download and tidy dependencies
+deps:
+	go mod download
+	go mod tidy
+
+# Build release version
+release:
+	#!/usr/bin/env bash
+	if ! command -v goreleaser > /dev/null; then
+		go install github.com/goreleaser/goreleaser@latest
+	fi
+	goreleaser build --snapshot --clean --single-target
+
+# Install development tools
+install-tools:
+	go install github.com/cosmtrek/air@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/goreleaser/goreleaser@latest
+
+# Build Docker image
+docker-build:
+	docker build -t {{binary_name}}:latest .
+
+# Run Docker container
+docker-run: docker-build
+	docker run --rm -p 8080:8080 {{binary_name}}:latest

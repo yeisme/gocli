@@ -18,7 +18,7 @@ build:
   - name: default
     description: "Build the project"
     cmds:
-      - task build
+      - "{{ .Manager }} build"
   - name: release
     description: "Build the project for release"
     cmds:
@@ -29,14 +29,14 @@ run:
   - name: default
     description: "Run the project"
     cmds:
-      - task run
+      - "{{ .Manager }} run"
 
 # gocli dev (name=default)
 dev:
   - name: default
     description: "Run the project in development mode (hot reload)"
     cmds:
-      - task dev
+      - "{{ .Manager }} dev"
 
 # gocli clean (name=default)
 clean:
@@ -57,21 +57,21 @@ help:
   - name: default
     description: "Show help"
     cmds:
-      - task --list
+      - "{{ .Manager }} list"
 
 # gocli release (name=default)
 release:
   - name: default
     description: "Release the project"
     cmds:
-      - task release
+      - "{{ .Manager }} release"
 
 # gocli test (name=default)
 test:
   - name: default
     description: "Run tests"
     cmds:
-      - task test
+      - "{{ .Manager }} test"
 
 # gocli deps (name=default)
 deps:

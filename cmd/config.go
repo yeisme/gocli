@@ -85,7 +85,7 @@ var (
 	force         bool
 	template      string
 	configInitCmd = &cobra.Command{
-		Use:   "init [template]",
+		Use:   "init",
 		Short: "Initialize a new configuration file",
 		Long: `Initialize a new configuration file for gocli.
 
@@ -109,6 +109,21 @@ and 'user' template will be used with --user flag.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := initConfigFile(args); err != nil {
 				utils.Error("Failed to initialize configuration: %v\n", err)
+				return
+			}
+		},
+	}
+
+	configListCmd = &cobra.Command{
+		Use:   "list",
+		Short: "List all available templates",
+		Long: `List all available configuration templates.
+
+This command shows both built-in templates and custom templates
+from your ~/.gocli/templates/ directory.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := listTemplates(); err != nil {
+				utils.Error("Failed to list templates: %v\n", err)
 				return
 			}
 		},
@@ -265,6 +280,74 @@ func getTemplateContent(templateType string, isUser, verbose bool) ([]byte, erro
 	return templateContent, nil
 }
 
+// listTemplates lists all available templates
+func listTemplates() error {
+	v := utils.IsVerbose()
+
+	if !utils.IsQuiet() {
+		utils.Header("Available Configuration Templates")
+	}
+
+	// 显示内置模板
+	if !utils.IsQuiet() {
+		utils.SubHeader("Built-in Templates")
+		builtinTemplates := []struct {
+			name        string
+			description string
+		}{
+			{"default", "Basic project configuration template"},
+			{"user", "User-specific global configuration template"},
+		}
+
+		for _, template := range builtinTemplates {
+			utils.ListItem("%s - %s", template.name, template.description)
+		}
+	}
+
+	// 扫描外部模板
+	templatesDir := getGocliTemplatesDir()
+	if _, err := os.Stat(templatesDir); err == nil {
+		entries, err := os.ReadDir(templatesDir)
+		if err != nil {
+			return fmt.Errorf("failed to read templates directory: %w", err)
+		}
+
+		var customTemplates []struct {
+			name string
+			path string
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() && (filepath.Ext(entry.Name()) == ".yaml" || filepath.Ext(entry.Name()) == ".yml") {
+				templateName := entry.Name()[:len(entry.Name())-len(filepath.Ext(entry.Name()))]
+				templatePath := filepath.Join(templatesDir, entry.Name())
+				customTemplates = append(customTemplates, struct {
+					name string
+					path string
+				}{templateName, templatePath})
+			}
+		}
+
+		if len(customTemplates) > 0 && !utils.IsQuiet() {
+			utils.SubHeader("Custom Templates")
+			utils.Info("Found in: %s", templatesDir)
+
+			for _, template := range customTemplates {
+				utils.ListItem("%s", template.name)
+				if v {
+					utils.Debug("  Path: %s", template.path)
+				}
+			}
+		} else if len(customTemplates) == 0 && v {
+			utils.Debug("No custom templates found in %s", templatesDir)
+		}
+	} else {
+		if v {
+			utils.Debug("Templates directory does not exist: %s", templatesDir)
+		}
+	}
+	return nil
+}
+
 func init() {
 	configEditCmd.Flags().StringVarP(&setEdit, "editor", "e", "", "Set the editor to use for editing the configuration file")
 
@@ -276,5 +359,6 @@ func init() {
 	configCmd.AddCommand(
 		configEditCmd,
 		configInitCmd,
+		configListCmd,
 	)
 }

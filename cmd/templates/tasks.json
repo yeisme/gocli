@@ -1,1 +1,158 @@
-{}
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "go",
+            "args": ["build", "-o", "./bin/${workspaceFolderBasename}", "."],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "run",
+            "type": "shell",
+            "command": "./bin/${workspaceFolderBasename}",
+            "dependsOn": "build",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "dev",
+            "type": "shell",
+            "command": "air",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "test",
+            "type": "shell",
+            "command": "go",
+            "args": ["test", "-v", "./..."],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "test-cover",
+            "type": "shell",
+            "command": "go",
+            "args": ["test", "-v", "-coverprofile=coverage.out", "./..."],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "lint",
+            "type": "shell",
+            "command": "golangci-lint",
+            "args": ["run"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$go"]
+        },
+        {
+            "label": "fmt",
+            "type": "shell",
+            "command": "go",
+            "args": ["fmt", "./..."],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "sh",
+            "args": ["-c", "rm -rf ./bin && go clean -cache -modcache -testcache"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "deps",
+            "type": "shell",
+            "command": "go",
+            "args": ["mod", "tidy"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "release",
+            "type": "shell",
+            "command": "goreleaser",
+            "args": ["build", "--snapshot", "--clean", "--single-target"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "list",
+            "type": "shell",
+            "command": "echo",
+            "args": ["Available tasks: build, run, dev, test, test-cover, lint, fmt, clean, deps, release"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}

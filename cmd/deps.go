@@ -16,6 +16,7 @@ var (
 		Short: "List dependencies",
 		Long:  "List all dependencies of the current project, including their versions and any additional information.",
 		Run: func(cmd *cobra.Command, args []string) {
+			v := utils.IsVerbose()
 			config := parse.GetProjectConfig()
 			if config == nil {
 				utils.Error("No project configuration found. Please run 'gocli config init' to create a configuration file.")
@@ -31,7 +32,7 @@ var (
 				}
 
 				for _, deps := range config.Deps {
-					if utils.IsVerbose() {
+					if v {
 						utils.Box(fmt.Sprintf("%s - %s",
 							deps.Name, deps.Description),
 							fmt.Sprintf("Commands:\n%s", joinStringSlice(deps.Cmds)),
@@ -43,23 +44,23 @@ var (
 				return
 			}
 
-			if utils.IsVerbose() {
+			if v {
 				utils.Info("Starting dependency management...")
 			}
 
-			if utils.IsVerbose() {
+			if v {
 				utils.Info(fmt.Sprintf("Loaded project configuration: %s v%s", config.Project.Name, config.Project.Version))
 				utils.Info(fmt.Sprintf("Found %d dependency configurations", len(config.Deps)))
 			}
 
 			if len(config.Deps) == 0 {
-				if utils.IsVerbose() {
+				if v {
 					utils.Info("No dependencies found in the project configuration, using default dependency management.")
 				}
 				utils.Info("Running default dependency management: go mod tidy")
 				if err := utils.GoExec("go mod tidy"); err != nil {
 					utils.Error(fmt.Sprintf("Failed to execute 'go mod tidy': %v", err))
-				} else if utils.IsVerbose() {
+				} else if v {
 					utils.Info("Successfully executed: go mod tidy")
 				}
 				return
@@ -68,10 +69,10 @@ var (
 			targetName := "default"
 			if len(args) > 0 {
 				targetName = args[0]
-				if utils.IsVerbose() {
+				if v {
 					utils.Info(fmt.Sprintf("Target dependency configuration specified: %s", targetName))
 				}
-			} else if utils.IsVerbose() {
+			} else if v {
 				utils.Info("Using default dependency configuration")
 			}
 
@@ -85,7 +86,7 @@ var (
 
 			if targetDeps == nil {
 				utils.Error(fmt.Sprintf("Deps configuration '%s' not found", targetName))
-				if utils.IsVerbose() {
+				if v {
 					utils.Info("Available dependency configurations:")
 					for _, dep := range config.Deps {
 						utils.Info(fmt.Sprintf("  - %s: %s", dep.Name, dep.Description))
@@ -94,7 +95,7 @@ var (
 				return
 			}
 
-			if utils.IsVerbose() {
+			if v {
 				utils.Info(fmt.Sprintf("Found dependency configuration: %s", targetDeps.Name))
 				utils.Info(fmt.Sprintf("Description: %s", targetDeps.Description))
 				utils.Info(fmt.Sprintf("Commands to execute: %d", len(targetDeps.Cmds)))
@@ -103,7 +104,7 @@ var (
 			utils.Info(fmt.Sprintf("Executing deps: %s - %s", targetDeps.Name, targetDeps.Description))
 
 			for i, cmdStr := range targetDeps.Cmds {
-				if utils.IsVerbose() {
+				if v {
 					utils.Info(fmt.Sprintf("Executing command %d/%d: %s", i+1, len(targetDeps.Cmds), cmdStr))
 				}
 
@@ -112,12 +113,12 @@ var (
 					return
 				}
 
-				if utils.IsVerbose() {
+				if v {
 					utils.Info(fmt.Sprintf("Successfully executed command %d/%d", i+1, len(targetDeps.Cmds)))
 				}
 			}
 
-			if utils.IsVerbose() {
+			if v {
 				utils.Info("Dependency management completed successfully")
 			}
 		},
