@@ -1,0 +1,360 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/yeisme/gocli/pkg/types/config",
+  "$ref": "#/$defs/Config",
+  "$defs": {
+    "Command": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "cmds": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "cmds"
+      ]
+    },
+    "Config": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "build": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "run": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "dev": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "clean": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "lint": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "help": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "release": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "test": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "deps": {
+          "items": {
+            "$ref": "#/$defs/Command"
+          },
+          "type": "array"
+        },
+        "project": {
+          "$ref": "#/$defs/Project"
+        },
+        "tools": {
+          "$ref": "#/$defs/Tools"
+        },
+        "plugins": {
+          "$ref": "#/$defs/Plugins"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "build",
+        "run",
+        "dev",
+        "clean",
+        "lint",
+        "help",
+        "release",
+        "test",
+        "deps",
+        "project",
+        "tools",
+        "plugins"
+      ]
+    },
+    "CustomTool": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "cmds": {
+          "type": "string"
+        },
+        "needs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "cmds"
+      ]
+    },
+    "DevTool": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ]
+    },
+    "GitTool": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "recipe": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "url",
+        "type",
+        "path"
+      ]
+    },
+    "GoTool": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "bin": {
+          "type": "string"
+        },
+        "flags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "url",
+        "bin"
+      ]
+    },
+    "Manager": {
+      "properties": {
+        "make": {
+          "items": {
+            "$ref": "#/$defs/ManagerItem"
+          },
+          "type": "array"
+        },
+        "task": {
+          "items": {
+            "$ref": "#/$defs/ManagerItem"
+          },
+          "type": "array"
+        },
+        "just": {
+          "items": {
+            "$ref": "#/$defs/ManagerItem"
+          },
+          "type": "array"
+        },
+        "vscode": {
+          "items": {
+            "$ref": "#/$defs/ManagerItem"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ManagerItem": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "dir": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "dir"
+      ]
+    },
+    "Plugins": {
+      "properties": {
+        "enable": {
+          "type": "boolean"
+        },
+        "dir": {
+          "type": "string"
+        },
+        "update": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enable",
+        "dir",
+        "update"
+      ]
+    },
+    "Project": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "go_version": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        },
+        "manager": {
+          "$ref": "#/$defs/Manager"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "description",
+        "author",
+        "license",
+        "go_version",
+        "repository",
+        "src",
+        "manager"
+      ]
+    },
+    "Tools": {
+      "properties": {
+        "dev": {
+          "items": {
+            "$ref": "#/$defs/DevTool"
+          },
+          "type": "array"
+        },
+        "go": {
+          "items": {
+            "$ref": "#/$defs/GoTool"
+          },
+          "type": "array"
+        },
+        "git": {
+          "items": {
+            "$ref": "#/$defs/GitTool"
+          },
+          "type": "array"
+        },
+        "custom": {
+          "items": {
+            "$ref": "#/$defs/CustomTool"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "dev",
+        "go",
+        "git"
+      ]
+    }
+  }
+}

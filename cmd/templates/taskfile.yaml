@@ -72,12 +72,3 @@ tasks:
   release:
     desc: "Build release version"
     cmd: goreleaser build --snapshot --clean --single-target
-
-  docker-build:
-    desc: "Build Docker image"
-    cmd: docker build -t {{ .BINARY_NAME }}:latest .
-
-  docker-run:
-    desc: "Run Docker container"
-    deps: [docker-build]
-    cmd: docker run --rm -p 8080:8080 {{ .BINARY_NAME }}:latest
