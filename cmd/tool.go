@@ -262,7 +262,7 @@ var (
 						if tool.Recipe != "" {
 							content += fmt.Sprintf("\nRecipe: %s", tool.Recipe)
 						}
-						utils.Box(fmt.Sprintf("%s - %s", tool.Name, tool.Description), content, len(tool.Description)+len(tool.Name)+10)
+						utils.Box(fmt.Sprintf("%s - %s", tool.Name, tool.Description), content, len(tool.Description)+len(tool.Name)+20)
 						utils.Print(utils.White, "\n")
 					}
 					utils.Print(utils.White, "\n")
