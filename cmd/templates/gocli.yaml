@@ -2,23 +2,26 @@ name: gocli
 version: "1"
 
 project:
-  name: ""
+  name: "{{ .ProjectName }}"
   version: "1.0.0"
   description: ""
-  author: ""
+  author: "{{ .Author }}"
   license: "MIT"
   go_version: "1.24"
   repository: ""
 
   src: "."
-  manager: []
+  manager:
+    {{ .Manager }}: 
+      - name: {{ .ManagerFile }}
+        dir: .
 
 # gocli build (name=default)
 build:
   - name: default
     description: "Build the project"
     cmds:
-      - "{{ .Manager }} build"
+      - {{ .Manager }} build
   - name: release
     description: "Build the project for release"
     cmds:
@@ -29,14 +32,14 @@ run:
   - name: default
     description: "Run the project"
     cmds:
-      - "{{ .Manager }} run"
+      - {{ .Manager }} run
 
 # gocli dev (name=default)
 dev:
   - name: default
     description: "Run the project in development mode (hot reload)"
     cmds:
-      - "{{ .Manager }} dev"
+      - {{ .Manager }} dev
 
 # gocli clean (name=default)
 clean:
@@ -57,21 +60,21 @@ help:
   - name: default
     description: "Show help"
     cmds:
-      - "{{ .Manager }} list"
+      - {{ .Manager }} list
 
 # gocli release (name=default)
 release:
   - name: default
     description: "Release the project"
     cmds:
-      - "{{ .Manager }} release"
+      - {{ .Manager }} release
 
 # gocli test (name=default)
 test:
   - name: default
     description: "Run tests"
     cmds:
-      - "{{ .Manager }} test"
+      - {{ .Manager }} test
 
 # gocli deps (name=default)
 deps:
@@ -126,5 +129,5 @@ tools:
 
 plugins:
   enable: true
-  dir: "{{ .Home }}/.gocli/plugins"
+  dir: "~/.gocli/plugins"
   update: true

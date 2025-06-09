@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +15,15 @@ import (
 )
 
 var (
+	templateData = map[string]string{
+		"User":        utils.GetCurrentUser(),
+		"Manager":     utils.GetManager(manager),
+		"ManagerFile": utils.GetManagerFile(manager),
+		"ProjectName": utils.GetProjectName(),
+		"Author":      utils.GetAuthor(),
+		"PluginsHome": utils.GetPluginsHome(),
+	}
+
 	configCmd = &cobra.Command{
 		Use:   "config",
 		Short: "A brief description of your command",
@@ -83,7 +94,8 @@ var (
 	//go:embed templates
 	example       embed.FS
 	force         bool
-	template      string
+	templateFile  string
+	manager       string
 	configInitCmd = &cobra.Command{
 		Use:   "init",
 		Short: "Initialize a new configuration file",
@@ -135,8 +147,17 @@ func initConfigFile(args []string) error {
 	v := utils.IsVerbose()
 	u := utils.IsUser()
 
+	// 动态更新模板数据，确保使用正确的 manager 值
+	if manager != "" {
+		templateData["Manager"] = utils.GetManager(manager)
+		templateData["ManagerFile"] = utils.GetManagerFile(manager)
+		if v {
+			utils.Debug("Using manager: %s, manager file: %s\n", templateData["Manager"], templateData["ManagerFile"])
+		}
+	}
+
 	// 确定模板类型
-	templateType := template
+	templateType := templateFile
 	if len(args) > 0 {
 		templateType = args[0]
 	}
@@ -210,21 +231,43 @@ func getGocliTemplatesDir() string {
 
 // readTemplateFromPath tries to read template from external path first, then falls back to embedded
 func readTemplateFromPath(templateName string, verbose bool) ([]byte, error) {
+	var templateContent []byte
+
 	// 首先尝试从用户的 ~/.gocli/templates 目录读取
 	externalTemplatePath := filepath.Join(getGocliTemplatesDir(), templateName)
 	if _, err := os.Stat(externalTemplatePath); err == nil {
 		if verbose {
 			utils.Debug("Using external template: %s\n", externalTemplatePath)
 		}
-		return os.ReadFile(externalTemplatePath)
+		templateContent, err = os.ReadFile(externalTemplatePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read external template: %w", err)
+		}
+	} else {
+		// 回退到内置模板
+		embeddedPath := fmt.Sprintf("templates/%s", templateName)
+		if verbose {
+			utils.Debug("Using embedded template: %s\n", embeddedPath)
+		}
+		templateContent, err = example.ReadFile(embeddedPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read embedded template: %w", err)
+		}
 	}
 
-	// 回退到内置模板
-	embeddedPath := fmt.Sprintf("templates/%s", templateName)
-	if verbose {
-		utils.Debug("Using embedded template: %s\n", embeddedPath)
+	// 使用 text/template 解析模板
+	tmpl, err := template.New(templateName).Parse(string(templateContent))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse template: %w", err)
 	}
-	return example.ReadFile(embeddedPath)
+
+	// 执行模板并生成最终内容
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, templateData); err != nil {
+		return nil, fmt.Errorf("failed to execute template: %w", err)
+	}
+
+	return buf.Bytes(), nil
 }
 
 // getTemplateContent retrieves template content based on template type
@@ -352,7 +395,8 @@ func init() {
 	configEditCmd.Flags().StringVarP(&setEdit, "editor", "e", "", "Set the editor to use for editing the configuration file")
 
 	configInitCmd.Flags().BoolVarP(&force, "force", "", false, "Force overwrite existing configuration file")
-	configInitCmd.Flags().StringVarP(&template, "template", "t", "", "Template to use (default, user, project)")
+	configInitCmd.Flags().StringVarP(&templateFile, "template", "t", "", "Template to use (default, user, project)")
+	configInitCmd.Flags().StringVarP(&manager, "manager", "m", "", "Specify the manager to use (e.g., task,just,make...)")
 
 	rootCmd.AddCommand(configCmd)
 

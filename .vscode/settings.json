@@ -3,8 +3,6 @@
         "./gen/schema/schema.json": [
             ".gocli.yaml",
             ".gocli.yml",
-            "gocli.yaml",
-            "gocli.yml"
         ]
     }
 }

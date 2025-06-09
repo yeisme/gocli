@@ -27,3 +27,11 @@ func GoExec(cmdStr string) error {
 
 	return cmd.Run()
 }
+
+func GetCurrentUser() string {
+	out, err := exec.Command("git", "config", "--global", "user.name").Output()
+	if err != nil {
+		return "unknown"
+	}
+	return string(out)
+}

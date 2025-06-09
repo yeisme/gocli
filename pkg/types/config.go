@@ -7,37 +7,37 @@ type (
 
 	Config struct {
 		Name    string    `json:"name"`
-		Version string    `json:"version"`
-		Build   []Command `json:"build"`
-		Run     []Command `json:"run"`
-		Dev     []Command `json:"dev"`
-		Clean   []Command `json:"clean"`
-		Lint    []Command `json:"lint"`
-		Help    []Command `json:"help"`
-		Release []Command `json:"release"`
-		Test    []Command `json:"test"`
-		Deps    []Command `json:"deps"`
-		Project Project   `json:"project"`
-		Tools   Tools     `json:"tools"`
-		Plugins Plugins   `json:"plugins"`
+		Version string    `json:"version,omitempty"`
+		Build   []Command `json:"build,omitempty"`
+		Run     []Command `json:"run,omitempty"`
+		Dev     []Command `json:"dev,omitempty"`
+		Clean   []Command `json:"clean,omitempty"`
+		Lint    []Command `json:"lint,omitempty"`
+		Help    []Command `json:"help,omitempty"`
+		Release []Command `json:"release,omitempty"`
+		Test    []Command `json:"test,omitempty"`
+		Deps    []Command `json:"deps,omitempty"`
+		Project Project   `json:"project,omitempty"`
+		Tools   Tools     `json:"tools,omitempty"`
+		Plugins Plugins   `json:"plugins,omitempty"`
 	}
 
 	Command struct {
 		Name        string   `json:"name"`
-		Description string   `json:"description"`
-		Cmds         []string `json:"cmds"`
+		Description string   `json:"description,omitempty"`
+		Cmds        []string `json:"cmds"`
 	}
 
 	Project struct {
 		Name        string  `json:"name"`
-		Version     string  `json:"version"`
-		Description string  `json:"description"`
-		Author      string  `json:"author"`
-		License     string  `json:"license"`
-		GoVersion   string  `json:"go_version"`
-		Repository  string  `json:"repository"`
-		Src         string  `json:"src"`
-		Manager     Manager `json:"manager"`
+		Version     string  `json:"version,omitempty"`
+		Description string  `json:"description,omitempty"`
+		Author      string  `json:"author,omitempty"`
+		License     string  `json:"license,omitempty"`
+		GoVersion   string  `json:"go_version,omitempty"`
+		Repository  string  `json:"repository,omitempty"`
+		Src         string  `json:"src,omitempty"`
+		Manager     Manager `json:"manager,omitempty"`
 	}
 
 	Manager struct {
@@ -49,35 +49,35 @@ type (
 
 	ManagerItem struct {
 		Name string `json:"name"`
-		Dir  string `json:"dir"`
+		Dir  string `json:"dir,omitempty"`
 	}
 
 	Tools struct {
-		Dev    []DevTool    `json:"dev"`
-		Go     []GoTool     `json:"go"`
-		Git    []GitTool    `json:"git"`
+		Dev    []DevTool    `json:"dev,omitempty"`
+		Go     []GoTool     `json:"go,omitempty"`
+		Git    []GitTool    `json:"git,omitempty"`
 		Custom []CustomTool `json:"custom,omitempty"`
 	}
 
 	DevTool struct {
 		Name    string `json:"name"`
-		Version string `json:"version"`
+		Version string `json:"version,omitempty"`
 	}
 
 	GoTool struct {
 		Name  string   `json:"name"`
-		URL   string   `json:"url"`
-		Bin   string   `json:"bin"`
+		URL   string   `json:"url,omitempty"`
+		Bin   string   `json:"bin,omitempty"`
 		Flags []string `json:"flags,omitempty"`
 	}
 
 	GitTool struct {
 		Name        string `json:"name"`
 		Description string `json:"description,omitempty"`
-		URL         string `json:"url"`
-		Type        string `json:"type"`
+		URL         string `json:"url,omitempty"`
+		Type        string `json:"type,omitempty"`
 		Recipe      string `json:"recipe,omitempty"`
-		Path        string `json:"path"`
+		Path        string `json:"path,omitempty"`
 	}
 
 	CustomTool struct {
@@ -87,8 +87,8 @@ type (
 	}
 
 	Plugins struct {
-		Enable bool   `json:"enable"`
-		Dir    string `json:"dir"`
-		Update bool   `json:"update"`
+		Enable bool   `json:"enable,omitempty"`
+		Dir    string `json:"dir,omitempty"`
+		Update bool   `json:"update,omitempty"`
 	}
 )

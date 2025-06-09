@@ -22,7 +22,6 @@
       "type": "object",
       "required": [
         "name",
-        "description",
         "cmds"
       ]
     },
@@ -101,20 +100,7 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "name",
-        "version",
-        "build",
-        "run",
-        "dev",
-        "clean",
-        "lint",
-        "help",
-        "release",
-        "test",
-        "deps",
-        "project",
-        "tools",
-        "plugins"
+        "name"
       ]
     },
     "CustomTool": {
@@ -151,8 +137,7 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "name",
-        "version"
+        "name"
       ]
     },
     "GitTool": {
@@ -179,10 +164,7 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "name",
-        "url",
-        "type",
-        "path"
+        "name"
       ]
     },
     "GoTool": {
@@ -206,9 +188,7 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "name",
-        "url",
-        "bin"
+        "name"
       ]
     },
     "Manager": {
@@ -253,8 +233,7 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "name",
-        "dir"
+        "name"
       ]
     },
     "Plugins": {
@@ -270,12 +249,7 @@
         }
       },
       "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "enable",
-        "dir",
-        "update"
-      ]
+      "type": "object"
     },
     "Project": {
       "properties": {
@@ -310,15 +284,7 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "name",
-        "version",
-        "description",
-        "author",
-        "license",
-        "go_version",
-        "repository",
-        "src",
-        "manager"
+        "name"
       ]
     },
     "Tools": {
@@ -349,12 +315,7 @@
         }
       },
       "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "dev",
-        "go",
-        "git"
-      ]
+      "type": "object"
     }
   }
 }

@@ -2,35 +2,26 @@ name: gocli
 version: "1"
 
 project:
-  name: "yeisme"
+  name: "gocli"
   version: "1.0.0"
   description: ""
-  author: "yefun2004@gmail.com"
+  author: "yeisme"
   license: "MIT"
   go_version: "1.24"
-  repository: "github.com/yeisme"
+  repository: ""
 
   src: "."
   manager:
-    # make:
-    #   - name: makefile
-    #     dir: .
-    task:
-      - name: taskfile
+    just: 
+      - name: Justfile
         dir: .
-    # just:
-    #   - name: justfile
-    #     dir: .
-    # vscode:
-    #   - name: vscode-tasks
-    #     dir: .
 
 # gocli build (name=default)
 build:
   - name: default
     description: "Build the project"
     cmds:
-      - task build
+      - just build
   - name: release
     description: "Build the project for release"
     cmds:
@@ -41,14 +32,14 @@ run:
   - name: default
     description: "Run the project"
     cmds:
-      - task run
+      - just run
 
 # gocli dev (name=default)
 dev:
   - name: default
     description: "Run the project in development mode (hot reload)"
     cmds:
-      - task dev
+      - just dev
 
 # gocli clean (name=default)
 clean:
@@ -69,21 +60,21 @@ help:
   - name: default
     description: "Show help"
     cmds:
-      - task --list
+      - just list
 
 # gocli release (name=default)
 release:
   - name: default
     description: "Release the project"
     cmds:
-      - task release
+      - just release
 
 # gocli test (name=default)
 test:
   - name: default
     description: "Run tests"
     cmds:
-      - task test
+      - just test
 
 # gocli deps (name=default)
 deps:
@@ -107,6 +98,10 @@ tools:
   # use go install to install these tools
   go:
     # go install <flag> <url>@<version>
+    - name: goreleaser
+      url: github.com/goreleaser/goreleaser/v2@latest
+      bin: goreleaser
+      flags: []
     - name: go-task
       url: github.com/go-task/task/v3/cmd/task@latest
       bin: task
@@ -118,13 +113,12 @@ tools:
 
   # use git to clone these tools and build them
   # some tools may require additional steps to build (build with tags)
-  git:
-    - name: docker compose
-      description: "Define and run multi-container Docker applications"
-      url: https://github.com/docker/compose.git
-      type: make
-      recipe: build
-      path: bin/build
+  # git:
+  #   - name: docker compose
+  #     description: "Define and run multi-container Docker applications"
+  #     url: https://github.com/docker/compose.git
+  #     type: make
+  #     recipe: build
 
   # custom:
   #   - name: uv
@@ -135,5 +129,5 @@ tools:
 
 plugins:
   enable: true
-  dir: "{{ .Home }}/.gocli/plugins"
+  dir: "~/.gocli/plugins"
   update: true

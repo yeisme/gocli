@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 vars:
   BINARY_NAME: "{{ .ProjectName }}"
@@ -65,6 +65,10 @@ tasks:
       - go mod download
       - go mod tidy
 
-  release:
+  release:snapshot:
     desc: "Build release version"
     cmd: goreleaser build --snapshot --clean --single-target
+
+  release:
+    desc: "Release the application"
+    cmd: goreleaser release
