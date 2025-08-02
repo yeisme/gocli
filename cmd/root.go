@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/yeisme/gocli/pkg/context"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -22,7 +23,8 @@ to quickly create a Cobra application.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() {
+func Execute(ctx *context.GocliContext) {
+	rootCmd.SetContext(ctx)
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
