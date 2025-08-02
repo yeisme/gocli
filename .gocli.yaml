@@ -1,18 +1,18 @@
 # GoCLI 配置文件 (YAML 格式)
-version: '1.0'
+version: 1.0.0
 
 log:
-  level: 'debug' # 日志级别: trace, debug, info, warn, error, fatal, panic
+  level: debug # 日志级别: trace, debug, info, warn, error, fatal, panic
   json: false # 是否使用 JSON 格式输出
-  mode: 'console' # 输出模式: console, file, both
-  file_path: '.gocli/gocli.log' # 文件路径（当 mode 为 file 或 both 时使用）
+  mode: both # 输出模式: console, file, both
+  file_path: .gocli/gocli.log # 文件路径（当 mode 为 file 或 both 时使用）
   max_size: 0.1 # 日志文件最大大小（MB）
   max_backups: 3 # 保留的备份文件数量
   max_age: 28 # 文件保留天数
 
 app:
-  name: 'gocli'
+  name: gocli
   # 优先级 debug > verbose > quiet
-  debug: false
+  debug: true
   verbose: false
   quiet: false

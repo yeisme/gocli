@@ -13,7 +13,7 @@ type GocliContext struct {
 	Logger utils.Logger    // 日志记录器
 }
 
-func InitGocliContext() *GocliContext {
+func InitGocliContext(configPath string) *GocliContext {
 	ctx := context.Background()
 	config, err := configs.LoadConfig("")
 	if err != nil {

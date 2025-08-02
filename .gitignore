@@ -1,0 +1,8 @@
+
+.gocli/*.log
+
+# Ignore build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
