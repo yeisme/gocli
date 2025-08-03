@@ -15,42 +15,16 @@ import (
 type Config struct {
 	Version string    `mapstructure:"version"`
 	Log     LogConfig `mapstructure:"log"`
+	Env     EnvConfig `mapstructure:"env"`
 	App     AppConfig `mapstructure:"app"`
-}
-
-// LogConfig 日志配置
-type LogConfig struct {
-	Level      string `mapstructure:"level"`       // 日志级别: trace, debug, info, warn, error, fatal, panic
-	JSON       bool   `mapstructure:"json"`        // 是否使用 JSON 格式输出
-	Mode       string `mapstructure:"mode"`        // 输出模式: console, file, both
-	FilePath   string `mapstructure:"file_path"`   // 文件路径（当 mode 为 file 或 both 时使用）
-	MaxSize    int    `mapstructure:"max_size"`    // 日志文件最大大小（MB）
-	MaxBackups int    `mapstructure:"max_backups"` // 保留的备份文件数量
-	MaxAge     int    `mapstructure:"max_age"`     // 文件保留天数
-}
-
-// AppConfig 应用配置
-type AppConfig struct {
-	Name    string `mapstructure:"name"`
-	Debug   bool   `mapstructure:"debug"`
-	Verbose bool   `mapstructure:"verbose"`
-	Quiet   bool   `mapstructure:"quiet"` // 是否安静模式，禁止所有日志输出
 }
 
 // setDefaults 设置默认配置值
 func setDefaults() {
 	viper.SetDefault("version", "1.0")
-	viper.SetDefault("log.level", "info")
-	viper.SetDefault("log.json", false)
-	viper.SetDefault("log.mode", "console")
-	viper.SetDefault("log.file_path", ".gocli/gocli.log")
-	viper.SetDefault("log.max_size", 100)
-	viper.SetDefault("log.max_backups", 3)
-	viper.SetDefault("log.max_age", 28)
-	viper.SetDefault("app.name", "gocli")
-	viper.SetDefault("app.debug", false)
-	viper.SetDefault("app.verbose", false)
-	viper.SetDefault("app.quiet", false)
+	setLogConfigDefaults()
+	setEnvConfigDefaults()
+	setAppConfigDefaults()
 }
 
 var globalConfig *Config
@@ -131,6 +105,9 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("解析配置文件失败: %w", err)
 	}
 
+	// 应用环境变量
+	config.Env.ApplyEnvVars()
+
 	// 确保日志目录存在
 	if config.Log.Mode == "file" || config.Log.Mode == "both" {
 		logDir := filepath.Dir(config.Log.FilePath)
@@ -153,4 +130,9 @@ func GetConfig() *Config {
 		return config
 	}
 	return globalConfig
+}
+
+// GetViperInstance 返回当前的 viper 实例
+func GetViperInstance() *viper.Viper {
+    return viper.GetViper()
 }

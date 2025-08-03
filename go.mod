@@ -3,6 +3,7 @@ module github.com/yeisme/gocli
 go 1.24.3
 
 require (
+	github.com/goccy/go-yaml v1.18.0
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1

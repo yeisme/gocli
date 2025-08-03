@@ -6,10 +6,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/context"
+	"github.com/yeisme/gocli/pkg/utils"
 )
 
 var (
 	gocliCtx *context.GocliContext
+	log      utils.Logger
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -21,10 +23,20 @@ var rootCmd = &cobra.Command{
 
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		configPath, _ := cmd.Flags().GetString("config")
+		configPath, err := cmd.Flags().GetString("config")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing config flag: %v\n", err)
+			os.Exit(1)
+		}
 		debug, _ := cmd.Flags().GetBool("debug")
 		verbose, _ := cmd.Flags().GetBool("verbose")
 		quiet, _ := cmd.Flags().GetBool("quiet")
+		version, _ := cmd.Flags().GetBool("version")
+
+		if version {
+			fmt.Printf("gocli version: v%s\n", gocliCtx.Config.Version)
+			os.Exit(0)
+		}
 
 		ctx := context.InitGocliContext(configPath)
 		ctx.Config.App.Debug = debug
@@ -32,21 +44,14 @@ var rootCmd = &cobra.Command{
 		ctx.Config.App.Quiet = quiet
 
 		gocliCtx = ctx
+		log = ctx.Logger
 
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
-	err := rootCmd.Execute()
-	version, _ := rootCmd.Flags().GetBool("version")
-	if version {
-		rootCmd.Version = gocliCtx.Config.Version
-		fmt.Printf("gocli version: v%s\n", rootCmd.Version)
-		os.Exit(0)
-	}
-
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }

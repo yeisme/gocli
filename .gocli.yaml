@@ -10,9 +10,18 @@ log:
   max_backups: 3 # 保留的备份文件数量
   max_age: 28 # 文件保留天数
 
+env:
+  # cgo
+  CGO_ENABLED: "1"
+
 app:
   name: gocli
   # 优先级 debug > verbose > quiet
   debug: true
   verbose: false
   quiet: false
+  tasks:
+    - name: main
+      desc: "主任务"
+      cmds: |
+        go run main.go
