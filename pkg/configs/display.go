@@ -1,8 +1,10 @@
 package configs
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
@@ -50,7 +52,7 @@ func GetOutputFormatFromFlags(cmd *cobra.Command) OutputFormat {
 			return format
 		}
 	}
-	
+
 	// 检查具体的格式标志
 	if yaml, _ := cmd.Flags().GetBool("yaml"); yaml {
 		return FormatYAML
@@ -64,7 +66,7 @@ func GetOutputFormatFromFlags(cmd *cobra.Command) OutputFormat {
 	if text, _ := cmd.Flags().GetBool("text"); text {
 		return FormatText
 	}
-	
+
 	// 默认格式
 	return FormatYAML
 }
@@ -73,34 +75,38 @@ func GetOutputFormatFromFlags(cmd *cobra.Command) OutputFormat {
 func OutputData(data any, format OutputFormat) error {
 	switch format {
 	case FormatYAML:
-		yamlData, err := yaml.Marshal(data)
+		var buf bytes.Buffer
+		enc := yaml.NewEncoder(&buf)
+		enc.SetIndent(2)
+		err := enc.Encode(data)
+		enc.Close()
 		if err != nil {
 			return fmt.Errorf("failed to marshal to YAML: %w", err)
 		}
-		fmt.Print(string(yamlData))
-		
+		fmt.Print(buf.String())
+
 	case FormatJSON:
 		jsonData, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal to JSON: %w", err)
 		}
 		fmt.Println(string(jsonData))
-		
+
 	case FormatTOML:
 		tomlData, err := toml.Marshal(data)
 		if err != nil {
 			return fmt.Errorf("failed to marshal to TOML: %w", err)
 		}
 		fmt.Print(string(tomlData))
-		
+
 	case FormatText:
 		// 简单的文本格式输出
 		fmt.Printf("%+v\n", data)
-		
+
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)
 	}
-	
+
 	return nil
 }
 
@@ -112,41 +118,40 @@ func GetConfigSection(v *viper.Viper, section string, showAll bool) (any, error)
 		if err := v.Unmarshal(&config); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 		}
-		
+
 		if section == "" {
 			return config, nil
 		}
-		
-		// 根据 section 返回对应的子结构体
-		switch strings.ToLower(section) {
-		case "app":
-			return config.App, nil
-		case "env":
-			return config.Env, nil
-		case "log":
-			return config.Log, nil
-		default:
-			return nil, fmt.Errorf("unknown configuration section: %s", section)
+
+		// 使用反射动态查找配置段
+		val := reflect.ValueOf(config)
+		typ := val.Type()
+		lowerSection := strings.ToLower(section)
+
+		for i := 0; i < val.NumField(); i++ {
+			field := typ.Field(i)
+			tag := field.Tag.Get("mapstructure")
+			if strings.ToLower(tag) == lowerSection {
+				return val.Field(i).Interface(), nil
+			}
 		}
+
+		return nil, fmt.Errorf("unknown configuration section: %s", section)
 	}
-	
+
 	// 返回 viper 的原始数据
-	switch strings.ToLower(section) {
-	case "app":
-		return v.Get("app"), nil
-	case "env":
-		return v.Get("env"), nil
-	case "log":
-		return v.Get("log"), nil
-	case "":
+	lowerSection := strings.ToLower(section)
+
+	if lowerSection == "" {
 		// 显示所有配置
 		return v.AllSettings(), nil
-	default:
-		// 尝试获取指定的配置项
-		if v.IsSet(section) {
-			return v.Get(section), nil
-		} else {
-			return nil, fmt.Errorf("unknown configuration section: %s", section)
-		}
 	}
+
+	// 检查 section 是否是 viper 中的一个顶级键或已设置的键
+	if v.IsSet(lowerSection) {
+		return v.Get(lowerSection), nil
+	}
+
+	return nil, fmt.Errorf("unknown or unset configuration section %s", section)
+
 }
