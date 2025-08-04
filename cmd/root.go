@@ -33,11 +33,6 @@ var rootCmd = &cobra.Command{
 		quiet, _ := cmd.Flags().GetBool("quiet")
 		version, _ := cmd.Flags().GetBool("version")
 
-		if version {
-			fmt.Printf("gocli version: v%s\n", gocliCtx.Config.Version)
-			os.Exit(0)
-		}
-
 		ctx := context.InitGocliContext(configPath)
 		ctx.Config.App.Debug = debug
 		ctx.Config.App.Verbose = verbose
@@ -46,6 +41,11 @@ var rootCmd = &cobra.Command{
 		gocliCtx = ctx
 		log = ctx.Logger
 
+		log.Info().Msgf("Execute Command: %s %v", cmd.CommandPath(), args)
+		if version {
+			fmt.Printf("gocli version: v%s\n", gocliCtx.Config.Version)
+			os.Exit(0)
+		}
 	},
 }
 

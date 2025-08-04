@@ -12,7 +12,7 @@ type GocliContext struct {
 	context.Context
 	Config *configs.Config // 应用配置
 	Logger utils.Logger    // 日志记录器
-	Viper *viper.Viper
+	Viper  *viper.Viper
 }
 
 func InitGocliContext(configPath string) *GocliContext {
@@ -28,6 +28,6 @@ func InitGocliContext(configPath string) *GocliContext {
 		Context: ctx,
 		Config:  config,
 		Logger:  logger,
-		Viper: configs.GetViperInstance(),
+		Viper:   configs.GetViperInstance(),
 	}
 }

@@ -17,6 +17,7 @@ type Config struct {
 	Log     LogConfig `mapstructure:"log"`
 	Env     EnvConfig `mapstructure:"env"`
 	App     AppConfig `mapstructure:"app"`
+	Tools   Tools     `mapstructure:"tools"`
 }
 
 // setDefaults 设置默认配置值
@@ -25,6 +26,7 @@ func setDefaults() {
 	setLogConfigDefaults()
 	setEnvConfigDefaults()
 	setAppConfigDefaults()
+	setToolsConfigDefaults()
 }
 
 var globalConfig *Config
@@ -134,5 +136,5 @@ func GetConfig() *Config {
 
 // GetViperInstance 返回当前的 viper 实例
 func GetViperInstance() *viper.Viper {
-    return viper.GetViper()
+	return viper.GetViper()
 }
