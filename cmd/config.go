@@ -19,6 +19,24 @@ var (
 		Long:  `gocli config allows you to view and manage your gocli configuration settings.`,
 	}
 
+	configValidateCmd = &cobra.Command{
+		Use:   "validate",
+		Short: "Validate gocli configuration",
+		Long:  `gocli config validate checks the validity of your configuration file and environment variables.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// 检查配置文件加载
+			err := gocliCtx.Viper.ReadInConfig()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Config file error: %v\n", err)
+				os.Exit(1)
+			}
+
+			fileUsed := gocliCtx.Viper.ConfigFileUsed()
+
+			log.Info().Msgf("Config file used: %s", fileUsed)
+		},
+	}
+
 	configListCmd = &cobra.Command{
 		Use:   "list [section]",
 		Short: "List gocli configuration",
@@ -69,7 +87,10 @@ Examples:
 func init() {
 	rootCmd.AddCommand(configCmd)
 
-	configCmd.AddCommand(configListCmd)
+	configCmd.AddCommand(
+		configListCmd,
+		configValidateCmd,
+	)
 
 	// 添加输出格式标志
 	configListCmd.Flags().StringP("format", "f", "", fmt.Sprintf("Output format (%s)", strings.Join(configs.ValidFormats(), ", ")))
