@@ -1,4 +1,3 @@
-// tools/executor.go
 package tools
 
 import (
