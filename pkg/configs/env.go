@@ -3,8 +3,10 @@ package configs
 import (
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/viper"
+	"github.com/yeisme/gocli/pkg/tools"
 )
 
 // EnvConfig 环境变量配置
@@ -79,59 +81,55 @@ type EnvConfig struct {
 
 // setEnvConfigDefaults 设置环境变量配置的默认值
 func setEnvConfigDefaults() {
-	// Go 核心环境变量默认值 - 从当前环境或Go SDK获取
-	if goroot := os.Getenv("GOROOT"); goroot != "" {
-		viper.SetDefault("env.GOROOT", goroot)
-	}
-	if gopath := os.Getenv("GOPATH"); gopath != "" {
-		viper.SetDefault("env.GOPATH", gopath)
-	}
+	// Go 核心环境变量默认值 - 优先通过 go env 获取
+	viper.SetDefault("env.GOROOT", getGoEnvOrDefault("GOROOT", ""))
+	viper.SetDefault("env.GOPATH", getGoEnvOrDefault("GOPATH", ""))
 
 	// 模块相关环境变量默认值
-	viper.SetDefault("env.GOPROXY", getEnvWithDefault("GOPROXY", "https://proxy.golang.org,direct"))
-	viper.SetDefault("env.GOSUMDB", getEnvWithDefault("GOSUMDB", "sum.golang.org"))
-	viper.SetDefault("env.GOPRIVATE", os.Getenv("GOPRIVATE"))
-	viper.SetDefault("env.GONOPROXY", os.Getenv("GONOPROXY"))
-	viper.SetDefault("env.GONOSUMDB", os.Getenv("GONOSUMDB"))
+	viper.SetDefault("env.GOPROXY", getGoEnvOrDefault("GOPROXY", "https://proxy.golang.org,direct"))
+	viper.SetDefault("env.GOSUMDB", getGoEnvOrDefault("GOSUMDB", "sum.golang.org"))
+	viper.SetDefault("env.GOPRIVATE", getGoEnvOrDefault("GOPRIVATE", ""))
+	viper.SetDefault("env.GONOPROXY", getGoEnvOrDefault("GONOPROXY", ""))
+	viper.SetDefault("env.GONOSUMDB", getGoEnvOrDefault("GONOSUMDB", ""))
 
-	// 构建相关环境变量默认值 - 从runtime获取当前值
-	viper.SetDefault("env.GOOS", getEnvWithDefault("GOOS", runtime.GOOS))
-	viper.SetDefault("env.GOARCH", getEnvWithDefault("GOARCH", runtime.GOARCH))
-	viper.SetDefault("env.GO386", getEnvWithDefault("GO386", "sse2"))
-	viper.SetDefault("env.GOAMD64", getEnvWithDefault("GOAMD64", "v1"))
-	viper.SetDefault("env.GOARM", getEnvWithDefault("GOARM", "6"))
-	viper.SetDefault("env.GOMIPS", getEnvWithDefault("GOMIPS", "hardfloat"))
-	viper.SetDefault("env.GOMIPS64", getEnvWithDefault("GOMIPS64", "hardfloat"))
-	viper.SetDefault("env.GOPPC64", getEnvWithDefault("GOPPC64", "power8"))
+	// 构建相关环境变量默认值 - 优先通过 go env 获取
+	viper.SetDefault("env.GOOS", getGoEnvOrDefault("GOOS", runtime.GOOS))
+	viper.SetDefault("env.GOARCH", getGoEnvOrDefault("GOARCH", runtime.GOARCH))
+	viper.SetDefault("env.GO386", getGoEnvOrDefault("GO386", "sse2"))
+	viper.SetDefault("env.GOAMD64", getGoEnvOrDefault("GOAMD64", "v1"))
+	viper.SetDefault("env.GOARM", getGoEnvOrDefault("GOARM", "6"))
+	viper.SetDefault("env.GOMIPS", getGoEnvOrDefault("GOMIPS", "hardfloat"))
+	viper.SetDefault("env.GOMIPS64", getGoEnvOrDefault("GOMIPS64", "hardfloat"))
+	viper.SetDefault("env.GOPPC64", getGoEnvOrDefault("GOPPC64", "power8"))
 
 	// 编译器相关环境变量默认值
-	viper.SetDefault("env.GOFLAGS", os.Getenv("GOFLAGS"))
-	viper.SetDefault("env.GOGCFLAGS", os.Getenv("GOGCFLAGS"))
-	viper.SetDefault("env.GOASMFLAGS", os.Getenv("GOASMFLAGS"))
-	viper.SetDefault("env.GOLDFLAGS", os.Getenv("GOLDFLAGS"))
-	viper.SetDefault("env.GOINSECURE", os.Getenv("GOINSECURE"))
+	viper.SetDefault("env.GOFLAGS", getGoEnvOrDefault("GOFLAGS", ""))
+	viper.SetDefault("env.GOGCFLAGS", getGoEnvOrDefault("GOGCFLAGS", ""))
+	viper.SetDefault("env.GOASMFLAGS", getGoEnvOrDefault("GOASMFLAGS", ""))
+	viper.SetDefault("env.GOLDFLAGS", getGoEnvOrDefault("GOLDFLAGS", ""))
+	viper.SetDefault("env.GOINSECURE", getGoEnvOrDefault("GOINSECURE", ""))
 
 	// CGO 相关环境变量默认值
-	viper.SetDefault("env.CGO_ENABLED", getEnvWithDefault("CGO_ENABLED", "1"))
-	viper.SetDefault("env.CGO_CFLAGS", getEnvWithDefault("CGO_CFLAGS", "-g -O2"))
-	viper.SetDefault("env.CGO_CPPFLAGS", getEnvWithDefault("CGO_CPPFLAGS", "-g -O2"))
-	viper.SetDefault("env.CGO_LDFLAGS", getEnvWithDefault("CGO_LDFLAGS", "-g -O2"))
-	viper.SetDefault("env.CGO_CXXFLAGS", getEnvWithDefault("CGO_CXXFLAGS", "-g -O2"))
+	viper.SetDefault("env.CGO_ENABLED", getGoEnvOrDefault("CGO_ENABLED", "1"))
+	viper.SetDefault("env.CGO_CFLAGS", getGoEnvOrDefault("CGO_CFLAGS", "-g -O2"))
+	viper.SetDefault("env.CGO_CPPFLAGS", getGoEnvOrDefault("CGO_CPPFLAGS", "-g -O2"))
+	viper.SetDefault("env.CGO_LDFLAGS", getGoEnvOrDefault("CGO_LDFLAGS", "-g -O2"))
+	viper.SetDefault("env.CGO_CXXFLAGS", getGoEnvOrDefault("CGO_CXXFLAGS", "-g -O2"))
 
 	// 调试和性能相关环境变量默认值
-	viper.SetDefault("env.GODEBUG", os.Getenv("GODEBUG"))
-	viper.SetDefault("env.GOTRACE", os.Getenv("GOTRACE"))
+	viper.SetDefault("env.GODEBUG", getGoEnvOrDefault("GODEBUG", ""))
+	viper.SetDefault("env.GOTRACE", getGoEnvOrDefault("GOTRACE", ""))
 
 	// 工具链相关环境变量默认值
-	viper.SetDefault("env.GOTOOLCHAIN", getEnvWithDefault("GOTOOLCHAIN", "auto"))
-	viper.SetDefault("env.GOTOOLDIR", os.Getenv("GOTOOLDIR"))
-	viper.SetDefault("env.GOCACHE", os.Getenv("GOCACHE"))
-	viper.SetDefault("env.GOTMPDIR", os.Getenv("GOTMPDIR"))
-	viper.SetDefault("env.GOWORK", getEnvWithDefault("GOWORK", "auto"))
-	viper.SetDefault("env.GOWORKSUM", os.Getenv("GOWORKSUM"))
+	viper.SetDefault("env.GOTOOLCHAIN", getGoEnvOrDefault("GOTOOLCHAIN", "auto"))
+	viper.SetDefault("env.GOTOOLDIR", getGoEnvOrDefault("GOTOOLDIR", ""))
+	viper.SetDefault("env.GOCACHE", getGoEnvOrDefault("GOCACHE", ""))
+	viper.SetDefault("env.GOTMPDIR", getGoEnvOrDefault("GOTMPDIR", ""))
+	viper.SetDefault("env.GOWORK", getGoEnvOrDefault("GOWORK", "auto"))
+	viper.SetDefault("env.GOWORKSUM", getGoEnvOrDefault("GOWORKSUM", ""))
 
 	// 实验性功能环境变量默认值
-	viper.SetDefault("env.GOEXPERIMENT", os.Getenv("GOEXPERIMENT"))
+	viper.SetDefault("env.GOEXPERIMENT", getGoEnvOrDefault("GOEXPERIMENT", ""))
 }
 
 // ApplyEnvVars 应用环境变量到当前进程
@@ -333,10 +331,17 @@ func isValidOSArchCombination(goos, goarch string) bool {
 	return false
 }
 
-// getEnvWithDefault 获取环境变量，如果不存在则返回默认值
-func getEnvWithDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+// getGoEnvOrDefault 优先通过 go env 获取 Go 相关环境变量，否则回退到 os.Getenv，再否则用默认值
+func getGoEnvOrDefault(key, defaultValue string) string {
+	value, err := tools.NewExecutor("go", "env", key).Output()
+	if err == nil {
+		value = strings.TrimSpace(value)
+		if value != "" {
+			return value
+		}
+	}
+	if v := os.Getenv(key); v != "" {
+		return v
 	}
 	return defaultValue
 }

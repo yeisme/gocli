@@ -17,6 +17,10 @@ var (
 		Use:   "config",
 		Short: "Manage gocli configuration",
 		Long:  `gocli config allows you to view and manage your gocli configuration settings.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Help()
+		},
+		Aliases: []string{"c"},
 	}
 
 	configValidateCmd = &cobra.Command{
@@ -41,12 +45,12 @@ var (
 		Use:   "list [section]",
 		Short: "List gocli configuration",
 		Long: `gocli config list displays the current configuration settings.
-		
+
 You can specify a section to display only that part of the configuration:
   - app: Application settings
-  - env: Environment settings  
+  - env: Environment settings
   - log: Logging settings
-  
+
 Examples:
   gocli config list                    # Show all configuration (viper raw data)
   gocli config list --all              # Show all configuration with defaults

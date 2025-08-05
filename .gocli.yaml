@@ -1,5 +1,5 @@
 # GoCLI 配置文件 (YAML 格式)
-version: 1.0.0
+version: 1.0
 
 log:
   level: debug # 日志级别: trace, debug, info, warn, error, fatal, panic
@@ -31,3 +31,7 @@ tools:
   global:
     - type: go
       cmd: go install github.com/goreleaser/goreleaser/v2@latest
+
+plugins:
+  enabled: true
+  path: .gocli/plugins

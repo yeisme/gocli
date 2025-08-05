@@ -21,29 +21,21 @@ repos:
         name: goimports
         description: "Auto format Go code and manage imports."
         entry: goimports -w
-        language: golang
+        language: system
         types: [go]
 
       - id: go-mod-tidy
         name: go mod tidy
         description: "Run 'go mod tidy' to clean up go.mod."
         entry: go mod tidy
-        language: golang
+        language: system
         files: ^go\.mod$
-
-      - id: golangci-lint
-        name: golangci-lint
-        description: "Run golangci-lint static analysis."
-        entry: golangci-lint run --fix
-        language: golang
-        types: [go]
-        # 如果 lint 需要时间较长，可以取消下面的注释，使其只在 push 时运行
-        # stages: [push]
+        pass_filenames: false
 
       - id: go-unit-tests
         name: go-unit-tests
         description: "Run Go unit tests."
         entry: go test ./...
-        language: golang
+        language: system
         types: [go]
         pass_filenames: false

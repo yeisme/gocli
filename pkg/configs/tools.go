@@ -2,7 +2,7 @@ package configs
 
 import "github.com/spf13/viper"
 
-type Tools struct {
+type ToolsConfig struct {
 	Deps   []Tool `mapstructure:"deps,omitempty"`   // 依赖工具
 	Global []Tool `mapstructure:"global,omitempty"` // 全局工具
 }

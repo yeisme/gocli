@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/context"
@@ -20,7 +21,7 @@ var rootCmd = &cobra.Command{
 	Short: "gocli is a CLI application for managing your Go projects",
 	Long:  `gocli is a command line interface application that helps you manage your Go projects efficiently.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
+		cmd.Help()
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		configPath, err := cmd.Flags().GetString("config")
@@ -41,7 +42,7 @@ var rootCmd = &cobra.Command{
 		gocliCtx = ctx
 		log = ctx.Logger
 
-		log.Info().Msgf("Execute Command: %s %v", cmd.CommandPath(), args)
+		log.Info().Msgf("Execute Command: %s %s", "gocli", strings.Join(os.Args[1:], " "))
 		if version {
 			fmt.Printf("gocli version: v%s\n", gocliCtx.Config.Version)
 			os.Exit(0)
@@ -57,7 +58,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().String("config", "", "config file (default is $HOME/.gocli.yaml)")
+	rootCmd.PersistentFlags().String("config", "", "config file")
 	rootCmd.PersistentFlags().Bool("debug", false, "enable debug mode")
 	rootCmd.PersistentFlags().Bool("verbose", false, "enable verbose output")
 	rootCmd.PersistentFlags().Bool("quiet", false, "suppress all output except errors")

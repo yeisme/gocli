@@ -13,11 +13,12 @@ import (
 
 // Config 应用配置结构
 type Config struct {
-	Version string    `mapstructure:"version"`
-	Log     LogConfig `mapstructure:"log"`
-	Env     EnvConfig `mapstructure:"env"`
-	App     AppConfig `mapstructure:"app"`
-	Tools   Tools     `mapstructure:"tools"`
+	Version string       `mapstructure:"version"`
+	Log     LogConfig    `mapstructure:"log"`
+	Env     EnvConfig    `mapstructure:"env"`
+	App     AppConfig    `mapstructure:"app"`
+	Tools   ToolsConfig  `mapstructure:"tools"`
+	Plugin  PluginConfig `mapstructure:"plugin"`
 }
 
 // setDefaults 设置默认配置值
@@ -27,6 +28,7 @@ func setDefaults() {
 	setEnvConfigDefaults()
 	setAppConfigDefaults()
 	setToolsConfigDefaults()
+	setPluginConfigDefaults()
 }
 
 var globalConfig *Config

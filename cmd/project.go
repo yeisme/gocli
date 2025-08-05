@@ -7,8 +7,9 @@ var projectCmd = &cobra.Command{
 	Short: "Manage Go projects",
 	Long:  `gocli project allows you to manage your Go projects, including creating, building, and running them.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
+		cmd.Help()
 	},
+	Aliases: []string{"p", "mod"},
 }
 
 func init() {
