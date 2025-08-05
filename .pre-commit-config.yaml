@@ -1,0 +1,49 @@
+# .pre-commit-config.yaml
+
+repos:
+  # =================================================================
+  # 通用 Hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace # 删除行尾空格
+      - id: end-of-file-fixer # 保证文件以空行结尾
+      - id: check-yaml # 检查 YAML 文件语法
+      - id: check-json # 检查 JSON 文件语法
+      - id: check-merge-conflict # 防止合并冲突标记被提交
+      - id: check-added-large-files # 防止提交大文件
+
+  # =================================================================
+  # Golang 本地 Hooks
+  - repo: local
+    hooks:
+      - id: go-imports
+        name: goimports
+        description: "Auto format Go code and manage imports."
+        entry: goimports -w
+        language: golang
+        types: [go]
+
+      - id: go-mod-tidy
+        name: go mod tidy
+        description: "Run 'go mod tidy' to clean up go.mod."
+        entry: go mod tidy
+        language: golang
+        files: ^go\.mod$
+
+      - id: golangci-lint
+        name: golangci-lint
+        description: "Run golangci-lint static analysis."
+        entry: golangci-lint run --fix
+        language: golang
+        types: [go]
+        # 如果 lint 需要时间较长，可以取消下面的注释，使其只在 push 时运行
+        # stages: [push]
+
+      - id: go-unit-tests
+        name: go-unit-tests
+        description: "Run Go unit tests."
+        entry: go test ./...
+        language: golang
+        types: [go]
+        pass_filenames: false
