@@ -1,5 +1,7 @@
-// Package utils 提供通用工具函数，包括日志记录功能
-package utils
+// Package log 提供全局日志记录器的初始化和获取功能
+// 使用 zerolog 作为日志库，支持多种输出模式（控制台、文件、两者）
+// 支持不同的日志级别（Trace、Debug、Info、Warn、Error、Fatal、Panic）
+package log
 
 import (
 	"context"
@@ -14,12 +16,18 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+// Logger 定义全局日志记录器类型
+// 使用 *zerolog.Logger 作为日志记录器类型
 type Logger = *zerolog.Logger
 
+// globalLogger 全局日志记录器实例
+// 这个变量在 InitLogger 中被初始化
+// 并在 GetLogger 中被访问
+// 这样可以确保在应用程序的任何地方都能获取到一致的日志记录
 var globalLogger Logger
 
 // InitLogger 初始化日志记录器
-func InitLogger(config *configs.LogConfig, appConfig *configs.AppConfig, ctx context.Context) Logger {
+func InitLogger(ctx context.Context, config *configs.LogConfig, appConfig *configs.AppConfig) Logger {
 	if appConfig.Quiet && appConfig.Verbose {
 		panic("Cannot set both quiet and verbose modes")
 	}
@@ -117,7 +125,7 @@ func createFileWriter(config *configs.LogConfig) io.Writer {
 func GetLogger() Logger {
 	if globalLogger == nil {
 		config := configs.GetConfig()
-		return InitLogger(&config.Log, &config.App, context.Background())
+		return InitLogger(context.Background(), &config.Log, &config.App)
 	}
 	return globalLogger
 }
@@ -155,30 +163,37 @@ func WithFields(fields map[string]any) Logger {
 	return &result
 }
 
+// Trace 创建一个 Trace 级别的日志事件
 func Trace() *zerolog.Event {
 	return GetLogger().Trace()
 }
 
+// Debug 创建一个 Debug 级别的日志事件
 func Debug() *zerolog.Event {
 	return GetLogger().Debug()
 }
 
+// Info 创建一个 Info 级别的日志事件
 func Info() *zerolog.Event {
 	return GetLogger().Info()
 }
 
+// Warn 创建一个 Warn 级别的日志事件
 func Warn() *zerolog.Event {
 	return GetLogger().Warn()
 }
 
+// Error 创建一个 Error 级别的日志事件
 func Error() *zerolog.Event {
 	return GetLogger().Error()
 }
 
+// Fatal 创建一个 Fatal 级别的日志事件
 func Fatal() *zerolog.Event {
 	return GetLogger().Fatal()
 }
 
+// Panic 创建一个 Panic 级别的日志事件
 func Panic() *zerolog.Event {
 	return GetLogger().Panic()
 }

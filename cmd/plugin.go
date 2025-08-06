@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/models"
-	"github.com/yeisme/gocli/pkg/utils"
+	"github.com/yeisme/gocli/pkg/utils/plugin"
 )
 
 var pluginCmd = &cobra.Command{
@@ -25,7 +25,7 @@ var pluginListCmd = &cobra.Command{
 - User home directory (~/.gocli/plugins)
 - Current directory (./.gocli/plugins)
 - Config file specified path`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		global, _ := cmd.Flags().GetBool("global")
 		verbose, _ := cmd.Flags().GetBool("verbose")
 		source, _ := cmd.Flags().GetString("source")
@@ -42,7 +42,7 @@ func listPlugins(global, verbose bool, sourceFilter string) {
 	}
 
 	// 创建插件管理器
-	pm := utils.NewPluginManager(configPluginPath)
+	pm := plugin.NewPluginManager(configPluginPath)
 
 	// 查找所有插件
 	plugins, err := pm.FindAllPlugins()
@@ -127,34 +127,57 @@ func getSourcePriority(source models.PluginSource) int {
 
 func displayPluginsSimple(plugins []*models.PluginInfo) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "NAME\tSOURCE\tPATH")
-	fmt.Fprintln(w, "----\t------\t----")
-
-	for _, plugin := range plugins {
-		fmt.Fprintf(w, "%s\t%s\t%s\n",
-			plugin.GetDisplayName(),
-			getSourceShortName(plugin.Source),
-			plugin.Path)
+	if _, err := fmt.Fprintln(w, "NAME\tSOURCE\tPATH"); err != nil {
+		log.Error().Err(err).Msg("Failed to write header line")
+		return
+	}
+	if _, err := fmt.Fprintln(w, "----\t------\t----"); err != nil {
+		log.Error().Err(err).Msg("Failed to write separator line")
+		return
 	}
 
-	w.Flush()
+	for _, plugin := range plugins {
+		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\n",
+			plugin.GetDisplayName(),
+			getSourceShortName(plugin.Source),
+			plugin.Path); err != nil {
+			log.Error().Err(err).Msg("Failed to write plugin information")
+			return
+		}
+	}
+
+	if err := w.Flush(); err != nil {
+		log.Error().Err(err).Msg("Failed to flush tabwriter")
+	}
 }
 
 func displayPluginsVerbose(plugins []*models.PluginInfo) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "NAME\tSOURCE\tSIZE\tMODIFIED\tPATH")
-	fmt.Fprintln(w, "----\t------\t----\t--------\t----")
+	if _, err := fmt.Fprintln(w, "NAME\tSOURCE\tSIZE\tMODIFIED\tPATH"); err != nil {
+		log.Error().Err(err).Msg("Failed to write header line")
+		return
+	}
+	if _, err := fmt.Fprintln(w, "----\t------\t----\t--------\t----"); err != nil {
+		log.Error().Err(err).Msg("Failed to write separator line")
+		return
+	}
 
 	for _, plugin := range plugins {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 			plugin.GetDisplayName(),
 			getSourceShortName(plugin.Source),
 			formatSize(plugin.Size),
 			plugin.ModTime.Format("2006-01-02 15:04"),
-			plugin.Path)
+			plugin.Path); err != nil {
+			log.Error().Err(err).Msg("Failed to write plugin information")
+			return
+		}
 	}
 
-	w.Flush()
+	if err := w.Flush(); err != nil {
+		log.Error().Err(err).Msg("Failed to flush tabwriter")
+		return
+	}
 
 	// 显示来源说明
 	fmt.Println("\nSource descriptions:")
@@ -201,9 +224,8 @@ func formatSize(size int64) string {
 		return fmt.Sprintf("%dB", size)
 	} else if size < 1024*1024 {
 		return fmt.Sprintf("%.1fK", float64(size)/1024)
-	} else {
-		return fmt.Sprintf("%.1fM", float64(size)/(1024*1024))
 	}
+	return fmt.Sprintf("%.1fM", float64(size)/(1024*1024))
 }
 
 func init() {

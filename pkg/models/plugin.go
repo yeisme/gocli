@@ -4,14 +4,21 @@ import (
 	"time"
 )
 
-// PluginSource 插件来源类型
+// PluginSource defines the source type of a plugin.
+//
+// The following constants represent the possible sources of a plugin:
+// - SourceUserHome: User's home directory.
+// - SourceCurrentDir: Current working directory.
+// - SourceConfig: Specified in the configuration file.
 type PluginSource string
 
 const (
-	SourceUserHome    PluginSource = "user-home"   // 用户主目录
-	SourceCurrentDir  PluginSource = "current-dir" // 当前目录
-	SourceConfig      PluginSource = "config"      // 配置文件指定
-	SourceEnvironment PluginSource = "environment" // PATH环境变量
+	// SourceUserHome 用户主目录
+	SourceUserHome PluginSource = "user-home"
+	// SourceCurrentDir 当前目录
+	SourceCurrentDir PluginSource = "current-dir"
+	// SourceConfig 配置文件指定
+	SourceConfig PluginSource = "config"
 )
 
 // PluginInfo 插件信息

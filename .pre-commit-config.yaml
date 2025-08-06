@@ -17,12 +17,13 @@ repos:
   # Golang 本地 Hooks
   - repo: local
     hooks:
-      - id: go-imports
-        name: goimports
-        description: "Auto format Go code and manage imports."
-        entry: goimports -w
+      - id: golangci-lint
+        name: golang-lint
+        description: "Run golangci-lint to check Go code quality."
+        entry: golangci-lint run
         language: system
         types: [go]
+        pass_filenames: false
 
       - id: go-mod-tidy
         name: go mod tidy

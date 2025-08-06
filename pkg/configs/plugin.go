@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// PluginConfig represents the configuration for plugins.
 type PluginConfig struct {
 	DirPath string `mapstructure:"path"` // 插件目录路径
 }

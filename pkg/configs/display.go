@@ -17,9 +17,13 @@ import (
 type OutputFormat string
 
 const (
+	// FormatYAML represents the YAML output format.
 	FormatYAML OutputFormat = "yaml"
+	// FormatJSON represents the JSON output format.
 	FormatJSON OutputFormat = "json"
+	// FormatTOML represents the TOML output format.
 	FormatTOML OutputFormat = "toml"
+	// FormatText represents the plain text output format.
 	FormatText OutputFormat = "text"
 )
 
@@ -79,9 +83,12 @@ func OutputData(data any, format OutputFormat) error {
 		enc := yaml.NewEncoder(&buf)
 		enc.SetIndent(2)
 		err := enc.Encode(data)
-		enc.Close()
 		if err != nil {
 			return fmt.Errorf("failed to marshal to YAML: %w", err)
+		}
+		err = enc.Close()
+		if err != nil {
+			return fmt.Errorf("failed to close YAML encoder: %w", err)
 		}
 		fmt.Print(buf.String())
 

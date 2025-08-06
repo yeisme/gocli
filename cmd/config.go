@@ -11,15 +11,10 @@ import (
 )
 
 var (
-	outputFormat string
-
 	configCmd = &cobra.Command{
-		Use:   "config",
-		Short: "Manage gocli configuration",
-		Long:  `gocli config allows you to view and manage your gocli configuration settings.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
-		},
+		Use:     "config",
+		Short:   "Manage gocli configuration",
+		Long:    `gocli config allows you to view and manage your gocli configuration settings.`,
 		Aliases: []string{"c"},
 	}
 
@@ -27,11 +22,11 @@ var (
 		Use:   "validate",
 		Short: "Validate gocli configuration",
 		Long:  `gocli config validate checks the validity of your configuration file and environment variables.`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			// 检查配置文件加载
 			err := gocliCtx.Viper.ReadInConfig()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Config file error: %v\n", err)
+				cmd.PrintErrf("Config file error: %v\n", err)
 				os.Exit(1)
 			}
 

@@ -6,12 +6,9 @@ import (
 
 var (
 	toolsCmd = &cobra.Command{
-		Use:   "tools",
-		Short: "Tools Management for gocli",
-		Long:  `gocli tools allows you to manage various tools and utilities that enhance your golang development experience.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
-		},
+		Use:     "tools",
+		Short:   "Tools Management for gocli",
+		Long:    `gocli tools allows you to manage various tools and utilities that enhance your golang development experience.`,
 		Aliases: []string{"tool", "t"},
 	}
 
@@ -19,9 +16,6 @@ var (
 		Use:   "list",
 		Short: "List available tools",
 		Long:  `gocli tools list displays all available tools that can be used with gocli.`,
-		Run: func(cmd *cobra.Command, args []string) {
-
-		},
 	}
 )
 

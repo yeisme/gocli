@@ -1,4 +1,5 @@
-package utils
+// Package plugin 提供插件管理功能
+package plugin
 
 import (
 	"os"
@@ -9,20 +10,20 @@ import (
 	"github.com/yeisme/gocli/pkg/models"
 )
 
-// PluginManager 插件管理器
-type PluginManager struct {
+// Manager 插件管理器
+type Manager struct {
 	configPluginPath string
 }
 
 // NewPluginManager 创建插件管理器
-func NewPluginManager(configPluginPath string) *PluginManager {
-	return &PluginManager{
+func NewPluginManager(configPluginPath string) *Manager {
+	return &Manager{
 		configPluginPath: configPluginPath,
 	}
 }
 
 // FindAllPlugins 查找所有插件
-func (pm *PluginManager) FindAllPlugins() ([]*models.PluginInfo, error) {
+func (pm *Manager) FindAllPlugins() ([]*models.PluginInfo, error) {
 	var allPlugins []*models.PluginInfo
 
 	// 1. 查找用户主目录插件
@@ -48,7 +49,7 @@ func (pm *PluginManager) FindAllPlugins() ([]*models.PluginInfo, error) {
 }
 
 // findPluginsInUserHome 在用户主目录查找插件
-func (pm *PluginManager) findPluginsInUserHome() ([]*models.PluginInfo, error) {
+func (pm *Manager) findPluginsInUserHome() ([]*models.PluginInfo, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -59,7 +60,7 @@ func (pm *PluginManager) findPluginsInUserHome() ([]*models.PluginInfo, error) {
 }
 
 // findPluginsInCurrentDir 在当前目录查找插件
-func (pm *PluginManager) findPluginsInCurrentDir() ([]*models.PluginInfo, error) {
+func (pm *Manager) findPluginsInCurrentDir() ([]*models.PluginInfo, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func (pm *PluginManager) findPluginsInCurrentDir() ([]*models.PluginInfo, error)
 }
 
 // findPluginsInConfigPath 在配置文件指定目录查找插件
-func (pm *PluginManager) findPluginsInConfigPath() ([]*models.PluginInfo, error) {
+func (pm *Manager) findPluginsInConfigPath() ([]*models.PluginInfo, error) {
 	if pm.configPluginPath == "" {
 		return nil, nil
 	}
@@ -79,7 +80,7 @@ func (pm *PluginManager) findPluginsInConfigPath() ([]*models.PluginInfo, error)
 }
 
 // findPluginsInDirectory 在指定目录查找插件
-func (pm *PluginManager) findPluginsInDirectory(dir string, source models.PluginSource, sourcePath string) ([]*models.PluginInfo, error) {
+func (pm *Manager) findPluginsInDirectory(dir string, source models.PluginSource, sourcePath string) ([]*models.PluginInfo, error) {
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -119,7 +120,7 @@ func (pm *PluginManager) findPluginsInDirectory(dir string, source models.Plugin
 }
 
 // deduplicatePlugins 去重插件（优先级：用户主目录 > 当前目录 > 配置文件）
-func (pm *PluginManager) deduplicatePlugins(plugins []*models.PluginInfo) []*models.PluginInfo {
+func (pm *Manager) deduplicatePlugins(plugins []*models.PluginInfo) []*models.PluginInfo {
 	seen := make(map[string]*models.PluginInfo)
 
 	// 定义优先级

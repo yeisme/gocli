@@ -98,8 +98,7 @@ func LoadConfig(configPath string) (*Config, error) {
 
 	// 读取配置文件
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-		} else {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return nil, fmt.Errorf("读取配置文件失败: %w", err)
 		}
 	}

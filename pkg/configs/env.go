@@ -1,7 +1,9 @@
 package configs
 
 import (
+	"fmt"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 
@@ -134,150 +136,38 @@ func setEnvConfigDefaults() {
 
 // ApplyEnvVars 应用环境变量到当前进程
 func (e *EnvConfig) ApplyEnvVars() {
-	// 应用 Go 核心环境变量
-	if e.GoRoot != "" {
-		os.Setenv("GOROOT", e.GoRoot)
-	}
-	if e.GoPath != "" {
-		os.Setenv("GOPATH", e.GoPath)
-	}
-	if e.GoModDir != "" {
-		os.Setenv("GOMODDIR", e.GoModDir)
-	}
-	if e.GoModCache != "" {
-		os.Setenv("GOMODCACHE", e.GoModCache)
-	}
-	if e.GoSumDB != "" {
-		os.Setenv("GOSUMDB", e.GoSumDB)
-	}
-	if e.GoProxy != "" {
-		os.Setenv("GOPROXY", e.GoProxy)
-	}
-	if e.GoPrivate != "" {
-		os.Setenv("GOPRIVATE", e.GoPrivate)
-	}
-	if e.GoNoProxy != "" {
-		os.Setenv("GONOPROXY", e.GoNoProxy)
-	}
-	if e.GoNoSumDB != "" {
-		os.Setenv("GONOSUMDB", e.GoNoSumDB)
-	}
+	// 使用反射获取结构体字段
+	v := reflect.ValueOf(*e)
+	t := reflect.TypeOf(*e)
 
-	// 应用构建相关环境变量
-	if e.GoOS != "" {
-		os.Setenv("GOOS", e.GoOS)
-	}
-	if e.GoArch != "" {
-		os.Setenv("GOARCH", e.GoArch)
-	}
-	if e.Go386 != "" {
-		os.Setenv("GO386", e.Go386)
-	}
-	if e.GoAMD64 != "" {
-		os.Setenv("GOAMD64", e.GoAMD64)
-	}
-	if e.GoARM != "" {
-		os.Setenv("GOARM", e.GoARM)
-	}
-	if e.GoARM64 != "" {
-		os.Setenv("GOARM64", e.GoARM64)
-	}
-	if e.GoMIPS != "" {
-		os.Setenv("GOMIPS", e.GoMIPS)
-	}
-	if e.GoMIPS64 != "" {
-		os.Setenv("GOMIPS64", e.GoMIPS64)
-	}
-	if e.GoPPC64 != "" {
-		os.Setenv("GOPPC64", e.GoPPC64)
-	}
-	if e.GoWASM != "" {
-		os.Setenv("GOWASM", e.GoWASM)
-	}
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := t.Field(i)
 
-	// 应用编译器相关环境变量
-	if e.GoGCFlags != "" {
-		os.Setenv("GOGCFLAGS", e.GoGCFlags)
-	}
-	if e.GoAsmFlags != "" {
-		os.Setenv("GOASMFLAGS", e.GoAsmFlags)
-	}
-	if e.GoLDFlags != "" {
-		os.Setenv("GOLDFLAGS", e.GoLDFlags)
-	}
-	if e.GoFlags != "" {
-		os.Setenv("GOFLAGS", e.GoFlags)
-	}
-	if e.GoInsecure != "" {
-		os.Setenv("GOINSECURE", e.GoInsecure)
-	}
+		// 跳过非字符串类型字段
+		if field.Kind() != reflect.String {
+			continue
+		}
 
-	// 应用 CGO 相关环境变量
-	if e.CGOEnabled != "" {
-		os.Setenv("CGO_ENABLED", e.CGOEnabled)
-	}
-	if e.CGOCFlags != "" {
-		os.Setenv("CGO_CFLAGS", e.CGOCFlags)
-	}
-	if e.CGOCPPFlags != "" {
-		os.Setenv("CGO_CPPFLAGS", e.CGOCPPFlags)
-	}
-	if e.CGOLDFlags != "" {
-		os.Setenv("CGO_LDFLAGS", e.CGOLDFlags)
-	}
-	if e.CGOCXXFlags != "" {
-		os.Setenv("CGO_CXXFLAGS", e.CGOCXXFlags)
-	}
+		// 获取字段值和对应的环境变量名
+		value := field.String()
+		key := fieldType.Tag.Get("mapstructure")
+		if key == "" || value == "" {
+			continue
+		}
 
-	// 应用调试和性能相关环境变量
-	if e.GoTrace != "" {
-		os.Setenv("GOTRACE", e.GoTrace)
-	}
-	if e.GoDebug != "" {
-		os.Setenv("GODEBUG", e.GoDebug)
-	}
-	if e.GoMemProfile != "" {
-		os.Setenv("GOMEMPROFILE", e.GoMemProfile)
-	}
-	if e.GoCPUProfile != "" {
-		os.Setenv("GOCPUPROFILE", e.GoCPUProfile)
-	}
-	if e.GoBlockProfile != "" {
-		os.Setenv("GOBLOCKPROFILE", e.GoBlockProfile)
-	}
-	if e.GoMutexProfile != "" {
-		os.Setenv("GOMUTEXPROFILE", e.GoMutexProfile)
-	}
-
-	// 应用工具链相关环境变量
-	if e.GoToolchain != "" {
-		os.Setenv("GOTOOLCHAIN", e.GoToolchain)
-	}
-	if e.GoToolDir != "" {
-		os.Setenv("GOTOOLDIR", e.GoToolDir)
-	}
-	if e.GoCache != "" {
-		os.Setenv("GOCACHE", e.GoCache)
-	}
-	if e.GoTmpDir != "" {
-		os.Setenv("GOTMPDIR", e.GoTmpDir)
-	}
-	if e.GoWork != "" {
-		os.Setenv("GOWORK", e.GoWork)
-	}
-	if e.GoWorkSum != "" {
-		os.Setenv("GOWORKSUM", e.GoWorkSum)
-	}
-
-	// 应用实验性功能环境变量
-	if e.GoExperiment != "" {
-		os.Setenv("GOEXPERIMENT", e.GoExperiment)
+		// 设置环境变量并检查错误
+		if err := os.Setenv(key, value); err != nil {
+			fmt.Printf("Failed to set environment variable %s: %v", key, err)
+		}
 	}
 
 	// 应用自定义环境变量
 	for key, value := range e.Custom {
 		if value != "" {
-			os.Setenv(key, value)
+			if err := os.Setenv(key, value); err != nil {
+				fmt.Printf("Failed to set custom environment variable %s: %v", key, err)
+			}
 		}
 	}
 }

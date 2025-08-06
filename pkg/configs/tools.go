@@ -2,11 +2,13 @@ package configs
 
 import "github.com/spf13/viper"
 
+// ToolsConfig represents the configuration for tools.
 type ToolsConfig struct {
 	Deps   []Tool `mapstructure:"deps,omitempty"`   // 依赖工具
 	Global []Tool `mapstructure:"global,omitempty"` // 全局工具
 }
 
+// Tool represents a single tool configuration.
 type Tool struct {
 	Type string `mapstructure:"type"` // 工具类型，如 go, npm 等
 	Cmd  string `mapstructure:"cmd"`  // 工具的安装命令

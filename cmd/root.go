@@ -7,12 +7,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/context"
-	"github.com/yeisme/gocli/pkg/utils"
+	log2 "github.com/yeisme/gocli/pkg/utils/log"
 )
 
 var (
 	gocliCtx *context.GocliContext
-	log      utils.Logger
+	log      log2.Logger
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -20,10 +20,7 @@ var rootCmd = &cobra.Command{
 	Use:   "gocli",
 	Short: "gocli is a CLI application for managing your Go projects",
 	Long:  `gocli is a command line interface application that helps you manage your Go projects efficiently.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-	},
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
 		configPath, err := cmd.Flags().GetString("config")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error parsing config flag: %v\n", err)
