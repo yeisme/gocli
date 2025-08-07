@@ -1,15 +1,76 @@
 package configs
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/spf13/viper"
 	"github.com/yeisme/gocli/pkg/tools"
 )
+
+var (
+	goEnvCache    map[string]string
+	loadGoEnvOnce sync.Once
+)
+
+// loadGoEnv loads environment variables from `go env` and caches them.
+// It runs only once.
+func loadGoEnv() {
+	loadGoEnvOnce.Do(func() {
+		goEnvCache = make(map[string]string)
+		// The most reliable source is the `go env` command itself.
+		output, err := tools.NewExecutor("go", "env").Output()
+		if err != nil {
+			// Fallback to reading default go.env file if `go env` fails
+			goRoot := os.Getenv("GOROOT")
+			if goRoot != "" {
+				goEnvFile := filepath.Join(goRoot, "go.env")
+				file, err := os.Open(goEnvFile)
+				if err == nil {
+					defer func() {
+						if err := file.Close(); err != nil {
+							fmt.Fprintf(os.Stderr, "error closing go.env file: %v\n", err)
+						}
+					}()
+					scanner := bufio.NewScanner(file)
+					for scanner.Scan() {
+						line := strings.TrimSpace(scanner.Text())
+						if line == "" || strings.HasPrefix(line, "#") {
+							continue
+						}
+						parts := strings.SplitN(line, "=", 2)
+						if len(parts) == 2 {
+							goEnvCache[parts[0]] = parts[1]
+						}
+					}
+				}
+			}
+			return // Exit if we can't get env from `go env` or file
+		}
+
+		scanner := bufio.NewScanner(strings.NewReader(output))
+		for scanner.Scan() {
+			line := scanner.Text()
+			// On Windows, the output might be `set GOROOT=C:\Go`
+			if runtime.GOOS == "windows" && strings.HasPrefix(line, "set ") {
+				line = strings.TrimPrefix(line, "set ")
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := parts[0]
+				// Values can be enclosed in quotes
+				value := strings.Trim(parts[1], `"`)
+				goEnvCache[key] = value
+			}
+		}
+	})
+}
 
 // EnvConfig 环境变量配置
 type EnvConfig struct {
@@ -221,24 +282,24 @@ func isValidOSArchCombination(goos, goarch string) bool {
 	return false
 }
 
-// getGoEnvOrDefault 优先通过 go env 获取 Go 相关环境变量，否则回退到 os.Getenv，再否则用默认值
+// getGoEnvOrDefault gets a value for a Go environment variable with fallback.
+// It prioritizes:
+// 1. Value from the `go env` cache.
+// 2. Value from the operating system's environment variables.
+// 3. The provided default value.
 func getGoEnvOrDefault(key, defaultValue string) string {
-	value, err := tools.NewExecutor("go", "env", key).Output()
-	if err == nil {
-		value = strings.TrimSpace(value)
-		if value != "" {
-			return value
-		}
+	loadGoEnv() // Ensures the cache is populated on first call.
+
+	// 1. Check our `go env` cache.
+	if value, ok := goEnvCache[key]; ok && value != "" {
+		return value
 	}
+	// 2. Check the actual OS environment variables.
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
+	// 3. Fallback to the default value.
 	return defaultValue
-}
-
-// InitEnvDefaults 初始化环境变量默认值（公开函数）
-func InitEnvDefaults() {
-	setEnvConfigDefaults()
 }
 
 // GetAvailableGoExperiments 获取当前Go版本支持的实验性功能列表
