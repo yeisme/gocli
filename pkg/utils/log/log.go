@@ -28,21 +28,18 @@ var globalLogger Logger
 
 // InitLogger 初始化日志记录器
 func InitLogger(ctx context.Context, config *configs.LogConfig, appConfig *configs.AppConfig) Logger {
-	if appConfig.Quiet && appConfig.Verbose {
-		panic("Cannot set both quiet and verbose modes")
-	}
-
-	if appConfig.Verbose {
-		// 如果是 Debug 模式，设置日志级别为 Debug
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	} else if appConfig.Quiet {
-		// 如果是安静模式，禁止所有日志输出
+	// 优先级：quiet > debug > verbose > config.Level
+	if appConfig.Quiet {
 		zerolog.SetGlobalLevel(zerolog.PanicLevel)
+		logger := zerolog.New(io.Discard)
+		globalLogger = &logger
+		log.Logger = logger
+		return &logger
 	} else if appConfig.Debug {
-		// 如果是 Debug 模式，设置日志级别为 Debug
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else if appConfig.Verbose {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	} else {
-		// 设置日志级别
 		level := parseLogLevel(config.Level)
 		zerolog.SetGlobalLevel(level)
 	}

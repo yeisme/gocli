@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -13,6 +12,12 @@ import (
 var (
 	gocliCtx *context.GocliContext
 	log      log2.Logger
+
+	// Global flags
+	configPath string
+	debug      bool
+	verbose    bool
+	quiet      bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -20,30 +25,13 @@ var rootCmd = &cobra.Command{
 	Use:   "gocli",
 	Short: "gocli is a CLI application for managing your Go projects",
 	Long:  `gocli is a command line interface application that helps you manage your Go projects efficiently.`,
-	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
-		configPath, err := cmd.Flags().GetString("config")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing config flag: %v\n", err)
-			os.Exit(1)
-		}
-		debug, _ := cmd.Flags().GetBool("debug")
-		verbose, _ := cmd.Flags().GetBool("verbose")
-		quiet, _ := cmd.Flags().GetBool("quiet")
-		version, _ := cmd.Flags().GetBool("version")
-
-		ctx := context.InitGocliContext(configPath)
-		ctx.Config.App.Debug = debug
-		ctx.Config.App.Verbose = verbose
-		ctx.Config.App.Quiet = quiet
+	PersistentPreRun: func(_ *cobra.Command, _ []string) {
+		ctx := context.InitGocliContext(configPath, debug, verbose, quiet)
 
 		gocliCtx = ctx
 		log = ctx.Logger
 
 		log.Info().Msgf("Execute Command: %s %s", "gocli", strings.Join(os.Args[1:], " "))
-		if version {
-			fmt.Printf("gocli version: v%s\n", gocliCtx.Config.Version)
-			os.Exit(0)
-		}
 	},
 }
 
@@ -55,9 +43,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().String("config", "", "config file")
-	rootCmd.PersistentFlags().Bool("debug", false, "enable debug mode")
-	rootCmd.PersistentFlags().Bool("verbose", false, "enable verbose output")
-	rootCmd.PersistentFlags().Bool("quiet", false, "suppress all output except errors")
-	rootCmd.PersistentFlags().Bool("version", false, "display the version of the application")
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode (prints additional information)")
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "enable verbose output (prints more detailed information)")
+	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "suppress all output except errors")
 }

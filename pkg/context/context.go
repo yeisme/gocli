@@ -19,9 +19,13 @@ type GocliContext struct {
 }
 
 // InitGocliContext initializes the GocliContext with the provided configuration path.
-func InitGocliContext(configPath string) *GocliContext {
+func InitGocliContext(configPath string, debug, verbose, quiet bool) *GocliContext {
 	ctx := context.Background()
 	config, err := configs.LoadConfig(configPath)
+	config.App.Debug = debug
+	config.App.Verbose = verbose
+	config.App.Quiet = quiet
+
 	if err != nil {
 		panic(err)
 	}
