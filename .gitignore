@@ -10,3 +10,11 @@
 # IDE
 .vscode/
 .idea/
+
+# Ignore Go build directories
+dist/
+bin/
+
+# temporary files
+tmp
+temp
