@@ -31,12 +31,12 @@ var (
 `),
 	}
 	projectBuildCmd = &cobra.Command{
-		Use:   "build [packages]",
+		Use:   "build [args...] [packages]",
 		Short: "Build the Go project",
 		Long:  `gocli project build compiles the Go project. You can specify packages to build, or it defaults to the current directory.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			buildOptions.V = gocliCtx.Config.App.Verbose
-			if err := project.ExecuteBuildCommand(buildOptions, args); err != nil {
+			if err := project.ExecuteBuildCommand(gocliCtx, buildOptions, args); err != nil {
 				cmd.PrintErrf("Error: %v\n", err)
 				os.Exit(1)
 			}
@@ -50,12 +50,12 @@ var (
 `),
 	}
 	projectRunCmd = &cobra.Command{
-		Use:   "run [main.go] [args...]",
+		Use:   "run [args...] [packages]",
 		Short: "Run the Go project",
 		Long:  `gocli project run compiles and runs a main Go program.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			runOptions.V = gocliCtx.Config.App.Verbose
-			if err := project.ExecuteRunCommand(runOptions, args); err != nil {
+			if err := project.ExecuteRunCommand(gocliCtx, runOptions, args); err != nil {
 				cmd.PrintErrf("Error: %v\n", err)
 				os.Exit(1)
 			}
@@ -67,7 +67,7 @@ var (
 `),
 	}
 	projectListCmd = &cobra.Command{
-		Use:   "list",
+		Use:   "list [flags]",
 		Short: "List Go projects",
 		Example: strings.TrimSpace(`
   gocli project list
@@ -75,13 +75,27 @@ var (
   gocli project list --verbose
 `),
 	}
-	projectInfoCmd   = &cobra.Command{Use: "info", Short: "Show information about the Go project"}
-	projectAddCmd    = &cobra.Command{Use: "add", Short: "Add a dependency to the Go project"}
-	projectTestCmd   = &cobra.Command{Use: "test", Short: "Run tests for the Go project"}
-	projectLintCmd   = &cobra.Command{Use: "lint", Short: "Lint the Go project"}
+	projectInfoCmd = &cobra.Command{
+		Use:   "info [flags]",
+		Short: "Show information about the Go project",
+		Example: strings.TrimSpace(`
+  gocli project info
+  gocli project info --json
+  gocli project info --verbose
+`),
+	}
+	projectAddCmd  = &cobra.Command{Use: "add", Short: "Add a dependency to the Go project"}
+	projectTestCmd = &cobra.Command{Use: "test", Short: "Run tests for the Go project"}
+	projectLintCmd = &cobra.Command{
+		Use:   "lint",
+		Short: "Lint the Go project",
+		Example: strings.TrimSpace(`
+  gocli project lint
+  gocli project lint --fix
+`),
+	}
 	projectUpdateCmd = &cobra.Command{Use: "update", Short: "Update dependencies of the Go project"}
 	projectDepsCmd   = &cobra.Command{Use: "deps", Short: "Manage dependencies of the Go project"}
-	projectConfigCmd = &cobra.Command{Use: "config", Short: "Manage project configuration"}
 	projectDocCmd    = &cobra.Command{Use: "doc", Short: "Generate documentation for the Go project"}
 )
 
@@ -115,6 +129,8 @@ func addBuildRunFlags(cmd *cobra.Command, opts *project.BuildRunOptions) {
 	// --- Built-in templates ---
 	cmd.Flags().BoolVar(&opts.ReleaseBuild, "release-mode", false, "Build in release mode (remove debug info)")
 	cmd.Flags().BoolVar(&opts.DebugBuild, "debug-mode", false, "Build in debug mode (disable optimizations and enable debug info)")
+	cmd.Flags().BoolVarP(&opts.HotReload, "hot-reload", "r", false, "Enable hot reloading of code changes")
+	cmd.Flags().BoolVar(&opts.NoGitIgnore, "no-gitignore", false, "Disable .gitignore file filtering during hot reload")
 
 	// --- Goblin options ---
 
@@ -142,7 +158,6 @@ func init() {
 		projectLintCmd,
 		projectUpdateCmd,
 		projectDepsCmd,
-		projectConfigCmd,
 		projectDocCmd,
 	)
 }

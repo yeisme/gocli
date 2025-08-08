@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"runtime/pprof"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -18,6 +19,7 @@ var (
 	debug      bool
 	verbose    bool
 	quiet      bool
+	cpuProfile string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -26,12 +28,26 @@ var rootCmd = &cobra.Command{
 	Short: "gocli is a CLI application for managing your Go projects",
 	Long:  `gocli is a command line interface application that helps you manage your Go projects efficiently.`,
 	PersistentPreRun: func(_ *cobra.Command, _ []string) {
+		if cpuProfile != "" {
+			f, err := os.Create(cpuProfile)
+			if err != nil {
+				log.Fatal().Err(err).Msg("could not create CPU profile")
+			}
+			if err := pprof.StartCPUProfile(f); err != nil {
+				log.Fatal().Err(err).Msg("could not start CPU profile")
+			}
+		}
 		ctx := context.InitGocliContext(configPath, debug, verbose, quiet)
 
 		gocliCtx = ctx
 		log = ctx.Logger
 
 		log.Info().Msgf("Execute Command: %s %s", "gocli", strings.Join(os.Args[1:], " "))
+	},
+	PersistentPostRun: func(_ *cobra.Command, _ []string) {
+		if cpuProfile != "" {
+			pprof.StopCPUProfile()
+		}
 	},
 }
 
@@ -44,6 +60,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file")
+	rootCmd.PersistentFlags().StringVar(&cpuProfile, "cpu-profile", "", "write cpu profile to `file`")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode (prints additional information)")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "enable verbose output (prints more detailed information)")
 	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "suppress all output except errors")

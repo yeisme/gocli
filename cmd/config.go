@@ -34,6 +34,7 @@ var (
 
 			log.Info().Msgf("Config file used: %s", fileUsed)
 		},
+		Aliases: []string{"check", "verify"},
 	}
 
 	configListCmd = &cobra.Command{

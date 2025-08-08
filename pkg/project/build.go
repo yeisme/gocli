@@ -2,9 +2,13 @@ package project
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/yeisme/gocli/pkg/context"
+	"github.com/yeisme/gocli/pkg/utils/hotload"
 
 	"github.com/yeisme/gocli/pkg/tools"
 	log2 "github.com/yeisme/gocli/pkg/utils/log"
@@ -54,6 +58,8 @@ type BuildRunOptions struct {
 type BuildinOptions struct {
 	ReleaseBuild bool // Release mode: removes debug information to reduce binary size (-ldflags="-s -w")
 	DebugBuild   bool // Debug mode: disables optimizations and enables race detection for easier debugging
+	HotReload    bool // Hot reload: enables automatic reloading of code changes
+	NoGitIgnore  bool // No git ignore: disables .gitignore file filtering during hot reload
 }
 
 // applyBuildTemplates modifies build options based on built-in templates (Release/Debug).
@@ -210,12 +216,69 @@ func executeGoProcessCommand(command string, options BuildRunOptions, args []str
 	return runGoCommand(options, cmdArgs)
 }
 
+// 热重启循环，监听变更并自动执行 build/run
+func hotReloadLoop(gocliCtx *context.GocliContext, options BuildRunOptions, runFunc func() error) error {
+	hotloadConfig := gocliCtx.Config.App.Hotload
+
+	// 如果指定了 --no-gitignore 参数，则覆盖配置中的 git_ignore 设置
+	if options.NoGitIgnore {
+		hotloadConfig.GitIgnore = false
+		log.Info().Msg("[HotReload] --no-gitignore flag specified, disabling .gitignore filtering")
+	}
+
+	// 检查热加载是否启用
+	if !hotloadConfig.Enabled {
+		log.Warn().Msg("[HotReload] Hot reload is disabled in configuration")
+		return runFunc() // 直接执行一次，不进行热加载
+	}
+
+	// 执行初始构建/运行
+	log.Info().Msg("[HotReload] Executing initial build/run...")
+	if err := runFunc(); err != nil {
+		log.Error().Msgf("[HotReload] Initial execution failed: %v", err)
+		return err
+	}
+
+	// 使用配置中的监听目录，默认为当前目录
+	watchDir := hotloadConfig.Dir
+	if watchDir == "" {
+		var err error
+		watchDir, err = os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get current directory: %w", err)
+		}
+	}
+
+	log.Info().Msgf("[HotReload] Start watching: %s (recursive=%t, git_ignore=%t)",
+		watchDir, hotloadConfig.Recursive, hotloadConfig.GitIgnore)
+	log.Debug().Msgf("[HotReload] Configuration - Filter: %v, IgnorePatterns: %v, Debounce: %dms",
+		hotloadConfig.Filter, hotloadConfig.IgnorePatterns, hotloadConfig.Debounce)
+
+	// 使用配置化的热加载监听器
+	return hotload.WatchWithConfig(hotloadConfig, func() {
+		log.Info().Msg("[HotReload] Change detected, restarting...")
+		if err := runFunc(); err != nil {
+			log.Error().Msgf("[HotReload] Execution failed: %v", err)
+		}
+	})
+}
+
 // ExecuteBuildCommand uses the new executeGoProcessCommand. (This function remains unchanged)
-func ExecuteBuildCommand(options BuildRunOptions, args []string) error {
+func ExecuteBuildCommand(gocliCtx *context.GocliContext, options BuildRunOptions, args []string) error {
+	if options.HotReload {
+		return hotReloadLoop(gocliCtx, options, func() error {
+			return executeGoProcessCommand("build", options, args)
+		})
+	}
 	return executeGoProcessCommand("build", options, args)
 }
 
 // ExecuteRunCommand uses the new executeGoProcessCommand. (This function remains unchanged)
-func ExecuteRunCommand(options BuildRunOptions, args []string) error {
+func ExecuteRunCommand(gocliCtx *context.GocliContext, options BuildRunOptions, args []string) error {
+	if options.HotReload {
+		return hotReloadLoop(gocliCtx, options, func() error {
+			return executeGoProcessCommand("run", options, args)
+		})
+	}
 	return executeGoProcessCommand("run", options, args)
 }

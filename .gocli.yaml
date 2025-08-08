@@ -20,6 +20,26 @@ app:
   debug: true
   verbose: false
   quiet: false
+  hotload:
+    enabled: true
+    dir: "."
+    filter:
+      - "*.go"
+      - "*.mod"
+      - "*.sum"
+    recursive: true
+    debounce: 300 # 防抖时间，毫秒
+    ignore_patterns:
+      - "*.tmp"
+      - "*.swp"
+      - "*.log"
+      - "tmp/*"
+      - "vendor/*"
+      - ".git/*"
+      - "node_modules/*"
+      - "*.exe"
+      - "*.bin"
+      - "bin/*"
 
 tools:
   deps:
