@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -40,7 +41,10 @@ func InitLogger(ctx context.Context, config *configs.LogConfig, appConfig *confi
 	} else if appConfig.Verbose {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	} else {
-		level := parseLogLevel(config.Level)
+		level, err := zerolog.ParseLevel(config.Level)
+		if err != nil {
+			level = zerolog.PanicLevel
+		}
 		zerolog.SetGlobalLevel(level)
 	}
 
@@ -73,15 +77,16 @@ func InitLogger(ctx context.Context, config *configs.LogConfig, appConfig *confi
 
 	// 创建日志记录器
 	if appConfig.Debug {
-		logger = zerolog.New(output).With().Caller().
-			Str("app", appConfig.Name).
-			Ctx(ctx).Timestamp().Logger()
+		logger = zerolog.New(output).With().Timestamp().
+			Caller().Stack().
+			Ctx(ctx).Logger()
 	} else if appConfig.Verbose {
-		logger = zerolog.New(output).With().
-			Str("app", appConfig.Name).
-			Ctx(ctx).Timestamp().Logger()
+		logger = zerolog.New(output).With().Timestamp().
+			Ctx(ctx).Logger()
 	} else {
-		logger = zerolog.New(output).With().Timestamp().Logger()
+		zerolog.TimeFieldFormat = time.Kitchen
+		logger = zerolog.New(output).With().Timestamp().
+			Logger()
 	}
 
 	globalLogger = &logger
@@ -125,28 +130,6 @@ func GetLogger() Logger {
 		return InitLogger(context.Background(), &config.Log, &config.App)
 	}
 	return globalLogger
-}
-
-// parseLogLevel 解析日志级别
-func parseLogLevel(level string) zerolog.Level {
-	switch strings.ToLower(level) {
-	case "trace":
-		return zerolog.TraceLevel
-	case "debug":
-		return zerolog.DebugLevel
-	case "info":
-		return zerolog.InfoLevel
-	case "warn", "warning":
-		return zerolog.WarnLevel
-	case "error":
-		return zerolog.ErrorLevel
-	case "fatal":
-		return zerolog.FatalLevel
-	case "panic":
-		return zerolog.PanicLevel
-	default:
-		return zerolog.InfoLevel
-	}
 }
 
 // WithFields 带字段的日志记录

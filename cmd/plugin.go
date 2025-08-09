@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/models"
+	"github.com/yeisme/gocli/pkg/style"
 	"github.com/yeisme/gocli/pkg/utils/plugin"
 )
 
@@ -126,68 +126,46 @@ func getSourcePriority(source models.PluginSource) int {
 }
 
 func displayPluginsSimple(plugins []*models.PluginInfo) {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	if _, err := fmt.Fprintln(w, "NAME\tSOURCE\tPATH"); err != nil {
-		log.Error().Err(err).Msg("Failed to write header line")
-		return
-	}
-	if _, err := fmt.Fprintln(w, "----\t------\t----"); err != nil {
-		log.Error().Err(err).Msg("Failed to write separator line")
-		return
-	}
-
+	// 构造表格数据
+	headers := []string{"NAME", "SOURCE", "PATH"}
+	var rows [][]string
 	for _, plugin := range plugins {
-		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\n",
+		rows = append(rows, []string{
 			plugin.GetDisplayName(),
 			getSourceShortName(plugin.Source),
-			plugin.Path); err != nil {
-			log.Error().Err(err).Msg("Failed to write plugin information")
-			return
-		}
+			plugin.Path,
+		})
 	}
-
-	if err := w.Flush(); err != nil {
-		log.Error().Err(err).Msg("Failed to flush tabwriter")
+	if err := style.PrintTable(os.Stdout, headers, rows, 0); err != nil {
+		log.Error().Err(err).Msg("Failed to print plugin table")
 	}
 }
 
 func displayPluginsVerbose(plugins []*models.PluginInfo) {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	if _, err := fmt.Fprintln(w, "NAME\tSOURCE\tSIZE\tMODIFIED\tPATH"); err != nil {
-		log.Error().Err(err).Msg("Failed to write header line")
-		return
-	}
-	if _, err := fmt.Fprintln(w, "----\t------\t----\t--------\t----"); err != nil {
-		log.Error().Err(err).Msg("Failed to write separator line")
-		return
-	}
-
+	headers := []string{"NAME", "SOURCE", "SIZE", "MODIFIED", "PATH"}
+	var rows [][]string
 	for _, plugin := range plugins {
-		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		rows = append(rows, []string{
 			plugin.GetDisplayName(),
 			getSourceShortName(plugin.Source),
 			formatSize(plugin.Size),
 			plugin.ModTime.Format("2006-01-02 15:04"),
-			plugin.Path); err != nil {
-			log.Error().Err(err).Msg("Failed to write plugin information")
-			return
-		}
+			plugin.Path,
+		})
 	}
-
-	if err := w.Flush(); err != nil {
-		log.Error().Err(err).Msg("Failed to flush tabwriter")
+	if err := style.PrintTable(os.Stdout, headers, rows, 0); err != nil {
+		log.Error().Err(err).Msg("Failed to print plugin table")
 		return
 	}
 
 	// 显示来源说明
-	fmt.Println("\nSource descriptions:")
 	sources := make(map[models.PluginSource]bool)
+	sourceDescriptions := make(map[string]string)
 	for _, plugin := range plugins {
-		sources[plugin.Source] = true
-	}
-
-	for source := range sources {
-		fmt.Printf("  %s: %s\n", getSourceShortName(source), getSourceDescription(source))
+		if !sources[plugin.Source] {
+			sources[plugin.Source] = true
+			sourceDescriptions[getSourceShortName(plugin.Source)] = getSourceDescription(plugin.Source)
+		}
 	}
 }
 
