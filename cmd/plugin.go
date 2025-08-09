@@ -27,11 +27,24 @@ var pluginListCmd = &cobra.Command{
 - Config file specified path`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		global, _ := cmd.Flags().GetBool("global")
-		verbose, _ := cmd.Flags().GetBool("verbose")
 		source, _ := cmd.Flags().GetString("source")
+
+		if !isValidSource(source) {
+			log.Error().Msgf("Invalid source: %s. Valid sources are: user, current, config", source)
+			return
+		}
 
 		listPlugins(global, verbose, source)
 	},
+}
+
+func isValidSource(source string) bool {
+	switch source {
+	case "user", "current", "config", "":
+		return true
+	default:
+		return false
+	}
 }
 
 func listPlugins(global, verbose bool, sourceFilter string) {

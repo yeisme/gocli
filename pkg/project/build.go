@@ -128,9 +128,6 @@ func buildArgsFromOptions(options BuildRunOptions) []string {
 	// First, apply built-in templates to modify values in the options struct.
 	applyBuildTemplates(&options)
 
-	// Re-get the ValueOf, as applyBuildTemplates may have modified the options.
-	val = reflect.ValueOf(options)
-
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
 		fieldType := typ.Field(i)
@@ -189,13 +186,13 @@ func runGoCommand(options BuildRunOptions, goCmdArgs []string) error {
 
 	stdout, stderr, err := executor.Run()
 	if stdout != "" {
-		for _, line := range strings.Split(strings.TrimSpace(stdout), "\n") {
+		for line := range strings.SplitSeq(strings.TrimSpace(stdout), "\n") {
 			log.Info().Msg(line)
 		}
 	}
 
 	if err == nil && stderr != "" {
-		for _, line := range strings.Split(strings.TrimSpace(stderr), "\n") {
+		for line := range strings.SplitSeq(strings.TrimSpace(stderr), "\n") {
 			log.Warn().Msg(line)
 		}
 	}

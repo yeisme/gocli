@@ -1,5 +1,6 @@
 
 .gocli/*.log
+.gocli/
 
 # Ignore build artifacts
 *.exe

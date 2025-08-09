@@ -40,6 +40,9 @@ app:
       - "*.exe"
       - "*.bin"
       - "bin/*"
+      - ".gocli/"
+    git_ignore: true # 是否忽略 .gitignore 文件
+
 
 tools:
   deps:
