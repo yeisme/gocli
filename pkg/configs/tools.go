@@ -6,6 +6,9 @@ import "github.com/spf13/viper"
 type ToolsConfig struct {
 	Deps   []Tool `mapstructure:"deps,omitempty"`   // 依赖工具
 	Global []Tool `mapstructure:"global,omitempty"` // 全局工具
+
+	// Go CLI 工具路径
+	GoCLIToolsPath string `mapstructure:"path,omitempty"`
 }
 
 // Tool represents a single tool configuration.
@@ -27,4 +30,5 @@ func setToolsConfigDefaults() {
 			Cmd:  "go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest",
 		},
 	})
+	viper.SetDefault("tools.path", "$HOME/.gocli/tools")
 }

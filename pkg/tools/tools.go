@@ -13,8 +13,8 @@ import (
 type toolSourceType string
 
 const (
-	goPath    toolSourceType = "go_path"
-	goCliPath toolSourceType = "gocli_path"
+	goPath    toolSourceType = "$GOPATH/bin"
+	goCliPath toolSourceType = "$GOCLI_TOOLS_PATH"
 )
 
 // ToolInfo 描述一个可用的工具
@@ -28,7 +28,7 @@ type ToolInfo struct {
 // - GOPATH/bin 下的可执行文件
 // - 用户目录下的 .gocli/tools 下的可执行文件（优先级更高，覆盖同名）
 // verbose 目前保留参数，不影响返回结果，预留将来扩展
-func FindTools(_ bool) []ToolInfo {
+func FindTools(_ bool, gocliToolsPath string) []ToolInfo {
 	// 收集两类目录
 	dirs := make([]struct {
 		path   string
@@ -47,7 +47,7 @@ func FindTools(_ bool) []ToolInfo {
 	}
 
 	// 2) 用户目录下的 .gocli/tools
-	if userTools := getUserToolsDir(); userTools != "" {
+	if userTools := getUserToolsDir(gocliToolsPath); userTools != "" {
 		dirs = append(dirs, struct {
 			path   string
 			source toolSourceType
@@ -100,7 +100,11 @@ func splitList(s string) []string {
 	return out
 }
 
-func getUserToolsDir() string {
+func getUserToolsDir(gocliToolsPath string) string {
+	if gocliToolsPath != "" {
+		return gocliToolsPath
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {
 		return ""

@@ -32,7 +32,8 @@ var (
 			// 优先使用全局 verbose；若未设置，则读取本地 flags
 			v := verbose
 
-			tools := toolsPkg.FindTools(v)
+			gocliToolsPath := gocliCtx.Config.Tools.GoCLIToolsPath
+			tools := toolsPkg.FindTools(v, gocliToolsPath)
 			if listJSON {
 				b, err := json.MarshalIndent(tools, "", "  ")
 				if err != nil {
