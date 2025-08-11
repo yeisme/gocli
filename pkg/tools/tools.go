@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 )
 
 type toolSourceType string
@@ -22,6 +23,9 @@ type ToolInfo struct {
 	Name   string         `json:"name"`
 	Path   string         `json:"path"`
 	Source toolSourceType `json:"source"`
+	// 以下字段用于 verbose 展示
+	Size    int64     `json:"size,omitempty"`
+	ModTime time.Time `json:"modTime,omitzero"`
 }
 
 // FindTools 搜索可用工具，来源包括：
@@ -130,11 +134,21 @@ func listExecutablesInDir(dir string, source toolSourceType) []ToolInfo {
 		if !isExecutable(name, dir) {
 			continue
 		}
+		// 读取文件信息以获取大小与修改时间
+		fi, _ := e.Info()
+		var size int64
+		var mtime time.Time
+		if fi != nil {
+			size = fi.Size()
+			mtime = fi.ModTime()
+		}
 		display := stripExeSuffix(name)
 		tools = append(tools, ToolInfo{
-			Name:   display,
-			Path:   filepath.Join(dir, name),
-			Source: source,
+			Name:    display,
+			Path:    filepath.Join(dir, name),
+			Source:  source,
+			Size:    size,
+			ModTime: mtime,
 		})
 	}
 	return tools

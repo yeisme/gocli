@@ -48,14 +48,30 @@ var (
 				return
 			}
 
-			// 表格输出
-			headers := []string{"name", "source", "path"}
-			rows := make([][]string, 0, len(tools))
-			for _, t := range tools {
-				rows = append(rows, []string{t.Name, string(t.Source), t.Path})
-			}
-			if err := style.PrintTable(cmd.OutOrStdout(), headers, rows, 0); err != nil {
-				cmd.PrintErrf("failed to print table: %v\n", err)
+			if v {
+				headers := []string{"name", "source", "size", "modified", "path"}
+				rows := make([][]string, 0, len(tools))
+				for _, t := range tools {
+					rows = append(rows, []string{
+						t.Name,
+						string(t.Source),
+						formatSize(t.Size),
+						t.ModTime.Format("2006-01-02 15:04"),
+						t.Path,
+					})
+				}
+				if err := style.PrintTable(cmd.OutOrStdout(), headers, rows, 0); err != nil {
+					log.Error().Err(err).Msg("failed to print tools list in table format")
+				}
+			} else {
+				headers := []string{"name", "source", "path"}
+				rows := make([][]string, 0, len(tools))
+				for _, t := range tools {
+					rows = append(rows, []string{t.Name, string(t.Source), t.Path})
+				}
+				if err := style.PrintTable(cmd.OutOrStdout(), headers, rows, 0); err != nil {
+					log.Error().Err(err).Msg("failed to print tools list in table format")
+				}
 			}
 		},
 	}
