@@ -92,6 +92,7 @@ var (
 		Example: strings.TrimSpace(`
   gocli project lint
   gocli project lint --fix
+  gocli project lint --list # List all available linters
 `),
 	}
 	projectUpdateCmd = &cobra.Command{Use: "update", Short: "Update dependencies of the Go project"}
