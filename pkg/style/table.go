@@ -16,30 +16,35 @@ import (
 // PrintTable 用于标准化表格输出，支持自定义表头和内容
 // width: 期望的表格宽度；当 width<=0 时自动探测终端宽度（失败则回退到80）。
 func PrintTable(w io.Writer, headers []string, rows [][]string, width int) error {
-	// 终端宽度
 	termWidth := detectTerminalWidth(w)
 	if termWidth <= 0 {
 		termWidth = 80
 	}
-
-	// 计算基于内容的“自然宽度”（尽量贴合字符串长度）
 	naturalWidth := calcNaturalTableWidth(headers, rows)
-
-	// 选择最终宽度：
-	// - 若调用方指定了 width>0，尊重该宽度
-	// - 否则在终端宽度与自然宽度之间取较小者
 	if width <= 0 {
-		if naturalWidth < termWidth {
-			width = naturalWidth
-		} else {
-			width = termWidth
-		}
+		width = min(naturalWidth, termWidth)
 	}
 
 	re := lipgloss.NewRenderer(w)
-	baseStyle := re.NewStyle().Padding(0, 1)
-	headerStyle := baseStyle.Foreground(lipgloss.Color("252")).Bold(true)
 
+	// 表头样式: 金色文字，紫色背景，加粗，居中对齐
+	headerStyle := re.NewStyle().
+		Foreground(ColorAccentText).
+		Background(ColorAccentPrimary).
+		Bold(true).
+		Padding(0, 1).
+		Align(lipgloss.Center)
+
+	// 单元格基础样式: 左右内边距
+	cellStyle := re.NewStyle().Padding(0, 1)
+
+	// 奇数行样式: 浅灰色文字
+	oddRowStyle := cellStyle.Foreground(ColorText)
+
+	// 偶数行样式: 浅灰色文字，深灰色背景（形成斑马条纹）
+	evenRowStyle := cellStyle.Foreground(ColorText).Background(ColorBackgroundAlternate)
+
+	// 将表头文字转为大写
 	capitalizeHeaders := func(headers []string) []string {
 		for i := range headers {
 			headers[i] = strings.ToUpper(headers[i])
@@ -48,16 +53,28 @@ func PrintTable(w io.Writer, headers []string, rows [][]string, width int) error
 	}
 
 	tbl := table.New().
-		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
-		Headers(capitalizeHeaders(headers)...).
+		// 设置总宽度
 		Width(width).
+		// 使用圆角边框
+		Border(lipgloss.RoundedBorder()).
+		// 设置边框颜色为深灰色
+		BorderStyle(re.NewStyle().Foreground(ColorBorder)).
+		// 设置表头
+		Headers(capitalizeHeaders(headers)...).
+		// 设置所有行数据
 		Rows(rows...).
+		// 使用 StyleFunc 为不同行应用不同样式
 		StyleFunc(func(row, _ int) lipgloss.Style {
-			if row == table.HeaderRow {
+			switch {
+			case row == table.HeaderRow:
 				return headerStyle
+			case row%2 == 0:
+				// 偶数行
+				return evenRowStyle
+			default:
+				// 奇数行
+				return oddRowStyle
 			}
-			return baseStyle
 		})
 
 	_, err := fmt.Fprintln(w, tbl)
@@ -66,7 +83,6 @@ func PrintTable(w io.Writer, headers []string, rows [][]string, width int) error
 
 // detectTerminalWidth 尝试从 writer 获取终端宽度，失败则返回 0
 func detectTerminalWidth(w io.Writer) int {
-	// 优先使用文件描述符
 	if f, ok := w.(*os.File); ok {
 		if fw := f.Fd(); fw > 0 {
 			if cols, _, err := xterm.GetSize(fw); err == nil && cols > 0 {
@@ -74,7 +90,6 @@ func detectTerminalWidth(w io.Writer) int {
 			}
 		}
 	}
-	// 尝试从环境变量读取（例如某些环境会设置 COLUMNS）
 	if v := os.Getenv("COLUMNS"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			return n
@@ -83,7 +98,7 @@ func detectTerminalWidth(w io.Writer) int {
 	return 0
 }
 
-// 计算表格的“自然宽度”：
+// 计算表格的宽度
 // = 各列最大内容宽度之和 + 每列左右 padding(2) + 边框竖线数量(列数+1)
 // 使用 runewidth 以兼容中英文/emoji 宽度。
 func calcNaturalTableWidth(headers []string, rows [][]string) int {
@@ -92,7 +107,6 @@ func calcNaturalTableWidth(headers []string, rows [][]string) int {
 	}
 	cols := len(headers)
 	maxW := make([]int, cols)
-	// 统计表头
 	for i := 0; i < cols; i++ {
 		if i < len(headers) {
 			if w := runewidth.StringWidth(headers[i]); w > maxW[i] {
@@ -100,12 +114,10 @@ func calcNaturalTableWidth(headers []string, rows [][]string) int {
 			}
 		}
 	}
-	// 统计行内容
 	for _, r := range rows {
 		for i := 0; i < cols && i < len(r); i++ {
-			// 多行单元格按最长行计算
-			parts := strings.Split(r[i], "\n")
-			for _, p := range parts {
+			parts := strings.SplitSeq(r[i], "\n")
+			for p := range parts {
 				if w := runewidth.StringWidth(p); w > maxW[i] {
 					maxW[i] = w
 				}
@@ -116,9 +128,7 @@ func calcNaturalTableWidth(headers []string, rows [][]string) int {
 	for _, w := range maxW {
 		contentSum += w
 	}
-	// 每列样式 padding: Padding(0,1) -> 左右各 1，共 2
 	paddingSum := 2 * cols
-	// 边框竖线：列数+1（例如 | a | b |）
 	borders := cols + 1
 	return contentSum + paddingSum + borders
 }
