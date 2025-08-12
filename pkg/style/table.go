@@ -27,7 +27,6 @@ func PrintTable(w io.Writer, headers []string, rows [][]string, width int) error
 
 	re := lipgloss.NewRenderer(w)
 
-	// 表头样式: 金色文字，紫色背景，加粗，居中对齐
 	headerStyle := re.NewStyle().
 		Foreground(ColorAccentText).
 		Background(ColorAccentPrimary).

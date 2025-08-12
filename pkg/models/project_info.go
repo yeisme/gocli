@@ -32,8 +32,11 @@ type GoDetails struct {
 
 // LanguageStats 存储单一语言的聚合统计信息
 type LanguageStats struct {
-	FileCount int        `json:"file_count" yaml:"file_count"` // 该语言的文件总数
-	Stats     Stats      `json:"stats" yaml:"stats"`           // 该语言的总行数统计
+	FileCount int   `json:"file_count" yaml:"file_count"` // 该语言的文件总数
+	Stats     Stats `json:"stats" yaml:"stats"`           // 该语言的总行数统计
+	// 可选：该语言聚合的函数/结构体数量（目前主要用于 Go）
+	Functions int        `json:"functions,omitempty" yaml:"functions,omitempty"`
+	Structs   int        `json:"structs,omitempty" yaml:"structs,omitempty"`
 	Files     []FileInfo `json:"files,omitempty" yaml:"files,omitempty"`
 }
 
@@ -45,4 +48,7 @@ type AnalysisResult struct {
 	// Languages 是一个映射，键是语言名称 (例如 "Go", "Markdown")，
 	// 值是该语言的聚合统计信息使用指针可以方便地在遍历文件时直接修改
 	Languages map[string]*LanguageStats `json:"languages" yaml:"languages"`
+
+	// Files 顶层所有文件明细（当 WithFileDetails=true 时填充）
+	Files []FileInfo `json:"files,omitempty" yaml:"files,omitempty"`
 }

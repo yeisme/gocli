@@ -37,7 +37,7 @@ func (p *ProjectCounter) CountAllFiles(ctx context.Context, root string, opts Op
 	gi := loadGitIgnore(root, opts.RespectGitignore)
 
 	// 步骤1: 收集所有需要处理的文件路径
-	// 这个阶段会遍历目录，并根据 .gitignore、include/exclude 规则、文件大小等进行过滤
+	// 这个阶段会遍历目录，并根据 .gitignore、include/exclude 规则、文件大小等进行过滤，并且过滤一些常见的目录 .git
 	filesToProcess, err := collectFiles(ctx, root, opts, gi)
 	if err != nil {
 		return nil, err
@@ -58,9 +58,11 @@ func (p *ProjectCounter) CountAllFiles(ctx context.Context, root string, opts Op
 
 // CountProjectSummary 在 CountAllFiles 的基础上，对所有文件的统计结果进行聚合
 // 它将结果按编程语言分组，并计算整个项目的总计信息
-// ctx: 用于控制函数执行的上下文
-// root: 要统计的项目的根目录路径
-// opts: 统计选项
+//
+//	ctx: 用于控制函数执行的上下文
+//	root: 要统计的项目的根目录路径
+//	opts: 统计选项
+//
 // 返回值: 一个包含详细聚合分析结果的指针，或者在获取文件列表时发生的错误
 func (p *ProjectCounter) CountProjectSummary(ctx context.Context, root string, opts Options) (*models.AnalysisResult, error) {
 	// 首先，获取所有独立文件的统计信息
@@ -245,6 +247,10 @@ func toRelSlash(root, path string) string {
 //  1. 目录被 `.gitignore` 规则匹配
 //  2. 没有设置 `Include` 规则，但目录匹配了 `Exclude` 规则
 func shouldSkipDir(relSlash string, opts Options, gi *gitignore.GitIgnore) bool {
+	// 默认忽略任意层级的 .git 目录（例如 .git, foo/.git, a/b/.git）
+	if relSlash == ".git" || strings.HasSuffix(relSlash, "/.git") || strings.Contains(relSlash, "/.git/") {
+		return true
+	}
 	if gi != nil && gi.IsIgnored(relSlash) {
 		return true
 	}
@@ -258,10 +264,10 @@ func shouldSkipDir(relSlash string, opts Options, gi *gitignore.GitIgnore) bool 
 
 // shouldIncludeFile 判断是否应该包含一个文件用于统计
 // 包含的逻辑优先级:
-// 1. 如果被 `.gitignore` 忽略，则不包含
-// 2. 如果 `Include` 列表不为空，则只有匹配 `Include` 列表的文件才被包含
-// 3. 如果 `Include` 列表为空，则检查文件是否匹配 `Exclude` 列表，匹配则不包含
-// 4. 如果以上条件都不满足，则默认包含
+//  1. 如果被 `.gitignore` 忽略，则不包含
+//  2. 如果 `Include` 列表不为空，则只有匹配 `Include` 列表的文件才被包含
+//  3. 如果 `Include` 列表为空，则检查文件是否匹配 `Exclude` 列表，匹配则不包含
+//  4. 如果以上条件都不满足，则默认包含
 func shouldIncludeFile(relSlash string, opts Options, gi *gitignore.GitIgnore) bool {
 	if gi != nil && gi.IsIgnored(relSlash) {
 		return false
@@ -442,6 +448,17 @@ func aggregateAnalysis(files []models.FileInfo, opts Options) *models.AnalysisRe
 		ls.Stats.Code += f.Stats.Code
 		ls.Stats.Comments += f.Stats.Comments
 		ls.Stats.Blanks += f.Stats.Blanks
+		// 若语言特定信息中包含函数/结构体并且开启统计，则聚合
+		if opts.WithFunctions || opts.WithStructs {
+			if gd, ok := f.LanguageSpecific.(*models.GoDetails); ok && gd != nil {
+				if opts.WithFunctions {
+					ls.Functions += gd.Functions
+				}
+				if opts.WithStructs {
+					ls.Structs += gd.Structs
+				}
+			}
+		}
 		// 如果选项要求，将文件的详细信息添加到语言分组中
 		if opts.WithLanguageDetails {
 			ls.Files = append(ls.Files, f)
@@ -452,6 +469,21 @@ func aggregateAnalysis(files []models.FileInfo, opts Options) *models.AnalysisRe
 		res.Total.Stats.Code += f.Stats.Code
 		res.Total.Stats.Comments += f.Stats.Comments
 		res.Total.Stats.Blanks += f.Stats.Blanks
+		if opts.WithFunctions || opts.WithStructs {
+			if gd, ok := f.LanguageSpecific.(*models.GoDetails); ok && gd != nil {
+				if opts.WithFunctions {
+					res.Total.Functions += gd.Functions
+				}
+				if opts.WithStructs {
+					res.Total.Structs += gd.Structs
+				}
+			}
+		}
+
+		// 如果顶层需要文件列表（不分语言），收集
+		if opts.WithFileDetails {
+			res.Files = append(res.Files, f)
+		}
 	}
 	return res
 }
