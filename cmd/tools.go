@@ -22,12 +22,12 @@ var (
 	toolListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List available tools",
-		Long:  `gocli tools list displays all available tools that can be used with gocli.`,
-		Example: strings.TrimSpace(`
+		Long: `gocli tools list displays all available tools that can be used with gocli.
+
+Examples:
   gocli tools list
   gocli tools list --json
-  gocli tools list --verbose
-`),
+`,
 		Run: func(cmd *cobra.Command, _ []string) {
 			listJSON, _ := cmd.Flags().GetBool("json")
 			// 优先使用全局 verbose；若未设置，则读取本地 flags
@@ -79,8 +79,8 @@ var (
 	toolInstallCmd = &cobra.Command{
 		Use:   "install",
 		Short: "Install a tool",
-		Long:  `gocli tools install allows you to install a specific tool or utility for your Go development environment.`,
-		Example: strings.TrimSpace(`
+		Long: `gocli tools install allows you to install a specific tool or utility for your Go development environment.
+
   # Example 1: Install the latest version of a tool
   # This is the most common usage, installing directly from a Go module path.
   gocli tools install github.com/golangci/golangci-lint/cmd/golangci-lint
@@ -109,19 +109,20 @@ var (
   # Use the --env flag to pass environment variables required at compile time.
   gocli tools install --env "CGO_ENABLED=1" github.com/example/cgo-tool
 
-	# Example 8: Install in release mode (preconfigured flags)
-	# Equivalent to adding: -trimpath -ldflags="-s -w" (and -v when --verbose)
-	gocli tools install --release-build github.com/golangci/golangci-lint/cmd/golangci-lint
+  # Example 8: Install in release mode (preconfigured flags)
+  # Equivalent to adding: -trimpath -ldflags="-s -w" (and -v when --verbose)
+  gocli tools install --release-build github.com/golangci/golangci-lint/cmd/golangci-lint
 
-	# Example 9: Install in debug mode (preconfigured flags)
-	# Equivalent to adding: -gcflags=all=-N -l (and -v when --verbose)
-	gocli tools install --debug-build github.com/golangci/golangci-lint/cmd/golangci-lint
+  # Example 9: Install in debug mode (preconfigured flags)
+  # Equivalent to adding: -gcflags=all=-N -l (and -v when --verbose)
+  gocli tools install --debug-build github.com/golangci/golangci-lint/cmd/golangci-lint
 
-	# Example 10: Clone + make with custom output directories
-	# When the Makefile builds binaries into custom folders, use --bin to tell gocli where to pick them up.
-	# You can provide multiple directories by repeating --bin or using the platform path list separator.
-	gocli tools install --clone https://github.com/docker/compose.git#v2.39.2 --make-target build --bin ./cmd/build --bin ./bin
-`),
+  # Example 10: Clone + make with custom output directories
+  # When the Makefile builds binaries into custom folders, use --bin to tell gocli where to pick them up.
+  # You can provide multiple directories by repeating --bin or using the platform path list separator.
+  gocli tools install --clone https://github.com/docker/compose.git#v2.39.2 --make-target build --bin ./cmd/build --bin ./bin
+`,
+
 		Run: func(cmd *cobra.Command, args []string) {
 			cloneURL, _ := cmd.Flags().GetString("clone")
 			makeTarget, _ := cmd.Flags().GetString("make-target")
@@ -235,6 +236,9 @@ func init() {
 		toolUninstallCmd,
 		toolSearchCmd,
 	)
+
+	// json flags
+	toolListCmd.Flags().BoolP("json", "j", false, "Output the list of tools in JSON format")
 
 	// flags for install
 	toolInstallCmd.Flags().StringP("path", "p", "", "Installation output directory (effective for go install, equivalent to setting GOBIN)")
