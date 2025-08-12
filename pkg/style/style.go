@@ -19,4 +19,7 @@ const (
 
 	// 交替背景色，用于斑马条纹等，以区分相邻项目。
 	ColorBackgroundAlternate = lipgloss.Color("#303030")
+
+	// 危险/禁用/错误强调色（例如 Disabled linters/formatters 名称）
+	ColorDanger = lipgloss.Color("#FF5555")
 )

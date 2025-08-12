@@ -12,6 +12,8 @@ var (
 	buildOptions project.BuildRunOptions
 	runOptions   project.BuildRunOptions
 	infoOptions  project.InfoOptions
+	fmtOptions   project.FmtOptions
+	lintOptions  project.LintOptions
 
 	projectCmd = &cobra.Command{
 		Use:     "project",
@@ -235,7 +237,16 @@ Examples:
 
   # List all available linters
   gocli project lint --list
+
 `,
+		Run: func(cmd *cobra.Command, _ []string) {
+			lintOptions.Verbose = gocliCtx.Config.App.Verbose
+			err := project.RunLint(lintOptions, cmd.OutOrStdout())
+			if err != nil {
+				cmd.PrintErrf("Error: %v\n", err)
+				os.Exit(1)
+			}
+		},
 	}
 	projectFmtCmd = &cobra.Command{
 		Use:   "fmt",
@@ -249,6 +260,17 @@ Examples:
   gocli project fmt --list
 
 `,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmtOptions.Verbose = gocliCtx.Config.App.Verbose
+			if len(args) > 0 { // 若用户传入路径，取第一个作为路径
+				fmtOptions.Path = args[0]
+			}
+			err := project.RunFmt(fmtOptions, cmd.OutOrStdout())
+			if err != nil {
+				cmd.PrintErrf("Error: %v\n", err)
+				os.Exit(1)
+			}
+		},
 	}
 	projectUpdateCmd = &cobra.Command{Use: "update", Short: "Update dependencies of the Go project"}
 	projectDepsCmd   = &cobra.Command{Use: "deps", Short: "Manage dependencies of the Go project"}
@@ -315,6 +337,16 @@ func init() {
 	addBuildRunFlags(projectRunCmd, &runOptions)
 
 	addInfoFlags(projectInfoCmd, &infoOptions)
+
+	// lint flags
+	projectLintCmd.Flags().BoolVar(&lintOptions.List, "list", false, "List all available linters")
+	projectLintCmd.Flags().BoolVar(&lintOptions.Fix, "fix", false, "Fix issues where possible")
+	projectLintCmd.Flags().BoolVar(&lintOptions.Verbose, "verbose", false, "Verbose output (line by line)")
+
+	// fmt flags
+	projectFmtCmd.Flags().BoolVar(&fmtOptions.List, "list", false, "List all available formatters")
+	projectFmtCmd.Flags().StringVarP(&fmtOptions.Path, "path", "p", "", "Target path to format (default current directory)")
+	projectFmtCmd.Flags().BoolVar(&fmtOptions.Verbose, "verbose", false, "Verbose output (line by line)")
 
 	// Disable sorting for build and run commands to group flags logically
 	projectBuildCmd.Flags().SortFlags = false
