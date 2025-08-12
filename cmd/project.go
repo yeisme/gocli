@@ -1,19 +1,11 @@
 package cmd
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yeisme/gocli/pkg/models"
 	"github.com/yeisme/gocli/pkg/project"
-	"github.com/yeisme/gocli/pkg/style"
-	"github.com/yeisme/gocli/pkg/utils/count"
 )
 
 var (
@@ -25,7 +17,7 @@ var (
 		Use:     "project",
 		Short:   "Manage Go projects",
 		Long:    `gocli project allows you to manage your Go projects, including creating, building, and running them.`,
-		Aliases: []string{"p", "mod"},
+		Aliases: []string{"p", "pj"},
 	}
 
 	projectInitCmd = &cobra.Command{
@@ -120,42 +112,42 @@ Core capabilities:
 	- Supports changing working directory via -C.
 	- Supports hot reloading (--hot-reload / -r) to auto rebuild & restart on file changes.
 
-Basic examples:
-	# 1. Run the main package in the current directory
-	gocli project run
+Examples:
+  # 1. Run the main package in the current directory
+  gocli project run
 
-	# 2. Run a specific main file
-	gocli project run main.go
+  # 2. Run a specific main file
+  gocli project run main.go
 
-	# 3. Run a specific entry directory
-	gocli project run ./cmd/server
+  # 3. Run a specific entry directory
+  gocli project run ./cmd/server
 
-Parallelism & build control:
-	# 4. Set parallelism during build
-	gocli project run -p 2 ./cmd/server
+  # Parallelism & build control:
+  # 4. Set parallelism during build
+  gocli project run -p 2 ./cmd/server
 
-Build tags & module mode:
-	# 5. Use build tags (e.g. dev)
-	gocli project run --tags "dev" ./cmd/server
-	# 6. Set module download mode (readonly/vendor/mod)
-	gocli project run --mod=mod ./cmd/server
+  # Build tags & module mode:
+  # 5. Use build tags (e.g. dev)
+  gocli project run --tags "dev" ./cmd/server
+  # 6. Set module download mode (readonly/vendor/mod)
+  gocli project run --mod=mod ./cmd/server
 
-Debugging & performance:
-	# 7. Debug mode (disable opt, keep symbols)
-	gocli project run --debug-mode ./cmd/server
-	# 8. Race detector
-	gocli project run --race ./cmd/server
+  # Debugging & performance:
+  # 7. Debug mode (disable opt, keep symbols)
+  gocli project run --debug-mode ./cmd/server
+  # 8. Race detector
+  gocli project run --race ./cmd/server
 
-Hot reload:
-	# 9. Enable hot reload (rebuild & restart on change)
-	gocli project run -r ./cmd/server
-	# 10. Hot reload without respecting .gitignore
-	gocli project run -r --no-gitignore ./cmd/server
+  # Hot reload:
+  # 9. Enable hot reload (rebuild & restart on change)
+  gocli project run -r ./cmd/server
+  # 10. Hot reload without respecting .gitignore
+  gocli project run -r --no-gitignore ./cmd/server
 
-Additional tips:
-	- Hot reload is for local dev; for production prefer a static build + external supervisor.
-	- --release-mode may also be used here to emulate production flags for a quick run.
-	- Use -n / --dry-run to only print the underlying commands.
+  # Additional tips:
+  - Hot reload is for local dev; for production prefer a static build + external supervisor.
+  - --release-mode may also be used here to emulate production flags for a quick run.
+  - Use -n / --dry-run to only print the underlying commands.
 `),
 		Run: func(cmd *cobra.Command, args []string) {
 			runOptions.V = gocliCtx.Config.App.Verbose
@@ -164,7 +156,6 @@ Additional tips:
 				os.Exit(1)
 			}
 		},
-		// 详细示例已整合进 Long 字段，保持 Example 留空可减少重复展示
 	}
 	projectListCmd = &cobra.Command{
 		Use:   "list [flags]",
@@ -212,200 +203,20 @@ Examples:
 
   # Include detailed information for each file (more useful with JSON)
   gocli project info --with-files --json
-
-  # Include a list of files within the language block (JSON output only)
-  gocli project info --with-language-files --json
-
-  # Disable language-specific information (e.g., Go imports)
-  gocli project info --with-lang-specific=false
-
-  # Combined example: analyze Go & Markdown, exclude vendor, output JSON with file details
-  gocli project info --include "**/*.go" --include "**/*.md" \
-      --exclude "vendor/**" --with-files --with-language-files --json
 `,
-
 		Run: func(cmd *cobra.Command, args []string) {
-			// Determine root path (default current dir or first arg if provided)
-			root := "."
-			if len(args) > 0 {
-				root = args[0]
-			}
-			absRoot, err := filepath.Abs(root)
-			if err == nil {
-				root = absRoot
-			}
-
 			jsonOut, _ := cmd.Flags().GetBool("json")
-			// Auto-enable JSON if language-files requested or lang-specific explicitly set by user
-			if lf, _ := cmd.Flags().GetBool("language-files"); lf {
+			if lf, _ := cmd.Flags().GetBool("language-files"); lf { // auto enable JSON
 				jsonOut = true
 			}
-			if cmd.Flags().Changed("lang-specific") { // 用户显式传入（无论 true/false）都更适合用 JSON 来携带结构化字段
+			if cmd.Flags().Changed("lang-specific") { // 用户显式使用
 				jsonOut = true
 			}
-
-			// Respect gitignore unless --no-gitignore set
 			noGitignore, _ := cmd.Flags().GetBool("no-gitignore")
 			infoOptions.RespectGitignore = !noGitignore
-
-			ctx := context.Background()
-			pc := &count.ProjectCounter{}
-			res, err := pc.CountProjectSummary(ctx, root, infoOptions.Options)
-			if err != nil {
-				log.Error().Err(err).Msg("failed to count project summary")
+			if err := project.ExecuteInfoCommand(gocliCtx, infoOptions, args, jsonOut, !quiet, cmd.OutOrStdout()); err != nil {
+				cmd.PrintErrf("Error: %v\n", err)
 				os.Exit(1)
-				return
-			}
-
-			if jsonOut {
-				b, err := json.MarshalIndent(res, "", "  ")
-				if err != nil {
-					log.Error().Err(err).Msg("failed to marshal project info to JSON")
-					os.Exit(1)
-					return
-				}
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(b))
-				return
-			}
-
-			// ========== 语言汇总表 ==========
-			langHeaders := []string{"language", "files", "code", "comments", "blanks", "code%", "lines"}
-			if infoOptions.WithFunctions {
-				langHeaders = append(langHeaders, "funcs")
-			}
-			if infoOptions.WithStructs {
-				langHeaders = append(langHeaders, "structs")
-			}
-			langRows := make([][]string, 0, len(res.Languages))
-			langs := make([]string, 0, len(res.Languages))
-			for l := range res.Languages {
-				if l == "Unknown" { // 不展示 Unknown 分类
-					continue
-				}
-				langs = append(langs, l)
-			}
-			sort.Strings(langs)
-			displayedTotalCode := 0
-			for _, l := range langs {
-				displayedTotalCode += res.Languages[l].Stats.Code
-			}
-			for _, l := range langs {
-				ls := res.Languages[l]
-				codePct := 0.0
-				if displayedTotalCode > 0 {
-					codePct = float64(ls.Stats.Code) * 100 / float64(displayedTotalCode)
-				}
-				row := []string{
-					l,
-					fmt.Sprintf("%d", ls.FileCount),
-					fmt.Sprintf("%d", ls.Stats.Code),
-					fmt.Sprintf("%d", ls.Stats.Comments),
-					fmt.Sprintf("%d", ls.Stats.Blanks),
-					fmt.Sprintf("%.1f%%", codePct),
-					fmt.Sprintf("%d", ls.Stats.Code+ls.Stats.Comments+ls.Stats.Blanks),
-				}
-				if infoOptions.WithFunctions {
-					row = append(row, fmt.Sprintf("%d", ls.Functions))
-				}
-				if infoOptions.WithStructs {
-					row = append(row, fmt.Sprintf("%d", ls.Structs))
-				}
-				langRows = append(langRows, row)
-			}
-
-			// Append TOTAL summary row (excluding Unknown)
-			if len(langs) > 0 {
-				totalFiles := 0
-				totalComments := 0
-				totalBlanks := 0
-				totalLines := 0
-				totalFuncs := 0
-				totalStructs := 0
-				for _, l := range langs {
-					ls := res.Languages[l]
-					totalFiles += ls.FileCount
-					totalComments += ls.Stats.Comments
-					totalBlanks += ls.Stats.Blanks
-					lines := ls.Stats.Code + ls.Stats.Comments + ls.Stats.Blanks
-					totalLines += lines
-					if infoOptions.WithFunctions {
-						totalFuncs += ls.Functions
-					}
-					if infoOptions.WithStructs {
-						totalStructs += ls.Structs
-					}
-				}
-				totalRow := []string{
-					"TOTAL",
-					fmt.Sprintf("%d", totalFiles),
-					fmt.Sprintf("%d", displayedTotalCode),
-					fmt.Sprintf("%d", totalComments),
-					fmt.Sprintf("%d", totalBlanks),
-					"100.0%",
-					fmt.Sprintf("%d", totalLines),
-				}
-				if infoOptions.WithFunctions {
-					totalRow = append(totalRow, fmt.Sprintf("%d", totalFuncs))
-				}
-				if infoOptions.WithStructs {
-					totalRow = append(totalRow, fmt.Sprintf("%d", totalStructs))
-				}
-				langRows = append(langRows, totalRow)
-			}
-			if !quiet {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project: %s\n", root)
-			}
-			if err := style.PrintTable(cmd.OutOrStdout(), langHeaders, langRows, 0); err != nil {
-				log.Error().Err(err).Msg("failed to print info table")
-			}
-
-			// ========== 文件明细表（可选） ==========
-			if infoOptions.WithFileDetails {
-				files := res.Files
-				if len(files) > 0 {
-					fileHeaders := []string{"path", "language", "code", "comments", "blanks", "lines"}
-					if infoOptions.WithFunctions {
-						fileHeaders = append(fileHeaders, "funcs")
-					}
-					if infoOptions.WithStructs {
-						fileHeaders = append(fileHeaders, "structs")
-					}
-					fileRows := make([][]string, 0, len(files))
-					// 稳定排序：按语言再按路径
-					sort.Slice(files, func(i, j int) bool {
-						if files[i].Language == files[j].Language {
-							return files[i].Path < files[j].Path
-						}
-						return files[i].Language < files[j].Language
-					})
-					for _, f := range files {
-						row := []string{f.Path, f.Language, fmt.Sprintf("%d", f.Stats.Code), fmt.Sprintf("%d", f.Stats.Comments), fmt.Sprintf("%d", f.Stats.Blanks), fmt.Sprintf("%d", f.Stats.Code+f.Stats.Comments+f.Stats.Blanks)}
-						if infoOptions.WithFunctions || infoOptions.WithStructs {
-							if gd, ok := f.LanguageSpecific.(*models.GoDetails); ok && gd != nil {
-								if infoOptions.WithFunctions {
-									row = append(row, fmt.Sprintf("%d", gd.Functions))
-								}
-								if infoOptions.WithStructs {
-									row = append(row, fmt.Sprintf("%d", gd.Structs))
-								}
-							} else {
-								// 非 Go 文件占位 0
-								if infoOptions.WithFunctions {
-									row = append(row, "0")
-								}
-								if infoOptions.WithStructs {
-									row = append(row, "0")
-								}
-							}
-						}
-						fileRows = append(fileRows, row)
-					}
-					_, _ = fmt.Fprintln(cmd.OutOrStdout())
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Files:")
-					if err := style.PrintTable(cmd.OutOrStdout(), fileHeaders, fileRows, 0); err != nil {
-						log.Error().Err(err).Msg("failed to print file table")
-					}
-				}
 			}
 		},
 	}
@@ -414,11 +225,30 @@ Examples:
 	projectLintCmd = &cobra.Command{
 		Use:   "lint",
 		Short: "Lint the Go project",
-		Example: strings.TrimSpace(`
+		Long: `gocli project lint checks the Go project for common issues and style violations.(use golangci-lint)
+
+Examples:
   gocli project lint
+
+  # Fix issues
   gocli project lint --fix
-  gocli project lint --list # List all available linters
-`),
+
+  # List all available linters
+  gocli project lint --list
+`,
+	}
+	projectFmtCmd = &cobra.Command{
+		Use:   "fmt",
+		Short: "Format the Go project",
+		Long:  `gocli project fmt formats the Go project code (use golangci-lint).`,
+
+		Example: `
+  gocli project fmt
+
+  # List all available formatters
+  gocli project fmt --list
+
+`,
 	}
 	projectUpdateCmd = &cobra.Command{Use: "update", Short: "Update dependencies of the Go project"}
 	projectDepsCmd   = &cobra.Command{Use: "deps", Short: "Manage dependencies of the Go project"}
@@ -499,6 +329,7 @@ func init() {
 		projectAddCmd,
 		projectTestCmd,
 		projectLintCmd,
+		projectFmtCmd,
 		projectUpdateCmd,
 		projectDepsCmd,
 		projectDocCmd,

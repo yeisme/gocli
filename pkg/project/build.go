@@ -11,14 +11,7 @@ import (
 	"github.com/yeisme/gocli/pkg/utils/hotload"
 
 	"github.com/yeisme/gocli/pkg/tools"
-	log2 "github.com/yeisme/gocli/pkg/utils/log"
 )
-
-var log log2.Logger
-
-func init() {
-	log = log2.GetLogger()
-}
 
 // BuildRunOptions defines shared options for building and running a project.
 // It uses `cli` struct tags to automatically generate command-line arguments.
