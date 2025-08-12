@@ -1,0 +1,22 @@
+version: 3
+
+tasks:
+  defaults:
+    cmds:
+      - go build ./cmd/gocli
+    desc: Build the project using the default Go build command (Without Version Info)
+
+  build:
+    cmds:
+      - MOD_SUM=$(sha256sum go.sum | cut -d" " -f1 | cut -c1-16) goreleaser build --snapshot --clean --single-target
+    desc: Build the project using GoReleaser
+
+  release:
+    cmds:
+      - MOD_SUM=$(sha256sum go.sum | cut -d" " -f1 | cut -c1-16) goreleaser release --clean
+    desc: Create a new release using GoReleaser
+
+  test:
+    cmds:
+      - go test ./...
+    desc: Run tests
