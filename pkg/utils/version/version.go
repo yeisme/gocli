@@ -14,7 +14,7 @@ var (
 	// GitCommit is the git commit hash
 	GitCommit = "unknown"
 	// BuildDate is when the binary was built
-	BuildDate = "unknown"
+	BuildDate = time.Now().Format(time.RFC3339)
 	// GoVersion is the Go version used to build the binary
 	GoVersion = runtime.Version()
 	// Platform is the target platform
@@ -22,7 +22,7 @@ var (
 	// Modified indicates if the source tree was modified (string: "true" or "false")
 	Modified = "false"
 	// ModSum is the module checksum
-	ModSum = "unknown"
+	ModSum = ""
 )
 
 // Info contains version information

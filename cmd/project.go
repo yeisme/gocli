@@ -42,26 +42,65 @@ var (
 	projectBuildCmd = &cobra.Command{
 		Use:   "build [args...] [packages]",
 		Short: "Build the Go project",
-		Long: `gocli project build compiles the Go project. You can specify packages to build, or it defaults to the current directory.
+		Long: strings.TrimSpace(`
+gocli project build compiles Go packages (a superset wrapper of 'go build').
+
+Basic usage:
+  When no package/path is specified, the current directory is used.
+  You may pass a directory, file, or pattern (e.g. ./..., ./cmd/server).
 
 Examples:
+  # 1. Build current module (similar to 'go build')
   gocli project build
+
+  # 2. Build all sub-packages
   gocli project build ./...
+
+  # 3. Build with custom output binary name
   gocli project build -o bin/myapp ./cmd/server
+
+  # 4. Change directory before build (like 'cd examples/web && go build')
   gocli project build -C ./examples/web ./cmd/server
+
+  # 5. Force full rebuild and set parallelism to 4
   gocli project build -a -p 4 ./cmd/server
-  gocli project build --race
-  gocli project build --msan
-  gocli project build --asan
+
+  # 6. Enable race detector
+  gocli project build --race ./cmd/server
+
+  # 7. Memory / Address sanitizers (platform / compiler dependent)
+  gocli project build --msan ./cmd/server
+  gocli project build --asan ./cmd/server
+
+  # 8. Optimization / size flags (strip symbols + remove file paths)
   gocli project build --tags "sqlite,json" --ldflags "-s -w" --trimpath
-  gocli project build --gcflags "all=-N -l"
+
+  # 9. Disable optimizations & inlining for debugging
+  gocli project build --gcflags "all=-N -l" ./cmd/cli
+
+  # 10. Specify build mode (e.g. position independent executable)
   gocli project build --buildmode=pie ./cmd/cli
+
+  # 11. Use vendor mode for dependencies
   gocli project build --mod=vendor ./...
+
+  # 12. Coverage instrumentation (mostly used with tests; here for demo)
   gocli project build --cover --covermode=atomic --coverpkg=./... ./...
+
+  # 13. Keep temporary work directory (inspect intermediate files)
   gocli project build --work -x ./cmd/server
+
+  # 14. Quick release-style build (smaller binary, stripped info)
   gocli project build --release-mode ./cmd/cli
+
+  # 15. Debug-style build (no optimizations, full symbols)
   gocli project build --debug-mode ./cmd/cli
-`,
+
+Advanced notes:
+  - Most flags map directly to 'go build' counterparts (asmflags/gcflags/ldflags...).
+  - --release-mode / --debug-mode are opinionated presets combining common flags.
+  - Can be combined with --hot-reload (more commonly used under 'run').
+`),
 		Run: func(cmd *cobra.Command, args []string) {
 			buildOptions.V = gocliCtx.Config.App.Verbose
 			if err := project.ExecuteBuildCommand(gocliCtx, buildOptions, args); err != nil {
@@ -73,7 +112,51 @@ Examples:
 	projectRunCmd = &cobra.Command{
 		Use:   "run [args...] [packages]",
 		Short: "Run the Go project",
-		Long:  `gocli project run compiles and runs a main Go program.`,
+		Long: strings.TrimSpace(`
+gocli project run builds then runs one (or multiple) main entrypoints (main package / main.go).
+
+Core capabilities:
+	- Automatically triggers a build with the provided flags before execution.
+	- Supports changing working directory via -C.
+	- Supports hot reloading (--hot-reload / -r) to auto rebuild & restart on file changes.
+
+Basic examples:
+	# 1. Run the main package in the current directory
+	gocli project run
+
+	# 2. Run a specific main file
+	gocli project run main.go
+
+	# 3. Run a specific entry directory
+	gocli project run ./cmd/server
+
+Parallelism & build control:
+	# 4. Set parallelism during build
+	gocli project run -p 2 ./cmd/server
+
+Build tags & module mode:
+	# 5. Use build tags (e.g. dev)
+	gocli project run --tags "dev" ./cmd/server
+	# 6. Set module download mode (readonly/vendor/mod)
+	gocli project run --mod=mod ./cmd/server
+
+Debugging & performance:
+	# 7. Debug mode (disable opt, keep symbols)
+	gocli project run --debug-mode ./cmd/server
+	# 8. Race detector
+	gocli project run --race ./cmd/server
+
+Hot reload:
+	# 9. Enable hot reload (rebuild & restart on change)
+	gocli project run -r ./cmd/server
+	# 10. Hot reload without respecting .gitignore
+	gocli project run -r --no-gitignore ./cmd/server
+
+Additional tips:
+	- Hot reload is for local dev; for production prefer a static build + external supervisor.
+	- --release-mode may also be used here to emulate production flags for a quick run.
+	- Use -n / --dry-run to only print the underlying commands.
+`),
 		Run: func(cmd *cobra.Command, args []string) {
 			runOptions.V = gocliCtx.Config.App.Verbose
 			if err := project.ExecuteRunCommand(gocliCtx, runOptions, args); err != nil {
@@ -81,19 +164,7 @@ Examples:
 				os.Exit(1)
 			}
 		},
-		Example: strings.TrimSpace(`
-  gocli project run
-  gocli project run main.go
-  gocli project run ./cmd/server
-  gocli project run --race ./cmd/server
-  gocli project run -C ./examples/web ./cmd/server
-  gocli project run -p 2 ./cmd/server
-  gocli project run --tags "dev" ./cmd/server
-  gocli project run --mod=mod ./cmd/server
-  gocli project run --debug-mode ./cmd/server
-  gocli project run -r ./cmd/server
-  gocli project run -r --no-gitignore ./cmd/server
-`),
+		// 详细示例已整合进 Long 字段，保持 Example 留空可减少重复展示
 	}
 	projectListCmd = &cobra.Command{
 		Use:   "list [flags]",

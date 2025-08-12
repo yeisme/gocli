@@ -24,7 +24,13 @@ var pluginListCmd = &cobra.Command{
 	Long: `List all available gocli plugins from various sources including:
 - User home directory (~/.gocli/plugins)
 - Current directory (./.gocli/plugins)
-- Config file specified path`,
+- Config file specified path
+
+Examples:
+  gocli plugin list
+  gocli plugin list --global
+  gocli plugin list --source user
+`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		global, _ := cmd.Flags().GetBool("global")
 		source, _ := cmd.Flags().GetString("source")
