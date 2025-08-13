@@ -15,6 +15,8 @@ type FmtOptions struct {
 	List    bool   // 列出可用的格式化器
 	Path    string // 指定格式化路径，默认为当前目录
 	Verbose bool   // 逐行输出结果
+
+	ConfigPath string // 配置文件路径
 }
 
 // RunFmt 执行代码格式化操作（使用 golangci-lint fmt）
@@ -33,7 +35,11 @@ func RunFmt(options FmtOptions, out io.Writer) error {
 		if target == "" {
 			target = "."
 		}
+		if options.ConfigPath != "" {
+			args = append(args, "fmt", "--config", options.ConfigPath)
+		}
 		args = append(args, "fmt", target) // golangci-lint fmt <path>
+
 	}
 
 	output, err := execGolangCILint(args)

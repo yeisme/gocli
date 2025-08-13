@@ -238,12 +238,21 @@ Examples:
   # List all available linters
   gocli project lint --list
 
+  # Print used config path
+  gocli project lint --print
+
+  # Verify configuration against JSON schema
+  gocli project lint --verify
+
+  # Specify the configuration file path
+  gocli project lint --config ./path/to/config.yaml
+
 `,
 		Run: func(cmd *cobra.Command, _ []string) {
 			lintOptions.Verbose = gocliCtx.Config.App.Verbose
 			err := project.RunLint(lintOptions, cmd.OutOrStdout())
 			if err != nil {
-				cmd.PrintErrf("Error: %v\n", err)
+				log.Error().Err(err).Msg("failed to run project lint")
 				os.Exit(1)
 			}
 		},
@@ -267,7 +276,7 @@ Examples:
 			}
 			err := project.RunFmt(fmtOptions, cmd.OutOrStdout())
 			if err != nil {
-				cmd.PrintErrf("Error: %v\n", err)
+				log.Error().Err(err).Msg("failed to run project fmt")
 				os.Exit(1)
 			}
 		},
@@ -342,11 +351,15 @@ func init() {
 	projectLintCmd.Flags().BoolVar(&lintOptions.List, "list", false, "List all available linters")
 	projectLintCmd.Flags().BoolVar(&lintOptions.Fix, "fix", false, "Fix issues where possible")
 	projectLintCmd.Flags().BoolVar(&lintOptions.Verbose, "verbose", false, "Verbose output (line by line)")
+	projectLintCmd.Flags().BoolVar(&lintOptions.Config.Validate, "verify", false, "Verify configuration against JSON schema")
+	projectLintCmd.Flags().BoolVar(&lintOptions.Config.Path, "config-path", false, "Specify the configuration file path")
+	projectLintCmd.Flags().StringVarP(&lintOptions.ConfigPath, "config", "c", "", "Specify the configuration file path")
 
 	// fmt flags
 	projectFmtCmd.Flags().BoolVar(&fmtOptions.List, "list", false, "List all available formatters")
 	projectFmtCmd.Flags().StringVarP(&fmtOptions.Path, "path", "p", "", "Target path to format (default current directory)")
 	projectFmtCmd.Flags().BoolVar(&fmtOptions.Verbose, "verbose", false, "Verbose output (line by line)")
+	projectFmtCmd.Flags().StringVarP(&fmtOptions.ConfigPath, "config", "c", "", "Specify the configuration file path")
 
 	// Disable sorting for build and run commands to group flags logically
 	projectBuildCmd.Flags().SortFlags = false

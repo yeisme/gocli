@@ -16,6 +16,13 @@ type LintOptions struct {
 	List    bool
 	Fix     bool
 	Verbose bool
+
+	Config struct {
+		Validate bool
+		Path     bool
+	}
+	ConfigPath string // 配置文件路径
+
 }
 
 // RunLint 执行 lint 操作
@@ -25,9 +32,16 @@ func RunLint(options LintOptions, out io.Writer) error {
 		args = append(args, "linters") // golangci-lint linters
 	} else if options.Fix {
 		args = append(args, "run", "--fix") // golangci-lint run --fix
+	} else if options.Config.Validate {
+		args = append(args, "config", "validate", options.ConfigPath)
+	} else if options.Config.Path {
+		args = append(args, "config", "path", options.ConfigPath)
+	} else if options.ConfigPath != "" {
+		args = append(args, "run", "--config", options.ConfigPath)
 	} else {
-		args = append(args, "run") // golangci-lint run
+		args = append(args, "run")
 	}
+
 	output, err := execGolangCILint(args)
 	if err != nil {
 		return err
