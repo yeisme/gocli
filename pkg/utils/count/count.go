@@ -146,5 +146,3 @@ var (
 		"PowerShell": {single: []string{"#"}, blockStart: "<#", blockEnd: "#>"},
 	}
 )
-
-// （已移除未使用的 ExtTo 结构体）

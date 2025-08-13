@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/yeisme/gocli/pkg/configs"
 	"github.com/yeisme/gocli/pkg/style"
 	toolsPkg "github.com/yeisme/gocli/pkg/tools"
 )
@@ -132,11 +135,21 @@ Examples:
 			releaseBuild, _ := cmd.Flags().GetBool("release-build")
 			debugBuild, _ := cmd.Flags().GetBool("debug-build")
 
+			v := verbose
+
+			// 1. 无参数 && 无 --clone -> 批量安装配置中工具
+			if cloneURL == "" && len(args) == 0 {
+				if err := batchInstallConfiguredTools(gocliCtx.Config, envFlags, v); err != nil {
+					log.Error().Err(err).Msg("batch install finished with errors")
+				}
+				return
+			}
+
+			// 2. 单个工具安装逻辑
 			if pathFlag == "" {
 				pathFlag = gocliCtx.Config.Tools.GoCLIToolsPath
 			}
 
-			v := verbose
 			var spec string
 			if len(args) > 0 {
 				spec = args[0]
@@ -173,22 +186,7 @@ Examples:
 			if sp != nil {
 				sp.Stop()
 			}
-
-			// 逐行输出
-			for line := range strings.SplitSeq(res.Output, "\n") {
-				line = strings.TrimSpace(line)
-				if line == "" {
-					continue
-				}
-				if err != nil {
-					log.Error().Msg(line)
-				} else if v {
-					log.Debug().Msg(line)
-				} else {
-					log.Info().Msg(line)
-				}
-			}
-
+			printInstallOutput(res.Output, err, v)
 			if err != nil {
 				if res.Mode == "clone_make" {
 					log.Error().Err(err).Msg("install via clone failed")
@@ -249,4 +247,105 @@ func init() {
 	// build presets
 	toolInstallCmd.Flags().Bool("release-build", false, "Install in release mode (-trimpath -ldflags '-s -w')")
 	toolInstallCmd.Flags().Bool("debug-build", false, "Install in debug mode (-gcflags 'all=-N -l')")
+}
+
+// mustUserHome 返回用户 home 目录，若失败直接返回当前目录 (尽量不 panic 保持安装流程继续)。
+func mustUserHome() string {
+	h, err := os.UserHomeDir()
+	if err != nil || h == "" {
+		return "."
+	}
+	return h
+}
+
+// batchInstallConfiguredTools 批量安装配置文件中的 go 工具（deps -> tools.path, global -> 用户home .gocli/tools）。
+func batchInstallConfiguredTools(cfg *configs.Config, envFlags []string, verbose bool) error {
+	if cfg == nil {
+		return errors.New("config is nil")
+	}
+
+	depsPath := cfg.Tools.GoCLIToolsPath
+	if strings.TrimSpace(depsPath) == "" {
+		depsPath = filepath.Join(mustUserHome(), ".gocli", "tools")
+	}
+	globalPath := filepath.Join(mustUserHome(), ".gocli", "tools")
+
+	total := 0
+	failed := 0
+
+	installOne := func(rawCmd, targetPath, category string) {
+		spec, err := parseGoInstallSpec(rawCmd)
+		if err != nil {
+			failed++
+			log.Error().Err(err).Msgf("parse %s tool cmd failed: %s", category, rawCmd)
+			return
+		}
+		res, err := toolsPkg.InstallTool(toolsPkg.InstallOptions{Spec: spec, Path: targetPath, Env: envFlags, Verbose: verbose})
+		printInstallOutput(res.Output, err, verbose)
+		if err != nil {
+			failed++
+			log.Error().Err(err).Msgf("install %s tool failed: %s", category, spec)
+			return
+		}
+		if res.InstallDir != "" {
+			log.Info().Msgf("installed %s: %s -> %s", category, spec, filepath.Clean(res.InstallDir))
+		}
+		total++
+	}
+
+	for _, t := range cfg.Tools.Deps {
+		if strings.ToLower(t.Type) != "go" {
+			continue
+		}
+		installOne(t.Cmd, depsPath, "dep")
+	}
+	for _, t := range cfg.Tools.Global {
+		if strings.ToLower(t.Type) != "go" {
+			continue
+		}
+		installOne(t.Cmd, globalPath, "global")
+	}
+
+	if total == 0 && failed == 0 {
+		log.Warn().Msg("no go tools found in config for installation")
+	}
+	if failed > 0 {
+		return fmt.Errorf("%d tool(s) failed", failed)
+	}
+	return nil
+}
+
+// parseGoInstallSpec 从诸如 "go install pkg@v1" 的命令中提取 spec。
+func parseGoInstallSpec(cmd string) (string, error) {
+	fields := strings.Fields(cmd)
+	if len(fields) < 3 || fields[0] != "go" || fields[1] != "install" {
+		return "", fmt.Errorf("unsupported go tool cmd: %s", cmd)
+	}
+	for _, f := range fields[2:] {
+		if strings.HasPrefix(f, "-") { // 忽略构建 flag
+			continue
+		}
+		return f, nil
+	}
+	return "", fmt.Errorf("cannot find spec in: %s", cmd)
+}
+
+// printInstallOutput 按 verbose/err 级别打印安装输出。
+func printInstallOutput(output string, err error, verbose bool) {
+	if strings.TrimSpace(output) == "" {
+		return
+	}
+	for line := range strings.SplitSeq(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if err != nil {
+			log.Error().Msg(line)
+		} else if verbose {
+			log.Debug().Msg(line)
+		} else {
+			log.Info().Msg(line)
+		}
+	}
 }
