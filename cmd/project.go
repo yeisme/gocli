@@ -10,12 +10,13 @@ import (
 )
 
 var (
-	buildOptions project.BuildRunOptions
-	runOptions   project.BuildRunOptions
-	infoOptions  project.InfoOptions
-	fmtOptions   project.FmtOptions
-	lintOptions  project.LintOptions
-	listOptions  project.ListOptions
+	buildOptions  project.BuildRunOptions
+	runOptions    project.BuildRunOptions
+	infoOptions   project.InfoOptions
+	fmtOptions    project.FmtOptions
+	lintOptions   project.LintOptions
+	listOptions   project.ListOptions
+	updateOptions project.UpdateOptions
 
 	projectCmd = &cobra.Command{
 		Use:     "project",
@@ -334,9 +335,32 @@ Examples:
 			}
 		},
 	}
-	projectUpdateCmd = &cobra.Command{Use: "update", Short: "Update dependencies of the Go project"}
-	projectDepsCmd   = &cobra.Command{Use: "deps", Short: "Manage dependencies of the Go project"}
-	projectDocCmd    = &cobra.Command{Use: "doc", Short: "Generate documentation for the Go project"}
+	projectUpdateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Update dependencies of the Go project",
+		Long: `Update the dependencies of the Go project (use 'go get -u' under the hood).
+
+Examples:
+  # Update default all dependencies
+  gocli project update
+  gocli project update ./...
+
+  # Update specific module
+  gocli project update github.com/charmbracelet/lipgloss
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			opts := updateOptions
+			if gocliCtx.Config.App.Verbose {
+				opts.Verbose = true
+			}
+			if err := project.RunUpdate(opts, cmd.OutOrStdout(), args); err != nil {
+				cmd.PrintErrf("Error: %v\n", err)
+				os.Exit(1)
+			}
+		},
+	}
+	projectDepsCmd = &cobra.Command{Use: "deps", Short: "Manage dependencies of the Go project"}
+	projectDocCmd  = &cobra.Command{Use: "doc", Short: "Generate documentation for the Go project"}
 )
 
 // addBuildRunFlags adds the shared build and run flags to the given command.
@@ -417,6 +441,15 @@ func init() {
 	projectFmtCmd.Flags().StringVarP(&fmtOptions.Path, "path", "p", "", "Target path to format (default current directory)")
 	projectFmtCmd.Flags().BoolVar(&fmtOptions.Verbose, "verbose", false, "Verbose output (line by line)")
 	projectFmtCmd.Flags().StringVarP(&fmtOptions.ConfigPath, "config", "c", "", "Specify the configuration file path")
+
+	// update flags
+	// Currently only --verbose. Additional flags (e.g., tidy) can be added later.
+	// Verbose is also controlled by global --verbose; we keep a per-command flag for parity.
+	// Note: This toggles only the behavior inside RunUpdate (extra logs on error).
+	// projectUpdateCmd does not take a struct variable like others, so we read global verbose.
+	// Keeping here for discoverability, even if redundant with global.
+	// Usage: gocli project update --verbose ./...
+	projectUpdateCmd.Flags().BoolVar(&updateOptions.Verbose, "verbose", false, "Verbose output (line by line)")
 
 	// Disable sorting for build and run commands to group flags logically
 	projectBuildCmd.Flags().SortFlags = false
