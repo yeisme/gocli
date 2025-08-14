@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/project"
+	"github.com/yeisme/gocli/pkg/style"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 	infoOptions  project.InfoOptions
 	fmtOptions   project.FmtOptions
 	lintOptions  project.LintOptions
+	listOptions  project.ListOptions
 
 	projectCmd = &cobra.Command{
 		Use:     "project",
@@ -160,13 +162,64 @@ Examples:
 		},
 	}
 	projectListCmd = &cobra.Command{
-		Use:   "list [flags]",
-		Short: "List Go projects",
-		Example: strings.TrimSpace(`
+		Use:   "list [flags] [patterns]",
+		Short: "List Go packages (wrapper around 'go list')",
+		Long: `gocli project list lists Go packages under the current module.
+
+By default it expands to './...' to list all packages.
+Patterns can be provided (e.g. ./cmd/..., ./pkg/utils, ./... ).
+
+Examples:
+  # List all packages
   gocli project list
-  gocli project list --json
-  gocli project list --verbose
-`),
+
+  # List specific pattern
+  gocli project list ./cmd/
+  gocli project list ./...
+
+  # Include test packages
+  gocli project list --test
+
+  # JSON output
+  gocli project list --json > pkgs.json
+
+  # Verbose (show total count)
+  gocli project list -v
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// Execute list
+			var b strings.Builder
+			if err := project.RunList(listOptions, &b, args); err != nil {
+				log.Error().Err(err).Msg("failed to run project list")
+				os.Exit(1)
+			}
+			output := b.String()
+			// JSON: pass-through
+			if listOptions.JSON {
+				cmd.Print(output)
+				return
+			}
+			trimmed := strings.TrimSpace(output)
+			if trimmed != "" {
+				lines := strings.Split(trimmed, "\n")
+				pkgs := make([]string, 0, len(lines))
+				for _, l := range lines {
+					l = strings.TrimSpace(l)
+					if l == "" {
+						continue
+					}
+					pkgs = append(pkgs, l)
+				}
+				if len(pkgs) > 0 {
+					_ = style.PrintPackageList(cmd.OutOrStdout(), pkgs)
+				}
+				if verbose && !quiet {
+					cmd.Printf("Total: %d packages\n", len(pkgs))
+				}
+			} else if verbose && !quiet {
+				cmd.Println("No packages found")
+			}
+		},
 	}
 	projectInfoCmd = &cobra.Command{
 		Use:   "info [flags]",
@@ -346,6 +399,10 @@ func init() {
 	addBuildRunFlags(projectRunCmd, &runOptions)
 
 	addInfoFlags(projectInfoCmd, &infoOptions)
+
+	// lint flags
+	projectListCmd.Flags().BoolVar(&listOptions.JSON, "json", false, "Output packages as JSON array")
+	projectListCmd.Flags().BoolVar(&listOptions.Test, "test", false, "Include test packages (adds -test)")
 
 	// lint flags
 	projectLintCmd.Flags().BoolVar(&lintOptions.List, "list", false, "List all available linters")
