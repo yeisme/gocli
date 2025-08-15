@@ -17,6 +17,7 @@ var (
 	lintOptions   project.LintOptions
 	listOptions   project.ListOptions
 	updateOptions project.UpdateOptions
+	depsOptions   project.DepsOptions
 
 	projectCmd = &cobra.Command{
 		Use:     "project",
@@ -354,7 +355,7 @@ Examples:
 				opts.Verbose = true
 			}
 			if err := project.RunUpdate(opts, cmd.OutOrStdout(), args); err != nil {
-				cmd.PrintErrf("Error: %v\n", err)
+				log.Error().Err(err).Msg("failed to run project update")
 				os.Exit(1)
 			}
 		},
@@ -362,7 +363,48 @@ Examples:
 	projectDepsCmd = &cobra.Command{
 		Use:   "deps",
 		Short: "Manage dependencies of the Go project",
-		Long:  `gocli project deps provides commands to manage the dependencies of a Go project.`,
+		Long: `gocli project deps provides commands to manage the dependencies of a Go project.
+
+Examples:
+  gocli project deps
+  gocli project deps --tree
+  gocli project deps --graph
+  gocli project deps --json
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			opts := depsOptions
+			if gocliCtx.Config.App.Verbose {
+				opts.Verbose = true
+			}
+			var b strings.Builder
+			if err := project.RunDeps(opts, &b, args); err != nil {
+				log.Error().Err(err).Msg("failed to run project deps")
+				os.Exit(1)
+			}
+			output := b.String()
+			if opts.JSON {
+				_ = style.PrintJSONLine(cmd.OutOrStdout(), output)
+				return
+			}
+			trimmed := strings.TrimSpace(output)
+			if trimmed != "" {
+				lines := strings.Split(trimmed, "\n")
+				pkgs := make([]string, 0, len(lines))
+				for _, l := range lines {
+					l = strings.TrimSpace(l)
+					if l == "" {
+						continue
+					}
+					pkgs = append(pkgs, l)
+				}
+				if len(pkgs) > 0 {
+					_ = style.PrintGoModUpdatesList(cmd.OutOrStdout(), pkgs)
+				}
+				if verbose && !quiet {
+					cmd.Printf("Total: %d packages\n", len(pkgs))
+				}
+			}
+		},
 	}
 	projectDocCmd = &cobra.Command{Use: "doc", Short: "Generate documentation for the Go project"}
 )
@@ -449,6 +491,13 @@ func init() {
 	// update flags
 	// Usage: gocli project update --verbose ./...
 	projectUpdateCmd.Flags().BoolVar(&updateOptions.Verbose, "verbose", false, "Verbose output (line by line)")
+
+	// deps flags
+	projectDepsCmd.Flags().BoolVarP(&depsOptions.JSON, "json", "j", false, "Output dependencies as JSON (go list -m -json)")
+	projectDepsCmd.Flags().BoolVarP(&depsOptions.Update, "update", "u", false, "Check for available updates (adds -u)")
+	projectDepsCmd.Flags().BoolVarP(&depsOptions.Tree, "tree", "t", false, "Display dependency tree (future)")
+	projectDepsCmd.Flags().BoolVarP(&depsOptions.Graph, "graph", "g", false, "Display dependency graph (future)")
+	projectDepsCmd.Flags().BoolVarP(&depsOptions.Verbose, "verbose", "v", false, "Verbose output")
 
 	// Disable sorting for build and run commands to group flags logically
 	projectBuildCmd.Flags().SortFlags = false

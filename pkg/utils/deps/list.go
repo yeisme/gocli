@@ -7,18 +7,22 @@ func RunGoModList(args []string, option struct {
 	JSON   bool
 	Update bool
 }) (string, error) {
-	if args == nil {
-		args = []string{"list", "-m"}
-	}
+	// Always start with base command
+	base := []string{"list", "-m"}
 	if option.JSON {
-		args = append(args, "-json")
+		base = append(base, "-json")
 	}
 	if option.Update {
-		args = append(args, "-u")
+		base = append(base, "-u")
 	}
-	args = append(args, "all")
+	// Treat incoming args as targets/patterns
+	if len(args) == 0 {
+		base = append(base, "all")
+	} else {
+		base = append(base, args...)
+	}
 
-	output, err := tools.NewExecutor("go", args...).Output()
+	output, err := tools.NewExecutor("go", base...).Output()
 	if err != nil {
 		return "", err
 	}

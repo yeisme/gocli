@@ -81,10 +81,12 @@ var formatterLineRE = regexp.MustCompile(`^([a-zA-Z0-9_]+):\s+(.*)$`)
 // parseFormatterOutput 解析 golangci-lint formatters 命令输出
 // 样例：
 // Enabled by your configuration formatters:
-// gofmt: Check if the code is formatted according to 'gofmt' command.
-// ...
+//
+//	gofmt: Check if the code is formatted according to 'gofmt' command.
+//
 // Disabled by your configuration formatters:
-// gci: Check ...
+//
+//	gci: Check ...
 func parseFormatterOutput(out string) []style.Formatter {
 	var list []style.Formatter
 	enabledSection := false
