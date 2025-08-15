@@ -22,4 +22,12 @@ const (
 
 	// 危险/禁用/错误强调色（例如 Disabled linters/formatters 名称）
 	ColorDanger = lipgloss.Color("#FF5555")
+
+	// JSON 高亮颜色
+	ColorJSONKey    = lipgloss.Color("#55bcf4ff") // 键名
+	ColorJSONValue  = ColorAccentText             // 字符串值
+	ColorJSONNumber = lipgloss.Color("#d4ec19ff") // 数字
+	ColorJSONBool   = lipgloss.Color("#dfab49ff") // 布尔
+	ColorJSONNull   = lipgloss.Color("#6272A4")   // null
+	ColorJSONPunct  = lipgloss.Color("#6B7280")   // 标点
 )

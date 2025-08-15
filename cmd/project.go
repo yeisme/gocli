@@ -197,7 +197,7 @@ Examples:
 			output := b.String()
 			// JSON: pass-through
 			if listOptions.JSON {
-				cmd.Print(output)
+				_ = style.PrintJSONLine(cmd.OutOrStdout(), output)
 				return
 			}
 			trimmed := strings.TrimSpace(output)
@@ -359,8 +359,12 @@ Examples:
 			}
 		},
 	}
-	projectDepsCmd = &cobra.Command{Use: "deps", Short: "Manage dependencies of the Go project"}
-	projectDocCmd  = &cobra.Command{Use: "doc", Short: "Generate documentation for the Go project"}
+	projectDepsCmd = &cobra.Command{
+		Use:   "deps",
+		Short: "Manage dependencies of the Go project",
+		Long:  `gocli project deps provides commands to manage the dependencies of a Go project.`,
+	}
+	projectDocCmd = &cobra.Command{Use: "doc", Short: "Generate documentation for the Go project"}
 )
 
 // addBuildRunFlags adds the shared build and run flags to the given command.
@@ -443,11 +447,6 @@ func init() {
 	projectFmtCmd.Flags().StringVarP(&fmtOptions.ConfigPath, "config", "c", "", "Specify the configuration file path")
 
 	// update flags
-	// Currently only --verbose. Additional flags (e.g., tidy) can be added later.
-	// Verbose is also controlled by global --verbose; we keep a per-command flag for parity.
-	// Note: This toggles only the behavior inside RunUpdate (extra logs on error).
-	// projectUpdateCmd does not take a struct variable like others, so we read global verbose.
-	// Keeping here for discoverability, even if redundant with global.
 	// Usage: gocli project update --verbose ./...
 	projectUpdateCmd.Flags().BoolVar(&updateOptions.Verbose, "verbose", false, "Verbose output (line by line)")
 
