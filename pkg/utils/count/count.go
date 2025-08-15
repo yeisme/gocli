@@ -7,8 +7,8 @@ import (
 	"github.com/yeisme/gocli/pkg/models"
 )
 
-// Options 用于控制统计行为与范围。
-// 所有字段均为可选，零值表示采用实现的默认策略。
+// Options 用于控制统计行为与范围
+// 所有字段均为可选，零值表示采用实现的默认策略
 type Options struct {
 	// 过滤与遍历
 	Include          []string // 仅统计匹配这些 glob 的路径（优先级高于 Exclude）

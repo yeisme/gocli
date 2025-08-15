@@ -61,7 +61,7 @@ func PrintPackageList(w io.Writer, pkgs []string) error {
 
 		// 情况 2: 含有中括号附加测试包，如:
 		//   github.com/xxx/pkg [github.com/xxx/pkg.test]
-		// 需求: 仅中括号部分用测试样式，前缀保持普通样式；可能存在多个中括号片段时逐段处理。
+		// 需求: 仅中括号部分用测试样式，前缀保持普通样式；可能存在多个中括号片段时逐段处理
 		if strings.Contains(p, "[") && strings.Contains(p, "]") {
 			var lineBuilder strings.Builder
 			remain := p
@@ -104,12 +104,12 @@ func PrintPackageList(w io.Writer, pkgs []string) error {
 	return err
 }
 
-// PrintGoModUpdatesList 专用于渲染 `go list -m -u all` 的行列表。
+// PrintGoModUpdatesList 专用于渲染 `go list -m -u all` 的行列表
 // 规则：
 //   - 仅包含 `vX.Y.Z`（没有方括号更新部分）的行，整体用绿色(ColorSuccess)；
 //   - 包含 `current [next]` 形式的行：current 使用红色(ColorDanger)，方括号包含的 next 使用蓝色(ColorAccentPrimary)；
-//   - 其余部分（模块名和空白）使用普通文本色(ColorText)。
-//   - 每行前加与 PrintList 一致的 bullet。
+//   - 其余部分（模块名和空白）使用普通文本色(ColorText)
+//   - 每行前加与 PrintList 一致的 bullet
 func PrintGoModUpdatesList(w io.Writer, lines []string) error {
 	if len(lines) == 0 {
 		return nil

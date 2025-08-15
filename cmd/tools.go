@@ -249,7 +249,7 @@ func init() {
 	toolInstallCmd.Flags().Bool("debug-build", false, "Install in debug mode (-gcflags 'all=-N -l')")
 }
 
-// mustUserHome 返回用户 home 目录，若失败直接返回当前目录 (尽量不 panic 保持安装流程继续)。
+// mustUserHome 返回用户 home 目录，若失败直接返回当前目录 (尽量不 panic 保持安装流程继续)
 func mustUserHome() string {
 	h, err := os.UserHomeDir()
 	if err != nil || h == "" {
@@ -258,7 +258,7 @@ func mustUserHome() string {
 	return h
 }
 
-// batchInstallConfiguredTools 批量安装配置文件中的 go 工具（deps -> tools.path, global -> 用户home .gocli/tools）。
+// batchInstallConfiguredTools 批量安装配置文件中的 go 工具（deps -> tools.path, global -> 用户home .gocli/tools）
 func batchInstallConfiguredTools(cfg *configs.Config, envFlags []string, verbose bool) error {
 	if cfg == nil {
 		return errors.New("config is nil")
@@ -315,7 +315,7 @@ func batchInstallConfiguredTools(cfg *configs.Config, envFlags []string, verbose
 	return nil
 }
 
-// parseGoInstallSpec 从诸如 "go install pkg@v1" 的命令中提取 spec。
+// parseGoInstallSpec 从诸如 "go install pkg@v1" 的命令中提取 spec
 func parseGoInstallSpec(cmd string) (string, error) {
 	fields := strings.Fields(cmd)
 	if len(fields) < 3 || fields[0] != "go" || fields[1] != "install" {
@@ -330,7 +330,7 @@ func parseGoInstallSpec(cmd string) (string, error) {
 	return "", fmt.Errorf("cannot find spec in: %s", cmd)
 }
 
-// printInstallOutput 按 verbose/err 级别打印安装输出。
+// printInstallOutput 按 verbose/err 级别打印安装输出
 func printInstallOutput(output string, err error, verbose bool) {
 	if strings.TrimSpace(output) == "" {
 		return

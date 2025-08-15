@@ -12,7 +12,7 @@ import (
 )
 
 // SingleFileCounter 是 CountFile 的一个基础实现
-// 采用简单的基于扩展名的语言识别与注释统计。
+// 采用简单的基于扩展名的语言识别与注释统计
 type SingleFileCounter struct{}
 
 // CountSingleFile 通过组合 CountLines/CountBlanks/CountComments 汇总单文件信息

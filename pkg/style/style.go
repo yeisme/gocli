@@ -5,19 +5,19 @@ import "github.com/charmbracelet/lipgloss"
 
 // 定义一套颜色，方便管理和修改
 const (
-	// 主题强调色/品牌色，用于吸引注意力的元素，如表头背景。
+	// 主题强调色/品牌色，用于吸引注意力的元素，如表头背景
 	ColorAccentPrimary = lipgloss.Color("#33A1FF")
 
-	// 强调文本色，用于在强调背景(AccentPrimary)上显示的文本，以确保对比度。
+	// 强调文本色，用于在强调背景(AccentPrimary)上显示的文本，以确保对比度
 	ColorAccentText = lipgloss.Color("#FFFFFF")
 
-	// 主要文本颜色，用于普通的数据行内容。
+	// 主要文本颜色，用于普通的数据行内容
 	ColorText = lipgloss.Color("#E4E4E4")
 
-	// 边框颜色，用于表格或容器的轮廓。
+	// 边框颜色，用于表格或容器的轮廓
 	ColorBorder = lipgloss.Color("#444444")
 
-	// 交替背景色，用于斑马条纹等，以区分相邻项目。
+	// 交替背景色，用于斑马条纹等，以区分相邻项目
 	ColorBackgroundAlternate = lipgloss.Color("#303030")
 
 	// 危险/禁用/错误强调色（例如 Disabled linters/formatters 名称）

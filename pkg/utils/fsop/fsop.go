@@ -9,7 +9,7 @@ import (
 	"github.com/yeisme/gocli/pkg/utils/gitignore"
 )
 
-// walkSubdirectories 是内部通用实现，支持 ignorePatterns（可为 nil）。
+// walkSubdirectories 是内部通用实现，支持 ignorePatterns（可为 nil）
 func walkSubdirectories(root string, ignorePatterns []string) ([]string, error) {
 	var subdirs []string
 	walkErr := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {

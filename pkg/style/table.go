@@ -14,7 +14,7 @@ import (
 )
 
 // PrintTable 用于标准化表格输出，支持自定义表头和内容
-// width: 期望的表格宽度；当 width<=0 时自动探测终端宽度（失败则回退到80）。
+// width: 期望的表格宽度；当 width<=0 时自动探测终端宽度（失败则回退到80）
 func PrintTable(w io.Writer, headers []string, rows [][]string, width int) error {
 	termWidth := detectTerminalWidth(w)
 	if termWidth <= 0 {
@@ -99,7 +99,7 @@ func detectTerminalWidth(w io.Writer) int {
 
 // 计算表格的宽度
 // = 各列最大内容宽度之和 + 每列左右 padding(2) + 边框竖线数量(列数+1)
-// 使用 runewidth 以兼容中英文/emoji 宽度。
+// 使用 runewidth 以兼容中英文/emoji 宽度
 func calcNaturalTableWidth(headers []string, rows [][]string) int {
 	if len(headers) == 0 {
 		return 0

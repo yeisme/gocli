@@ -11,7 +11,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-// goInstallWithEnv 支持传入额外环境变量（如 GOBIN）。
+// goInstallWithEnv 支持传入额外环境变量（如 GOBIN）
 func goInstallWithEnv(spec string, env []string, verbose bool, buildArgs []string) (string, error) {
 	// 正确传递参数，避免将 "install -v" 作为一个整体参数
 	args := []string{"install"}
@@ -34,11 +34,12 @@ func goInstallWithEnv(spec string, env []string, verbose bool, buildArgs []strin
 	return out, nil
 }
 
-// InstallGoTool 安装 Go 工具。
-// - spec: go install 的目标（模块路径或本地路径），可带 @version。
-// - installDir: 若不为空，作为目标安装目录（将通过 GOBIN 传入）；支持 $ENV 与 ~ 展开。
-// - env: 额外环境变量（如 CGO_ENABLED=1）。
-// 返回：命令输出、最终绝对安装目录（若设置了 installDir）、错误。
+// InstallGoTool 安装 Go 工具
+//   - spec: go install 的目标（模块路径或本地路径），可带 @version
+//   - installDir: 若不为空，作为目标安装目录（将通过 GOBIN 传入）；支持 $ENV 与 ~ 展开
+//   - env: 额外环境变量（如 CGO_ENABLED=1）
+//
+// 返回：命令输出、最终绝对安装目录（若设置了 installDir）、错误
 func InstallGoTool(spec, installDir string, env []string, verbose bool, buildArgs []string) (string, string, error) {
 	finalDir := ""
 	env2 := append([]string{}, env...)
@@ -61,10 +62,10 @@ func InstallGoTool(spec, installDir string, env []string, verbose bool, buildArg
 	return out, finalDir, nil
 }
 
-// CloneAndMakeInstall 从 Git 仓库克隆源码并执行 make（可选目标）。
-// - cloneURL: 支持 "url#ref" 语法指定分支/标签/提交。
-// - makeTarget: 为空则执行 make 默认目标。
-// - env: 传递给 make 的环境变量。
+// CloneAndMakeInstall 从 Git 仓库克隆源码并执行 make（可选目标）
+//   - cloneURL: 支持 "url#ref" 语法指定分支/标签/提交
+//   - makeTarget: 为空则执行 make 默认目标
+//   - env: 传递给 make 的环境变量
 func CloneAndMakeInstall(cloneURL, installDir, makeTarget string, env []string, verbose bool, binDirs []string) (string, error) {
 	// 1) 解析输入并准备目录/环境
 	repoURL, resolvedRef, displayRef, absBase, repoDir, env2, err := resolveCloneInputs(cloneURL, installDir, env)
@@ -94,7 +95,7 @@ func CloneAndMakeInstall(cloneURL, installDir, makeTarget string, env []string, 
 	return out, nil
 }
 
-// resolveCloneInputs 解析 clone 规格、latest 标签、基础目录与目标仓库目录，并补全 GOBIN。
+// resolveCloneInputs 解析 clone 规格、latest 标签、基础目录与目标仓库目录，并补全 GOBIN
 func resolveCloneInputs(cloneURL, installDir string, env []string) (repoURL, resolvedRef, displayRef, absBase, repoDir string, env2 []string, err error) {
 	env2 = append([]string{}, env...)
 	repoURL, ref := splitRepoAndRef(cloneURL)
@@ -153,7 +154,7 @@ func resolveCloneInputs(cloneURL, installDir string, env []string) (repoURL, res
 	return
 }
 
-// gitCloneAndCheckout 克隆仓库并检出指定 ref（若非空）。
+// gitCloneAndCheckout 克隆仓库并检出指定 ref（若非空）
 func gitCloneAndCheckout(repoURL, repoDir, absBase, resolvedRef string) (string, error) {
 	if out, err := NewExecutor("git", "clone", repoURL, repoDir).WithDir(absBase).CombinedOutput(); err != nil {
 		return out, fmt.Errorf("git clone failed: %w", err)
@@ -167,7 +168,7 @@ func gitCloneAndCheckout(repoURL, repoDir, absBase, resolvedRef string) (string,
 	return "", nil
 }
 
-// runMakeWithContext 执行 make 并在 verbose 模式下附加上下文信息。
+// runMakeWithContext 执行 make 并在 verbose 模式下附加上下文信息
 func runMakeWithContext(repoDir, makeTarget string, env []string, verbose bool, absBase, repoURL, resolvedRef, displayRef string) (string, error) {
 	var (
 		out string
@@ -224,7 +225,7 @@ func runMakeWithContext(repoDir, makeTarget string, env []string, verbose bool, 
 	return out, nil
 }
 
-// collectAndCopyBins 从给定 bin 目录收集可执行文件复制到安装目录，并返回日志追加文本。
+// collectAndCopyBins 从给定 bin 目录收集可执行文件复制到安装目录，并返回日志追加文本
 func collectAndCopyBins(binDirs []string, repoDir string, env []string, absBase string, verbose bool) (string, error) {
 	// 目标安装目录：优先 env 中的 GOBIN，否则 absBase
 	destDir := envLookup(env, "GOBIN")
@@ -314,8 +315,8 @@ func splitRepoAndRef(s string) (string, string) {
 }
 
 // ensureVersionSuffix 在满足以下条件时为 spec 追加 @latest：
-// - 没有包含 '@'
-// - 不是本地路径（不是绝对路径；不以 ./ 或 ../ 开头；路径在本地不存在）
+//   - 没有包含 '@'
+//   - 不是本地路径（不是绝对路径；不以 ./ 或 ../ 开头；路径在本地不存在）
 func ensureVersionSuffix(spec string) string {
 	if spec == "" || strings.Contains(spec, "@") {
 		return spec
@@ -336,7 +337,7 @@ func ensureVersionSuffix(spec string) string {
 	return spec + "@latest"
 }
 
-// envLookup 在形如 KEY=VAL 的切片中查找 KEY 的值。
+// envLookup 在形如 KEY=VAL 的切片中查找 KEY 的值
 func envLookup(env []string, key string) string {
 	prefix := key + "="
 	for _, e := range env {
@@ -347,7 +348,7 @@ func envLookup(env []string, key string) string {
 	return ""
 }
 
-// extractRepoName 尽力从仓库 URL 中提取仓库名（去除 .git 尾缀）。
+// extractRepoName 尽力从仓库 URL 中提取仓库名（去除 .git 尾缀）
 func extractRepoName(u string) string {
 	s := u
 	// 去掉片段
@@ -366,7 +367,7 @@ func extractRepoName(u string) string {
 	return s
 }
 
-// sanitizeName 清理为文件夹安全名（Windows 也安全）。
+// sanitizeName 清理为文件夹安全名（Windows 也安全）
 func sanitizeName(s string) string {
 	// 替换常见非法字符
 	r := strings.NewReplacer(
@@ -386,7 +387,7 @@ func sanitizeName(s string) string {
 	return s
 }
 
-// copyFile 以 0644 权限复制普通文件（若目标存在则覆盖）。
+// copyFile 以 0644 权限复制普通文件（若目标存在则覆盖）
 func copyFile(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
@@ -411,8 +412,8 @@ func copyFile(src, dst string) error {
 	return out.Chmod(0o644)
 }
 
-// resolveLatestGitTag 使用 git ls-remote --tags 列出所有 tag，选择最新的语义化版本。
-// 优先返回稳定版本（无预发布后缀），若不存在稳定版本，则返回最高的预发布版本。
+// resolveLatestGitTag 使用 git ls-remote --tags 列出所有 tag，选择最新的语义化版本
+// 优先返回稳定版本（无预发布后缀），若不存在稳定版本，则返回最高的预发布版本
 func resolveLatestGitTag(repoURL string) (string, error) {
 	out, err := NewExecutor("git", "--no-pager", "ls-remote", "--tags", repoURL).CombinedOutput()
 	if err != nil {
@@ -487,7 +488,7 @@ func resolveLatestGitTag(repoURL string) (string, error) {
 	return "", fmt.Errorf("no semver-like tags found in repo: %s", repoURL)
 }
 
-// InstallOptions 用于统一描述工具安装的参数。
+// InstallOptions 用于统一描述工具安装的参数
 type InstallOptions struct {
 	// go install 专用：模块/本地路径规范，如 github.com/owner/repo/cmd/foo@vX 或 ./path
 	Spec string
@@ -512,7 +513,7 @@ type InstallOptions struct {
 	DebugBuild   bool
 }
 
-// InstallResult 统一返回值。
+// InstallResult 统一返回值
 type InstallResult struct {
 	// 原始命令输出（可能为多行）
 	Output string
@@ -524,7 +525,7 @@ type InstallResult struct {
 	Mode string
 }
 
-// InstallTool 统一入口：根据是否传入 CloneURL 决定使用 go install 或 clone+make。
+// InstallTool 统一入口：根据是否传入 CloneURL 决定使用 go install 或 clone+make
 func InstallTool(opts InstallOptions) (InstallResult, error) {
 	res := InstallResult{}
 	verbose := opts.Verbose

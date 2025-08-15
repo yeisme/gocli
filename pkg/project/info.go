@@ -20,7 +20,7 @@ type InfoOptions struct {
 	count.Options
 }
 
-// ExecuteInfoCommand 负责执行业务逻辑（统计 + 输出），与 build/run 的风格保持一致。
+// ExecuteInfoCommand 负责执行业务逻辑（统计 + 输出），与 build/run 的风格保持一致
 // 参数说明:
 //
 //	args: 可能包含一个 root 路径；为空则默认为当前目录 '.'

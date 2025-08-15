@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// Spinner 是一个简单的终端旋转指示器。
-// 用于长时间运行的任务期间提供轻量反馈。
+// Spinner 是一个简单的终端旋转指示器
+// 用于长时间运行的任务期间提供轻量反馈
 type Spinner struct {
 	out      io.Writer
 	msg      string
@@ -16,7 +16,7 @@ type Spinner struct {
 	interval time.Duration
 }
 
-// NewSpinner 创建一个新的 Spinner。
+// NewSpinner 创建一个新的 Spinner
 // out: 写入目标（一般为 cmd.OutOrStdout() 或 os.Stdout）
 // msg: 前缀消息
 func NewSpinner(out io.Writer, msg string) *Spinner {
@@ -29,7 +29,7 @@ func NewSpinner(out io.Writer, msg string) *Spinner {
 	}
 }
 
-// Start 启动 spinner，直到 Stop 被调用。
+// Start 启动 spinner，直到 Stop 被调用
 func (s *Spinner) Start() {
 	go func() {
 		defer close(s.doneCh)
@@ -53,7 +53,7 @@ func (s *Spinner) Start() {
 	}()
 }
 
-// Stop 停止 spinner。
+// Stop 停止 spinner.
 func (s *Spinner) Stop() {
 	close(s.stopCh)
 	<-s.doneCh
