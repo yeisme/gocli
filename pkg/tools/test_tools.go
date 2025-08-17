@@ -10,7 +10,7 @@ import (
 )
 
 // TestExists 检查指定的工具是否存在于系统的 PATH 中；
-// 若不存在且为内置工具，则尝试按其 InstallType 自动安装。
+// 若不存在且为内置工具，则尝试按其 InstallType 自动安装.
 func TestExists(tool string) (string, error) {
 	// 1) 先查 PATH
 	if p, err := exec.LookPath(tool); err == nil {

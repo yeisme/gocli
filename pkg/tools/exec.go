@@ -53,6 +53,18 @@ func (e *Executor) WithStdin(r io.Reader) *Executor {
 	return e
 }
 
+// WithStdout 设置命令的标准输出
+func (e *Executor) WithStdout(w io.Writer) *Executor {
+	e.cmd.Stdout = w
+	return e
+}
+
+// WithStderr 设置命令的标准错误输出
+func (e *Executor) WithStderr(w io.Writer) *Executor {
+	e.cmd.Stderr = w
+	return e
+}
+
 // WithEnv 附加环境变量到命令
 // 它会附加到当前进程的环境变量之上
 func (e *Executor) WithEnv(envs ...string) *Executor {
@@ -119,4 +131,35 @@ func (e *Executor) CombinedOutput() (string, error) {
 		}
 	}
 	return string(output), nil
+}
+
+// RunStreaming 执行命令并将标准输出/错误流式写入提供的 io.Writer.
+// 为了在出错时仍能返回 stderr 内容，会在内部附加一个缓冲区捕获 stderr.
+// 仅在返回错误时，错误中的 Stderr 才会包含该缓冲区内容.
+func (e *Executor) RunStreaming(stdout, stderr io.Writer) error {
+	var errBuf bytes.Buffer
+
+	if stdout != nil {
+		e.cmd.Stdout = stdout
+	}
+	// 确保在写入外部 stderr 的同时也能捕获错误信息
+	switch {
+	case stderr != nil && e.cmd.Stderr != nil && e.cmd.Stderr != stderr:
+		e.cmd.Stderr = io.MultiWriter(e.cmd.Stderr, stderr, &errBuf)
+	case stderr != nil:
+		e.cmd.Stderr = io.MultiWriter(stderr, &errBuf)
+	default:
+		// 即使没有外部 stderr，也捕获到缓冲区，便于错误返回
+		e.cmd.Stderr = &errBuf
+	}
+
+	if err := e.cmd.Run(); err != nil {
+		return &ExecError{
+			Cmd:    e.cmd.Path,
+			Args:   e.cmd.Args[1:],
+			Stderr: errBuf.String(),
+			Err:    err,
+		}
+	}
+	return nil
 }

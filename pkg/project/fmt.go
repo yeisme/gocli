@@ -2,6 +2,7 @@ package project
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"regexp"
@@ -42,7 +43,22 @@ func RunFmt(options FmtOptions, out io.Writer) error {
 
 	}
 
-	output, err := execGolangCILint(args)
+	var output string
+	var err error
+	if options.List {
+		output, err = execGolangCILint(args, nil, nil)
+	} else {
+		var stdout, stderr io.Writer
+		if out != nil {
+			stdout = out
+			stderr = out
+		} else {
+			var discard bytes.Buffer
+			stdout = &discard
+			stderr = &discard
+		}
+		_, err = execGolangCILint(args, stdout, stderr)
+	}
 	if err != nil {
 		return err
 	}
@@ -65,7 +81,7 @@ func RunFmt(options FmtOptions, out io.Writer) error {
 		_, _ = fmt.Fprintln(out)
 		_ = style.PrintHeading(out, "Disabled Formatters")
 		_ = style.PrintFormatterList(out, disabled)
-	} else if options.Verbose {
+	} else if options.Verbose && output != "" {
 		// 逐行输出结果
 		scanner := bufio.NewScanner(strings.NewReader(output))
 		for scanner.Scan() {

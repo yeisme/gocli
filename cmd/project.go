@@ -294,7 +294,7 @@ Examples:
   gocli project lint --list
 
   # Print used config path
-  gocli project lint --print
+  gocli project lint --config-path
 
   # Verify configuration against JSON schema
   gocli project lint --verify
@@ -307,7 +307,7 @@ Examples:
 			lintOptions.Verbose = gocliCtx.Config.App.Verbose
 			err := project.RunLint(lintOptions, cmd.OutOrStdout())
 			if err != nil {
-				log.Error().Err(err).Msg("failed to run project lint")
+				log.Warn().Msg("have some lint issues")
 				os.Exit(1)
 			}
 		},
@@ -331,7 +331,7 @@ Examples:
 			}
 			err := project.RunFmt(fmtOptions, cmd.OutOrStdout())
 			if err != nil {
-				log.Error().Err(err).Msg("failed to run project fmt")
+				log.Warn().Msg("have some format issues")
 				os.Exit(1)
 			}
 		},
@@ -370,6 +370,12 @@ Examples:
   gocli project deps --tree
   gocli project deps --graph
   gocli project deps --json
+  gocli project deps --tidy
+  gocli project deps --vendor
+  gocli project deps --download
+  gocli project deps --verify
+  gocli project deps --why ./...
+  gocli project deps --why --why-module std
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			opts := depsOptions
@@ -382,27 +388,15 @@ Examples:
 				os.Exit(1)
 			}
 			output := b.String()
+			// JSON: pass-through colorize; others: print raw (tree/graph/tidy/verify/why etc.)
 			if opts.JSON {
 				_ = style.PrintJSONLine(cmd.OutOrStdout(), output)
 				return
 			}
-			trimmed := strings.TrimSpace(output)
+			trimmed := strings.TrimRight(output, "\n")
 			if trimmed != "" {
-				lines := strings.Split(trimmed, "\n")
-				pkgs := make([]string, 0, len(lines))
-				for _, l := range lines {
-					l = strings.TrimSpace(l)
-					if l == "" {
-						continue
-					}
-					pkgs = append(pkgs, l)
-				}
-				if len(pkgs) > 0 {
-					_ = style.PrintGoModUpdatesList(cmd.OutOrStdout(), pkgs)
-				}
-				if verbose && !quiet {
-					cmd.Printf("Total: %d packages\n", len(pkgs))
-				}
+				cmd.Print(trimmed)
+				cmd.Println()
 			}
 		},
 	}
@@ -495,9 +489,16 @@ func init() {
 	// deps flags
 	projectDepsCmd.Flags().BoolVarP(&depsOptions.JSON, "json", "j", false, "Output dependencies as JSON (go list -m -json)")
 	projectDepsCmd.Flags().BoolVarP(&depsOptions.Update, "update", "u", false, "Check for available updates (adds -u)")
-	projectDepsCmd.Flags().BoolVarP(&depsOptions.Tree, "tree", "t", false, "Display dependency tree (future)")
-	projectDepsCmd.Flags().BoolVarP(&depsOptions.Graph, "graph", "g", false, "Display dependency graph (future)")
+	projectDepsCmd.Flags().BoolVarP(&depsOptions.Tree, "tree", "t", false, "Display dependency tree (from 'go mod graph')")
+	projectDepsCmd.Flags().BoolVarP(&depsOptions.Graph, "graph", "g", false, "Display dependency graph (raw 'go mod graph')")
 	projectDepsCmd.Flags().BoolVarP(&depsOptions.Verbose, "verbose", "v", false, "Verbose output")
+	projectDepsCmd.Flags().BoolVar(&depsOptions.Tidy, "tidy", false, "Run 'go mod tidy'")
+	projectDepsCmd.Flags().BoolVar(&depsOptions.Vendor, "vendor", false, "Run 'go mod vendor'")
+	projectDepsCmd.Flags().BoolVar(&depsOptions.Download, "download", false, "Run 'go mod download'")
+	projectDepsCmd.Flags().BoolVar(&depsOptions.Verify, "verify", false, "Run 'go mod verify'")
+	projectDepsCmd.Flags().BoolVar(&depsOptions.Why, "why", false, "Run 'go mod why' for given targets (defaults to ./... if none)")
+	projectDepsCmd.Flags().BoolVar(&depsOptions.WhyModule, "why-module", false, "Explain why modules are needed (adds -m)")
+	projectDepsCmd.Flags().BoolVar(&depsOptions.WhyVendor, "why-vendor", false, "Explain use of vendored packages (adds -vendor)")
 
 	// Disable sorting for build and run commands to group flags logically
 	projectBuildCmd.Flags().SortFlags = false
