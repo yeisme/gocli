@@ -29,8 +29,9 @@ type ToolInfo struct {
 }
 
 // FindTools 搜索可用工具，来源包括：
-// - GOPATH/bin 下的可执行文件
-// - 用户目录下的 .gocli/tools 下的可执行文件（优先级更高，覆盖同名）
+//   - GOPATH/bin 下的可执行文件
+//   - 用户目录下的 .gocli/tools 下的可执行文件（优先级更高，覆盖同名）
+//
 // verbose 目前保留参数，不影响返回结果，预留将来扩展
 func FindTools(_ bool, gocliToolsPath string) []ToolInfo {
 	// 收集两类目录
