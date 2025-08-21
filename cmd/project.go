@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/project"
 	"github.com/yeisme/gocli/pkg/style"
+	"github.com/yeisme/gocli/pkg/utils/doc"
 )
 
 var (
@@ -18,6 +19,7 @@ var (
 	listOptions   project.ListOptions
 	updateOptions project.UpdateOptions
 	depsOptions   project.DepsOptions
+	docOptions    project.DocOptions
 
 	projectCmd = &cobra.Command{
 		Use:     "project",
@@ -400,7 +402,23 @@ Examples:
 			}
 		},
 	}
-	projectDocCmd = &cobra.Command{Use: "doc", Short: "Generate documentation for the Go project"}
+	projectDocCmd = &cobra.Command{
+		Use:   "doc [path|import]",
+		Short: "Show docs like 'go doc', with extras",
+		Long:  `gocli project doc prints package docs similar to 'go doc' and supports Markdown files and rich styles.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			gocliCtx.Config.Doc = docOptions
+			if len(args) == 0 {
+				_ = cmd.Help()
+				os.Exit(0)
+			}
+
+			if err := project.RunDoc(gocliCtx, docOptions, cmd.OutOrStdout(), args); err != nil {
+				log.Error().Err(err).Msg("failed to run project doc")
+				os.Exit(1)
+			}
+		},
+	}
 )
 
 // addBuildRunFlags adds the shared build and run flags to the given command.
@@ -503,6 +521,18 @@ func init() {
 	// Disable sorting for build and run commands to group flags logically
 	projectBuildCmd.Flags().SortFlags = false
 	projectRunCmd.Flags().SortFlags = false
+
+	// doc flags - bind directly to docOptions where possible to match other commands
+	projectDocCmd.Flags().StringVarP((*string)(&docOptions.Style), "style", "s", string(doc.StylePlain), "Render style: plain|markdown|html")
+	projectDocCmd.Flags().StringVarP((*string)(&docOptions.Mode), "mode", "m", string(doc.ModeGodoc), "Doc mode: godoc|markdown")
+	projectDocCmd.Flags().StringVarP(&docOptions.Output, "output", "o", "", "Output file path (default stdout)")
+	projectDocCmd.Flags().BoolVarP(&docOptions.IncludePrivate, "private", "p", false, "Include unexported (private) symbols in analysis")
+	projectDocCmd.Flags().BoolVarP(&docOptions.IncludeTests, "tests", "t", false, "Include *_test.go files")
+	projectDocCmd.Flags().BoolVar(&docOptions.TOC, "toc", true, "Generate table of contents where applicable")
+	projectDocCmd.Flags().StringVar(&docOptions.Theme, "theme", "", "Theme for styled output (markdown renderer)")
+	projectDocCmd.Flags().IntVarP(&docOptions.Width, "width", "w", 0, "Render width (0 auto)")
+	projectDocCmd.Flags().StringSliceVar(&docOptions.Exclude, "exclude", nil, "Exclude paths or patterns from scan")
+	projectDocCmd.Flags().BoolVarP(&docOptions.Detailed, "detailed", "d", false, "Enable detailed output")
 
 	projectCmd.AddCommand(
 		projectInitCmd,

@@ -19,6 +19,7 @@ type Config struct {
 	App     AppConfig    `mapstructure:"app"`
 	Tools   ToolsConfig  `mapstructure:"tools"`
 	Plugin  PluginConfig `mapstructure:"plugin"`
+	Doc     DocConfig    `mapstructure:"doc"`
 }
 
 // setDefaults 设置默认配置值
@@ -29,6 +30,7 @@ func setDefaults() {
 	setAppConfigDefaults()
 	setToolsConfigDefaults()
 	setPluginConfigDefaults()
+	setDocConfigDefaults()
 }
 
 var globalConfig *Config

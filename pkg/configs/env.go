@@ -77,7 +77,7 @@ type EnvConfig struct {
 	// Go 核心环境变量
 	GoRoot     string `mapstructure:"GOROOT"`     // Go 安装路径
 	GoPath     string `mapstructure:"GOPATH"`     // Go 工作空间路径
-	GoModDir   string `mapstructure:"GOMODDIR"`   // Go modules 目录
+	GoMod      string `mapstructure:"GOMOD"`      // Go modules 目录
 	GoModCache string `mapstructure:"GOMODCACHE"` // Go modules 缓存目录
 	GoSumDB    string `mapstructure:"GOSUMDB"`    // Go checksum 数据库
 	GoProxy    string `mapstructure:"GOPROXY"`    // Go 模块代理
@@ -154,6 +154,21 @@ func setEnvConfigDefaults() {
 	viper.SetDefault("env.GOPRIVATE", getGoEnvOrDefault("GOPRIVATE", ""))
 	viper.SetDefault("env.GONOPROXY", getGoEnvOrDefault("GONOPROXY", ""))
 	viper.SetDefault("env.GONOSUMDB", getGoEnvOrDefault("GONOSUMDB", ""))
+	viper.SetDefault("env.GOMOD", getGoEnvOrDefault("GOMOD", ""))
+	// GOMODCACHE: 优先取 `go env GOMODCACHE`，否则回退到 GOPATH/pkg/mod
+	viper.SetDefault(
+		"env.GOMODCACHE",
+		func() string {
+			if v := getGoEnvOrDefault("GOMODCACHE", ""); v != "" {
+				return v
+			}
+			gp := getGoEnvOrDefault("GOPATH", "")
+			if gp == "" {
+				return ""
+			}
+			return filepath.Join(gp, "pkg", "mod")
+		}(),
+	)
 
 	// 构建相关环境变量默认值 - 优先通过 go env 获取
 	viper.SetDefault("env.GOOS", getGoEnvOrDefault("GOOS", runtime.GOOS))
@@ -300,6 +315,19 @@ func getGoEnvOrDefault(key, defaultValue string) string {
 	}
 	// 3. Fallback to the default value.
 	return defaultValue
+}
+
+// GetModuleRoot returns the directory containing the provided go.mod path.
+// If the provided goMod is empty, it attempts to use the GOMOD value from
+// cached `go env` or environment variables; if still empty, returns an empty string.
+func GetModuleRoot(goMod string) string {
+	if goMod == "" {
+		goMod = getGoEnvOrDefault("GOMOD", "")
+	}
+	if goMod == "" {
+		return ""
+	}
+	return filepath.Dir(goMod)
 }
 
 // GetAvailableGoExperiments 获取当前Go版本支持的实验性功能列表
