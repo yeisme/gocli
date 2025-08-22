@@ -264,6 +264,7 @@ Examples:
   gocli project info --with-files --json
 `,
 		Run: func(cmd *cobra.Command, args []string) {
+			// determine JSON output
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if lf, _ := cmd.Flags().GetBool("language-files"); lf { // auto enable JSON
 				jsonOut = true
@@ -271,8 +272,47 @@ Examples:
 			if cmd.Flags().Changed("lang-specific") { // 用户显式使用
 				jsonOut = true
 			}
+
+			// normalize include/exclude patterns so they match collector's toRelSlash output
+			normalize := func(raw string) string {
+				r := strings.TrimSpace(raw)
+				if r == "" {
+					return ""
+				}
+				// convert backslashes to forward slashes
+				r = strings.ReplaceAll(r, "\\", "/")
+				// strip leading ./ or .\
+				if after, ok := strings.CutPrefix(r, "./"); ok {
+					r = after
+				}
+				if after, ok := strings.CutPrefix(r, ".\\"); ok {
+					r = after
+				}
+				return r
+			}
+
+			if incl, err := cmd.Flags().GetStringSlice("include"); err == nil {
+				clean := make([]string, 0, len(incl))
+				for _, p := range incl {
+					if p2 := normalize(p); p2 != "" {
+						clean = append(clean, p2)
+					}
+				}
+				infoOptions.Include = clean
+			}
+			if excl, err := cmd.Flags().GetStringSlice("exclude"); err == nil {
+				clean := make([]string, 0, len(excl))
+				for _, p := range excl {
+					if p2 := normalize(p); p2 != "" {
+						clean = append(clean, p2)
+					}
+				}
+				infoOptions.Exclude = clean
+			}
+
 			noGitignore, _ := cmd.Flags().GetBool("no-gitignore")
 			infoOptions.RespectGitignore = !noGitignore
+
 			if err := project.ExecuteInfoCommand(gocliCtx, infoOptions, args, jsonOut, !quiet, cmd.OutOrStdout()); err != nil {
 				cmd.PrintErrf("Error: %v\n", err)
 				os.Exit(1)

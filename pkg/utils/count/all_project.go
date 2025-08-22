@@ -256,8 +256,46 @@ func shouldSkipDir(relSlash string, opts Options, gi *gitignore.GitIgnore) bool 
 	}
 	// 当 Include 列表为空时，Exclude 规则才对目录生效
 	// 这是为了避免排除一个目录，但其子文件可能被 Include 规则包含的情况
-	if len(opts.Include) == 0 && matchesAny(relSlash, opts.Exclude) {
-		return true
+	if len(opts.Include) == 0 {
+		// 先做普通的匹配（glob / contains）
+		if matchesAny(relSlash, opts.Exclude) {
+			return true
+		}
+		// 另外支持像 `pkg/*`、`pkg/`、`pkg` 这样的排除模式匹配目录及其子项
+		for _, raw := range opts.Exclude {
+			p := strings.TrimSpace(raw)
+			if p == "" {
+				continue
+			}
+			// 规范化为使用 `/` 的形式，并去掉前导 `./` 或 `.\\`
+			p = strings.ReplaceAll(p, "\\", "/")
+			if after, ok := strings.CutPrefix(p, "./"); ok {
+				p = after
+			}
+			if after, ok := strings.CutPrefix(p, ".\\"); ok {
+				p = after
+			}
+			// 如果模式以 `/*` 结尾，去掉通配部分然后比较前缀
+			if strings.HasSuffix(p, "/*") {
+				prefix := strings.TrimSuffix(p, "/*")
+				if prefix == relSlash || strings.HasPrefix(relSlash, prefix+"/") {
+					return true
+				}
+				continue
+			}
+			// 如果模式以 `/` 结尾，认为是目录，直接比较前缀
+			if strings.HasSuffix(p, "/") {
+				prefix := strings.TrimSuffix(p, "/")
+				if prefix == relSlash || strings.HasPrefix(relSlash, prefix+"/") {
+					return true
+				}
+				continue
+			}
+			// 直接的前缀匹配（例如用户传入 pkg 或 pkg/some）也应当生效
+			if p == relSlash || strings.HasPrefix(p, relSlash+"/") || strings.HasPrefix(relSlash, p+"/") {
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -272,13 +310,99 @@ func shouldIncludeFile(relSlash string, opts Options, gi *gitignore.GitIgnore) b
 	if gi != nil && gi.IsIgnored(relSlash) {
 		return false
 	}
-	if len(opts.Include) > 0 {
-		return matchesAny(relSlash, opts.Include)
+	if includeMatches(relSlash, opts.Include) {
+		return true
 	}
-	if matchesAny(relSlash, opts.Exclude) {
+	if len(opts.Include) > 0 {
+		return false
+	}
+	if excludeMatches(relSlash, opts.Exclude) {
 		return false
 	}
 	return true
+}
+
+// normalizePattern 将用户传入的模式标准化为使用 `/` 的路径形式并去掉前导的 `./` 或 `.\`
+func normalizePattern(raw string) string {
+	p := strings.TrimSpace(raw)
+	if p == "" {
+		return ""
+	}
+	p = strings.ReplaceAll(p, "\\", "/")
+	if after, ok := strings.CutPrefix(p, "./"); ok {
+		p = after
+	}
+	if after, ok := strings.CutPrefix(p, ".\\"); ok {
+		p = after
+	}
+	return p
+}
+
+// includeMatches 检查相对路径是否匹配任意 include 模式
+func includeMatches(rel string, include []string) bool {
+	if len(include) == 0 {
+		return false
+	}
+	for _, raw := range include {
+		p := normalizePattern(raw)
+		if p == "" {
+			continue
+		}
+		if ok, _ := filepath.Match(p, rel); ok {
+			return true
+		}
+		if strings.HasSuffix(p, "/*") {
+			prefix := strings.TrimSuffix(p, "/*")
+			if prefix == rel || strings.HasPrefix(rel, prefix+"/") {
+				return true
+			}
+			continue
+		}
+		if strings.HasSuffix(p, "/") {
+			prefix := strings.TrimSuffix(p, "/")
+			if prefix == rel || strings.HasPrefix(rel, prefix+"/") {
+				return true
+			}
+			continue
+		}
+		if strings.Contains(rel, p) || strings.HasPrefix(rel, p+"/") || p == rel {
+			return true
+		}
+	}
+	return false
+}
+
+// excludeMatches 检查相对路径是否匹配任意 exclude 模式
+func excludeMatches(rel string, exclude []string) bool {
+	for _, raw := range exclude {
+		p := normalizePattern(raw)
+		if p == "" {
+			continue
+		}
+		if ok, _ := filepath.Match(p, rel); ok {
+			return true
+		}
+		if strings.HasSuffix(p, "/*") {
+			prefix := strings.TrimSuffix(p, "/*")
+			if prefix == rel || strings.HasPrefix(rel, prefix+"/") {
+				return true
+			}
+			continue
+		}
+		if strings.HasSuffix(p, "/") {
+			prefix := strings.TrimSuffix(p, "/")
+			if prefix == rel || strings.HasPrefix(rel, prefix+"/") {
+				return true
+			}
+			continue
+		}
+		if strings.Contains(rel, p) ||
+			strings.HasPrefix(p, rel+"/") ||
+			strings.HasPrefix(rel, p+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 // overSize 检查文件大小是否超过给定的限制 `limit`
