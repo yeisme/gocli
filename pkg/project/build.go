@@ -194,16 +194,32 @@ func runGoCommand(options BuildRunOptions, goCmdArgs []string) error {
 
 // executeGoProcessCommand generalizes the execution of "go build" and "go run" commands. (This function remains unchanged)
 func executeGoProcessCommand(command string, options BuildRunOptions, args []string) error {
-	cmdArgs := []string{command}
-	cmdArgs = append(cmdArgs, buildArgsFromOptions(options)...)
+	goArgs := []string{command}
+	goArgs = append(goArgs, buildArgsFromOptions(options)...)
 
-	if len(args) > 0 {
-		cmdArgs = append(cmdArgs, args...)
-	} else {
-		cmdArgs = append(cmdArgs, ".")
+	log.Debug().Msgf("Executing %v", goArgs)
+
+	if args[1:] != nil {
+		// 作为子命令提供给 go 命令
+		log.Debug().Msgf("Subcommand args: %v", args[1:])
 	}
 
-	return runGoCommand(options, cmdArgs)
+	// args 第一个为 run 命令执行时传入的路径，后面的参数多作为参数传递给生成的命令（当 command 为 build 忽略后面的参数）
+	if len(args) == 0 {
+		goArgs = append(goArgs, ".")
+	} else if len(args) == 1 && args[0] == "." {
+		// 第一个参数为路径
+		goArgs = append(goArgs, args...)
+	} else if len(args) > 1 && command == "run" {
+		// 去除 args 中的第一个参数
+		goArgs = append(goArgs, args...)
+	} else if len(args) > 1 && command == "build" {
+		// 仅保留第一个
+		goArgs = append(goArgs, args[0])
+		log.Warn().Msgf("Ignoring additional arguments for 'build': %v", args[1:])
+	}
+
+	return runGoCommand(options, goArgs)
 }
 
 // 热重启循环，监听变更并自动执行 build/run
