@@ -92,7 +92,7 @@ func OutputData(data any, format OutputFormat, out io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("failed to close YAML encoder: %w", err)
 		}
-		fmt.Print(buf.String())
+		_ = style.PrintYAML(out, buf.String())
 
 	case FormatJSON:
 		jsonData, err := json.MarshalIndent(data, "", "  ")
@@ -106,11 +106,11 @@ func OutputData(data any, format OutputFormat, out io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal to TOML: %w", err)
 		}
-		fmt.Print(string(tomlData))
+		_ = style.PrintTOML(out, string(tomlData))
 
 	case FormatText:
 		// 简单的文本格式输出
-		fmt.Printf("%+v\n", data)
+		_, _ = fmt.Fprintf(out, "%+v\n", data)
 
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)

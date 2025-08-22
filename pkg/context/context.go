@@ -12,10 +12,10 @@ import (
 
 // GocliContext represents the context for the gocli application.
 type GocliContext struct {
-	context.Context
-	Config *configs.Config // 应用配置
-	Logger log.Logger      // 日志记录器
-	Viper  *viper.Viper
+	Context context.Context
+	Config  *configs.Config // 应用配置
+	Logger  log.Logger      // 日志记录器
+	Viper   *viper.Viper
 }
 
 // InitGocliContext initializes the GocliContext with the provided configuration path.
