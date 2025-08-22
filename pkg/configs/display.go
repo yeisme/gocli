@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/yeisme/gocli/pkg/style"
 	"gopkg.in/yaml.v3"
 )
 
@@ -76,7 +78,7 @@ func GetOutputFormatFromFlags(cmd *cobra.Command) OutputFormat {
 }
 
 // OutputData 根据指定格式输出数据
-func OutputData(data any, format OutputFormat) error {
+func OutputData(data any, format OutputFormat, out io.Writer) error {
 	switch format {
 	case FormatYAML:
 		var buf bytes.Buffer
@@ -97,7 +99,7 @@ func OutputData(data any, format OutputFormat) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal to JSON: %w", err)
 		}
-		fmt.Println(string(jsonData))
+		_ = style.PrintJSON(out, jsonData)
 
 	case FormatTOML:
 		tomlData, err := toml.Marshal(data)

@@ -405,7 +405,49 @@ Examples:
 	projectDocCmd = &cobra.Command{
 		Use:   "doc [path|import]",
 		Short: "Show docs like 'go doc', with extras",
-		Long:  `gocli project doc prints package docs similar to 'go doc' and supports Markdown files and rich styles.`,
+		Long: `Display package or file documentation with enriched rendering and extra conveniences.
+
+gocli project doc provides a superset of 'go doc' and also supports:
+- Rendering Markdown files (README, docs/*.md) with selectable output styles (plain, markdown, html).
+- Rendering Go package documentation for local packages, relative paths, and remote module paths (e.g. gorm.io/gorm).
+- Including test files, examples and benchmark docs via flags so you can inspect *_test.go information.
+- Output to a file (via -o) for sharing or further processing, and theming for markdown/html renderers.
+
+Key behaviors:
+- If the target is a directory or package import path, package-level docs and symbols are printed.
+- If the target is a Markdown file, it will be rendered according to the chosen style/mode.
+- --tests (-t) will include *_test.go symbols (this also auto-enables --examples unless explicitly set).
+- --examples (-e) focuses on example functions and usage snippets.
+- Use --style to pick the renderer (plain for terminal, markdown for markdown output, html for HTML).
+- Use --mode to control parsing mode (godoc for Go-style docs, markdown to treat inputs as Markdown).
+
+When to use:
+- Quick local inspection: 'gocli project doc ./cmd' to view package docs while developing.
+- Readme preview: 'gocli project doc README.md --style=markdown' to validate generated markdown.
+- Third-party lookup: 'gocli project doc gorm.io/gorm' to fetch and show documentation for remote modules.
+- Produce shareable HTML: 'gocli project doc ./pkg -o docs/pkg.html --style=html'.
+
+Examples:
+  # Show docs for the current module
+  gocli project doc .
+  gocli project doc ./cmd
+
+  # Show docs for a specific package or import path
+  gocli project doc fmt
+  gocli project doc go/doc
+  gocli project doc gorm.io/gorm
+
+  # Render a markdown file
+  gocli project doc ./README.md --style=markdown -o README_rendered.md
+
+  # Include tests and examples
+  gocli project doc ./cmd --tests
+  gocli project doc ./cmd --examples
+
+Notes:
+- For remote package docs the tool may need network access to fetch module source (behaves like 'go list'/'go doc').
+- Large outputs can be redirected to a file using -o. Themes and --width can help produce readable markdown/HTML.
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			gocliCtx.Config.Doc = docOptions
 			if len(args) == 0 {
@@ -527,11 +569,11 @@ func init() {
 	projectDocCmd.Flags().StringVarP((*string)(&docOptions.Mode), "mode", "m", string(doc.ModeGodoc), "Doc mode: godoc|markdown")
 	projectDocCmd.Flags().StringVarP(&docOptions.Output, "output", "o", "", "Output file path (default stdout)")
 	projectDocCmd.Flags().BoolVarP(&docOptions.IncludePrivate, "private", "p", false, "Include unexported (private) symbols in analysis")
-	projectDocCmd.Flags().BoolVarP(&docOptions.IncludeTests, "tests", "t", false, "Include *_test.go files")
+	projectDocCmd.Flags().BoolVarP(&docOptions.IncludeTests, "tests", "t", false, "Include *_test.go files (auto enables --examples if not set)")
+	projectDocCmd.Flags().BoolVarP(&docOptions.IncludeExamples, "examples", "e", false, "Include example functions (auto-enabled by --tests)")
 	projectDocCmd.Flags().BoolVar(&docOptions.TOC, "toc", true, "Generate table of contents where applicable")
 	projectDocCmd.Flags().StringVar(&docOptions.Theme, "theme", "", "Theme for styled output (markdown renderer)")
 	projectDocCmd.Flags().IntVarP(&docOptions.Width, "width", "w", 0, "Render width (0 auto)")
-	projectDocCmd.Flags().StringSliceVar(&docOptions.Exclude, "exclude", nil, "Exclude paths or patterns from scan")
 	projectDocCmd.Flags().BoolVarP(&docOptions.Detailed, "detailed", "d", false, "Enable detailed output")
 
 	projectCmd.AddCommand(

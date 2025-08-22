@@ -5,7 +5,6 @@ package doc
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -37,13 +36,6 @@ func GetDoc(logger *zerolog.Logger, opt Options, root, path string) (string, err
 		return "", err
 	}
 
-	// 解析定位根目录与 path(需要解析的路径的相对路径)
-	relPath, err := filepath.Rel(root, path)
-	if err != nil {
-		return "", fmt.Errorf("failed to resolve relative path: %w", err)
-	}
-	log.Debug().Str("root", root).Str("relPath", relPath).Msg("GetDoc: resolved relative path")
-
 	// 根据模式解析文档
 	if s, err := resolveMode(opt, root, path); err != nil {
 		return "", err
@@ -69,12 +61,6 @@ func resolveMode(opt Options, root, path string) (string, error) {
 		if path == "" {
 			return "", fmt.Errorf("mode %s requires a markdown file path; pass a file or set mode to ModeGodoc for package docs", opt.Mode)
 		}
-
-		// 如果 file 是相对路径，尝试基于 root 解析
-		if !filepath.IsAbs(path) {
-			path = filepath.Join(root, path)
-		}
-
 		if s, err := readMarkdownFile(path); err == nil && strings.TrimSpace(s) != "" {
 			return s, nil
 		}

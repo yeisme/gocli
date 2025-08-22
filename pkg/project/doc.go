@@ -25,6 +25,15 @@ func RunDoc(ctx *context.GocliContext, opts DocOptions, out io.Writer, args []st
 		return fmt.Errorf("doc: at least one argument is required")
 	}
 
+	// 处理输出目标（可能是文件），prepareOutput 返回最终的 writer、可选的关闭函数和 error
+	out, closeOut, err := prepareOutput(&opts, out)
+	if err != nil {
+		return err
+	}
+	if closeOut != nil {
+		defer closeOut()
+	}
+
 	// 判断是否标准库/三方库的 import path（非文件系统绝对/相对路径）
 	isGoStandardPackage := func(ctx *context.GocliContext, importPath string) bool {
 		if importPath == "" {
@@ -76,8 +85,6 @@ func RunDoc(ctx *context.GocliContext, opts DocOptions, out io.Writer, args []st
 			}
 		}
 
-		log.Debug().Str("path", path).Str("root", root).Msg("RunDoc: processing path")
-
 		// 若仍然不是 import path 解析成功的目录，则按原有逻辑解析文件系统路径
 		if !filepath.IsAbs(path) && !isDirectory(path) && filepath.Ext(path) != ".go" && !isMarkdownExt(path) {
 			// 先把相对路径解析为基于当前工作目录的绝对路径，
@@ -87,6 +94,13 @@ func RunDoc(ctx *context.GocliContext, opts DocOptions, out io.Writer, args []st
 			} else {
 				// 如果获取当前工作目录失败，回退到 module root（保留旧行为的安全回退）
 				path = filepath.Join(root, path)
+			}
+		}
+
+		// 使用绝对路径处理，避免在不同操作系统下路径解析不一致的问题
+		if !filepath.IsAbs(path) {
+			if abs, err := filepath.Abs(path); err == nil {
+				path = abs
 			}
 		}
 
@@ -100,15 +114,7 @@ func RunDoc(ctx *context.GocliContext, opts DocOptions, out io.Writer, args []st
 		// 当输入一个 .go 后缀文件，提取所在目录作为包文档
 		if filepath.Ext(path) == ".go" {
 			cur.Mode = doc.ModeGodoc
-			// Windows 下 doc.GetDoc 内部会做 filepath.Rel(root, absPath)，
-			// 因此这里确保传入的是基于模块根目录的绝对路径，避免
-			// "Rel: can't make <rel> relative to <abs>" 错误。
-			dir := filepath.Dir(path)
-			if filepath.IsAbs(dir) {
-				path = dir
-			} else {
-				path = filepath.Join(root, dir)
-			}
+			path = filepath.Dir(path)
 		}
 
 		str, genErr := doc.GetDoc(log, cur, root, path)
@@ -206,4 +212,24 @@ func pickMostRecentDir(paths []string) string {
 		}
 	}
 	return best
+}
+
+// prepareOutput 根据 opts.Output 决定最终的输出 io.Writer，并返回一个可选的关闭函数（当输出为文件时）
+// 返回值: (writer, closeFunc, error)
+func prepareOutput(opts *DocOptions, defaultOut io.Writer) (io.Writer, func(), error) {
+	if opts.Output == "" {
+		return defaultOut, nil, nil
+	}
+	// TODO 使用 switch 判断 opts.Output 类型进行不同的分支
+
+	file, err := os.Create(opts.Output)
+	if err != nil {
+		return nil, nil, fmt.Errorf("doc: failed to create output file %q: %w", opts.Output, err)
+	}
+	closeFn := func() {
+		if err := file.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close output file")
+		}
+	}
+	return file, closeFn, nil
 }

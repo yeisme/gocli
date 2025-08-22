@@ -2,6 +2,7 @@ package doc
 
 import (
 	"fmt"
+	"go/ast"
 	gdoc "go/doc"
 	"go/printer"
 	"go/token"
@@ -11,16 +12,116 @@ import (
 
 // renderPlain renders documentation in plain text. It is composed of smaller helpers
 // so we can later add other renderers (markdown/html/json) easily.
-func renderPlainDoc(opts Options, dpkg *gdoc.Package, fset *token.FileSet) (string, error) {
+func renderPlainDoc(opts Options, dpkg *gdoc.Package, fset *token.FileSet, testFuncs []*ast.FuncDecl) (string, error) {
 	var buf strings.Builder
 
 	renderHeader(&buf, dpkg)
 	renderFilesAndImports(&buf, dpkg)
 	renderNotes(&buf, dpkg)
 	renderDecls(&buf, dpkg, fset, opts)
-	renderExamples(&buf, dpkg, fset)
+	if opts.IncludeExamples {
+		renderExamples(&buf, dpkg, fset, opts)
+	}
+	renderTests(&buf, testFuncs, fset, opts)
 
 	return buf.String(), nil
+}
+
+func renderTests(buf *strings.Builder, testFuncs []*ast.FuncDecl, fset *token.FileSet, opts Options) {
+	if !opts.IncludeTests || len(testFuncs) == 0 {
+		return
+	}
+
+	// 分组
+	type item struct {
+		fn   *ast.FuncDecl
+		name string
+	}
+	groups := map[string][]item{"Test": {}, "Benchmark": {}, "Example": {}}
+	order := []string{"Test", "Benchmark", "Example"}
+	if opts.IncludeExamples {
+		groups = map[string][]item{"Example": {}}
+		order = []string{"Example"}
+	}
+	for _, tf := range testFuncs {
+		if tf == nil {
+			continue
+		}
+		n := tf.Name.Name
+		switch {
+		case strings.HasPrefix(n, "Test"):
+			groups["Test"] = append(groups["Test"], item{tf, n})
+		case strings.HasPrefix(n, "Benchmark"):
+			groups["Benchmark"] = append(groups["Benchmark"], item{tf, n})
+		case strings.HasPrefix(n, "Example"):
+			groups["Example"] = append(groups["Example"], item{tf, n})
+		default:
+			groups["Test"] = append(groups["Test"], item{tf, n})
+		}
+	}
+
+	// 生成签名 + 首行注释摘要
+	buildLine := func(fd *ast.FuncDecl) (sig, summary string) {
+		if fd == nil {
+			return "", ""
+		}
+		// 提取首行注释
+		if fd.Doc != nil {
+			txt := strings.TrimSpace(fd.Doc.Text())
+			if txt != "" {
+				summary = strings.SplitN(txt, "\n", 2)[0]
+			}
+		}
+		cloned := *fd
+		cloned.Body = nil
+		cloned.Doc = nil
+		var sb strings.Builder
+		_ = printer.Fprint(&sb, fset, &cloned)
+		sig = strings.TrimSpace(sb.String())
+		return
+	}
+
+	if !opts.Detailed { // 简洁模式
+		fmt.Fprintf(buf, "Tests:\n")
+		for _, k := range order {
+			for _, it := range groups[k] {
+				sig, summary := buildLine(it.fn)
+				if sig == "" {
+					continue
+				}
+				if summary != "" {
+					fmt.Fprintf(buf, "    %s —> %s\n", sig, summary)
+				} else {
+					fmt.Fprintf(buf, "    %s\n", sig)
+				}
+			}
+		}
+		fmt.Fprintln(buf)
+		return
+	}
+
+	fmt.Fprintf(buf, "=== Tests / Benchmarks / Examples ===\n\n")
+	for _, k := range order {
+		list := groups[k]
+		if len(list) == 0 {
+			continue
+		}
+		fmt.Fprintf(buf, "%ss:\n\n", k)
+		for _, it := range list {
+			fd := it.fn
+			sig, summary := buildLine(fd)
+			if pos := declPosition(fd, fset); pos != "" {
+				fmt.Fprintf(buf, "    // defined at %s\n", pos)
+			}
+			if sig != "" {
+				line := sig
+				if summary != "" {
+					line += " —> " + summary
+				}
+				fmt.Fprintf(buf, "%s\n\n", indentLines(line, "    "))
+			}
+		}
+	}
 }
 
 func renderHeader(buf *strings.Builder, dpkg *gdoc.Package) {

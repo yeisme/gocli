@@ -17,6 +17,9 @@ func setDocConfigDefaults() {
 	viper.SetDefault("doc.title", "")
 	viper.SetDefault("doc.toc", true)
 	viper.SetDefault("doc.verbose", false)
-	viper.SetDefault("doc.exclude", []string{})
 	viper.SetDefault("doc.detailed", false)
+	viper.SetDefault("doc.theme", "")
+	viper.SetDefault("doc.width", 0)
+	viper.SetDefault("doc.include_tests", false)
+	viper.SetDefault("doc.include_examples", false)
 }
