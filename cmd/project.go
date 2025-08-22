@@ -431,13 +431,14 @@ Examples:
   # Show docs for the current module
   gocli project doc .
   gocli project doc ./cmd
+  gocli project doc main.go
 
   # Show docs for a specific package or import path
   gocli project doc fmt
   gocli project doc go/doc
   gocli project doc gorm.io/gorm
 
-  # Render a markdown file
+  # Render a markdown file (mode will auto set to markdown when extension is .md or .markdown)
   gocli project doc ./README.md --style=markdown -o README_rendered.md
 
   # Include tests and examples
@@ -525,26 +526,26 @@ func init() {
 	addInfoFlags(projectInfoCmd, &infoOptions)
 
 	// lint flags
-	projectListCmd.Flags().BoolVar(&listOptions.JSON, "json", false, "Output packages as JSON array")
+	projectListCmd.Flags().BoolVarP(&listOptions.JSON, "json", "j", false, "Output packages as JSON array")
 	projectListCmd.Flags().BoolVar(&listOptions.Test, "test", false, "Include test packages (adds -test)")
 
 	// lint flags
-	projectLintCmd.Flags().BoolVar(&lintOptions.List, "list", false, "List all available linters")
-	projectLintCmd.Flags().BoolVar(&lintOptions.Fix, "fix", false, "Fix issues where possible")
-	projectLintCmd.Flags().BoolVar(&lintOptions.Verbose, "verbose", false, "Verbose output (line by line)")
-	projectLintCmd.Flags().BoolVar(&lintOptions.Config.Validate, "verify", false, "Verify configuration against JSON schema")
-	projectLintCmd.Flags().BoolVar(&lintOptions.Config.Path, "config-path", false, "Specify the configuration file path")
+	projectLintCmd.Flags().BoolVarP(&lintOptions.List, "list", "l", false, "List all available linters")
+	projectLintCmd.Flags().BoolVarP(&lintOptions.Fix, "fix", "f", false, "Fix issues where possible")
+	projectLintCmd.Flags().BoolVarP(&lintOptions.Verbose, "verbose", "v", false, "Verbose output (line by line)")
+	projectLintCmd.Flags().BoolVarP(&lintOptions.Config.Validate, "verify", "V", false, "Verify configuration against JSON schema")
+	projectLintCmd.Flags().BoolVarP(&lintOptions.Config.Path, "config-path", "C", false, "Specify the configuration file path")
 	projectLintCmd.Flags().StringVarP(&lintOptions.ConfigPath, "config", "c", "", "Specify the configuration file path")
 
 	// fmt flags
-	projectFmtCmd.Flags().BoolVar(&fmtOptions.List, "list", false, "List all available formatters")
+	projectFmtCmd.Flags().BoolVarP(&fmtOptions.List, "list", "l", false, "List all available formatters")
 	projectFmtCmd.Flags().StringVarP(&fmtOptions.Path, "path", "p", "", "Target path to format (default current directory)")
-	projectFmtCmd.Flags().BoolVar(&fmtOptions.Verbose, "verbose", false, "Verbose output (line by line)")
+	projectFmtCmd.Flags().BoolVarP(&fmtOptions.Verbose, "verbose", "v", false, "Verbose output (line by line)")
 	projectFmtCmd.Flags().StringVarP(&fmtOptions.ConfigPath, "config", "c", "", "Specify the configuration file path")
 
 	// update flags
 	// Usage: gocli project update --verbose ./...
-	projectUpdateCmd.Flags().BoolVar(&updateOptions.Verbose, "verbose", false, "Verbose output (line by line)")
+	projectUpdateCmd.Flags().BoolVarP(&updateOptions.Verbose, "verbose", "v", false, "Verbose output (line by line)")
 
 	// deps flags
 	projectDepsCmd.Flags().BoolVarP(&depsOptions.JSON, "json", "j", false, "Output dependencies as JSON (go list -m -json)")

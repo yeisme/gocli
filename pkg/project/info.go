@@ -92,7 +92,7 @@ func printInfoJSON(w io.Writer, res *models.AnalysisResult) error {
 	if err != nil {
 		return fmt.Errorf("marshal project info failed: %w", err)
 	}
-	_, _ = fmt.Fprintln(w, string(b))
+	_ = style.PrintJSON(w, b)
 	return nil
 }
 

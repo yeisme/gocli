@@ -132,20 +132,65 @@ func GetConfigSection(v *viper.Viper, section string, showAll bool) (any, error)
 			return config, nil
 		}
 
-		// 使用反射动态查找配置段
-		val := reflect.ValueOf(config)
-		typ := val.Type()
-		lowerSection := strings.ToLower(section)
+		// 支持点分层次路径，比如 "app.hotload"
+		parts := strings.Split(section, ".")
+		// 从 config 的反射值开始递归查找
+		var curVal = reflect.ValueOf(config)
 
-		for i := 0; i < val.NumField(); i++ {
-			field := typ.Field(i)
-			tag := field.Tag.Get("mapstructure")
-			if strings.ToLower(tag) == lowerSection {
-				return val.Field(i).Interface(), nil
+		for _, part := range parts {
+			for curVal.Kind() == reflect.Pointer || curVal.Kind() == reflect.Interface {
+				curVal = curVal.Elem()
+			}
+
+			if !curVal.IsValid() {
+				return nil, fmt.Errorf("unknown configuration section: %s", section)
+			}
+
+			// only structs can have tagged fields
+			if curVal.Kind() != reflect.Struct {
+				return nil, fmt.Errorf("configuration section is not a struct: %s", part)
+			}
+
+			typ := curVal.Type()
+			found := false
+			lowerPart := strings.ToLower(part)
+
+			for i := 0; i < curVal.NumField(); i++ {
+				field := typ.Field(i)
+				tag := field.Tag.Get("mapstructure")
+
+				// mapstructure tag may contain options like `mapstructure:"name,omitempty"`
+				if idx := strings.Index(tag, ","); idx != -1 {
+					tag = tag[:idx]
+				}
+
+				if tag == "" {
+					// fallback to field name
+					tag = field.Name
+				}
+
+				if strings.ToLower(tag) == lowerPart {
+					curVal = curVal.Field(i)
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				return nil, fmt.Errorf("unknown configuration section: %s", section)
 			}
 		}
 
-		return nil, fmt.Errorf("unknown configuration section: %s", section)
+		// 解引用并返回最终值的接口表示
+		for curVal.Kind() == reflect.Pointer || curVal.Kind() == reflect.Interface {
+			curVal = curVal.Elem()
+		}
+
+		if !curVal.IsValid() {
+			return nil, fmt.Errorf("unknown configuration section: %s", section)
+		}
+
+		return curVal.Interface(), nil
 	}
 
 	// 返回 viper 的原始数据

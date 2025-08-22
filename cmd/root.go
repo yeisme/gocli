@@ -62,6 +62,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file")
 	rootCmd.PersistentFlags().StringVar(&cpuProfile, "cpu-profile", "", "write cpu profile to `file`")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode (prints additional information)")
-	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "enable verbose output (prints more detailed information)")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output (prints more detailed information)")
 	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "suppress all output except errors")
 }
