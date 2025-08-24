@@ -124,10 +124,6 @@ func createFileWriter(config *configs.LogConfig) io.Writer {
 
 // GetLogger 获取全局日志记录器
 func GetLogger() Logger {
-	if globalLogger == nil {
-		config := configs.GetConfig()
-		return InitLogger(context.Background(), &config.Log, &config.App)
-	}
 	return globalLogger
 }
 

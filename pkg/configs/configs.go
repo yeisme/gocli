@@ -162,6 +162,17 @@ func LoadConfig(configPath string) (*Config, error) {
 	// 应用环境变量
 	config.Env.ApplyEnvVars()
 
+	// 获取所在的配置文件的目录（如果没有加载到配置文件则不修改）
+	cfgFile := viper.ConfigFileUsed()
+	if cfgFile != "" {
+		cfgDir := filepath.Dir(cfgFile)
+		if config.Log.FilePath == "" {
+			config.Log.FilePath = filepath.Join(cfgDir, ".gocli/gocli.log")
+		} else if !filepath.IsAbs(config.Log.FilePath) {
+			config.Log.FilePath = filepath.Join(cfgDir, config.Log.FilePath)
+		}
+	}
+
 	// 确保日志目录存在
 	if config.Log.Mode == "file" || config.Log.Mode == "both" {
 		logDir := filepath.Dir(config.Log.FilePath)

@@ -22,13 +22,14 @@ type GocliContext struct {
 func InitGocliContext(configPath string, debug, verbose, quiet bool) *GocliContext {
 	ctx := context.Background()
 	config, err := configs.LoadConfig(configPath)
-	config.App.Debug = debug
-	config.App.Verbose = verbose
-	config.App.Quiet = quiet
-
 	if err != nil {
 		panic(err)
 	}
+
+	// config is guaranteed non-nil when err == nil
+	config.App.Debug = debug
+	config.App.Verbose = verbose
+	config.App.Quiet = quiet
 
 	logger := log.InitLogger(ctx, &config.Log, &config.App)
 
