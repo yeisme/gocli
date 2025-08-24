@@ -1,6 +1,12 @@
 package deps
 
-import "github.com/yeisme/gocli/pkg/tools"
+import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/yeisme/gocli/pkg/tools"
+)
 
 // RunGoModTidy 执行 `go mod tidy`，同步 go.mod 与 go.sum：
 //   - 移除未使用的依赖项；
@@ -56,7 +62,7 @@ func RunGoModVerify() (string, error) {
 // RunGoModWhy 执行 `go mod why` 并附带可选标志，用于解释某个包/模块为何被当前模块需要
 //
 // 选项:
-//   - Module: 等价于 `-m`，解释“模块”为何需要（而非具体包）；
+//   - Module: 等价于 `-m`，解释"模块"为何需要（而非具体包）；
 //   - Vendor: 等价于 `-vendor`，解释为何需要使用 vendor 中的包；
 //
 // 参数:
@@ -88,6 +94,49 @@ func RunGoModWhy(args []string, options struct {
 		base = append(base, args...)
 	}
 	output, err := tools.NewExecutor("go", base...).Output()
+	if err != nil {
+		return "", err
+	}
+	return output, nil
+}
+
+// RunGoModInit 执行 `go mod init [module]`。
+//
+// 如果 module 为空字符串，则运行 `go mod init` 让 go 命令自动推断模块路径；
+// 如果指定了 module，则使用该模块路径初始化。
+// 在执行命令前会检查当前目录是否已存在 go.mod，若存在则返回明确的错误信息。
+//
+// 返回值：命令标准输出，或执行错误（包含底层 stderr 信息）。
+// Opts for RunGoModInit
+func RunGoModInit(module string, dir string) (string, error) {
+	// 检查目标目录下的 go.mod（若 Dir 为空则检查当前工作目录）
+	statPath := "go.mod"
+	if strings.TrimSpace(dir) != "" {
+		statPath = strings.TrimRight(dir, string(os.PathSeparator)) + string(os.PathSeparator) + "go.mod"
+	}
+
+	if _, err := os.Stat(statPath); err == nil {
+		return "", fmt.Errorf("go.mod already exists in %s", func() string {
+			if dir == "" {
+				return "current directory"
+			}
+			return dir
+		}())
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
+
+	args := []string{"mod", "init"}
+	if strings.TrimSpace(module) != "" {
+		args = append(args, module)
+	}
+
+	exec := tools.NewExecutor("go", args...)
+	if strings.TrimSpace(dir) != "" {
+		exec = exec.WithDir(dir)
+	}
+
+	output, err := exec.Output()
 	if err != nil {
 		return "", err
 	}

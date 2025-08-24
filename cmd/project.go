@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/project"
 	"github.com/yeisme/gocli/pkg/style"
+	"github.com/yeisme/gocli/pkg/tools"
 	"github.com/yeisme/gocli/pkg/utils/doc"
 )
 
@@ -20,12 +21,13 @@ var (
 	updateOptions project.UpdateOptions
 	depsOptions   project.DepsOptions
 	docOptions    project.DocOptions
+	initOptions   project.InitOptions
 
 	projectCmd = &cobra.Command{
 		Use:     "project",
 		Short:   "Manage Go projects",
 		Long:    `gocli project allows you to manage your Go projects, including creating, building, and running them.`,
-		Aliases: []string{"p", "pj"},
+		Aliases: []string{"p", "pj", "go"},
 	}
 
 	projectInitCmd = &cobra.Command{
@@ -38,6 +40,16 @@ var (
   gocli project init --name myproject --path /path/to/project
   gocli project init --name myproject --path /path/to/project --template gin-gorm
 `),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := project.ExecuteInitCommand(gocliCtx, args, initOptions, cmd.OutOrStdout()); err != nil {
+				// 如果是 ExecError（包含 stderr），直接把格式化后的错误作为消息打印，避免 zerolog 将换行转义
+				if ee, ok := err.(*tools.ExecError); ok {
+					log.Error().Msgf("failed to initialize project: %s", ee.Error())
+				} else {
+					log.Error().Err(err).Msg("failed to initialize project")
+				}
+			}
+		},
 	}
 	projectBuildCmd = &cobra.Command{
 		Use:   "build [args...] [packages]",
@@ -419,6 +431,7 @@ Examples:
   gocli project deps --why ./...
   gocli project deps --why --why-module std
 `,
+		Aliases: []string{"dep", "mod"},
 		Run: func(cmd *cobra.Command, args []string) {
 			opts := depsOptions
 			if gocliCtx.Config.App.Verbose {
@@ -504,6 +517,13 @@ Notes:
 	}
 )
 
+func addInitFlags(cmd *cobra.Command, opts *project.InitOptions) {
+	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List available templates")
+	cmd.Flags().StringVarP(&opts.Format, "format", "f", "yaml", "Output format (json|yaml)")
+	cmd.Flags().BoolVarP(&opts.JSON, "json", "j", false, "Output in JSON format")
+	cmd.Flags().BoolVarP(&opts.YAML, "yaml", "y", false, "Output in YAML format")
+}
+
 // addBuildRunFlags adds the shared build and run flags to the given command.
 func addBuildRunFlags(cmd *cobra.Command, opts *project.BuildRunOptions) {
 	cmd.Flags().StringVarP(&opts.Output, "output", "o", "", "Output file name")
@@ -558,6 +578,8 @@ func addInfoFlags(cmd *cobra.Command, opts *project.InfoOptions) {
 
 func init() {
 	rootCmd.AddCommand(projectCmd)
+
+	addInitFlags(projectInitCmd, &initOptions)
 
 	// Add the shared flags to both build and run commands
 	addBuildRunFlags(projectBuildCmd, &buildOptions)

@@ -18,8 +18,23 @@ type ExecError struct {
 
 // Error 实现了 error 接口，返回一个详细的错误信息
 func (e *ExecError) Error() string {
-	return fmt.Sprintf("command execution failed: %s %s\nerror: %v\nstderr: %s",
-		e.Cmd, strings.Join(e.Args, " "), e.Err, strings.TrimSpace(e.Stderr))
+	args := strings.Join(e.Args, " ")
+
+	// 将字面 "\\n" 转为真实换行，便于多行显示
+	stderr := strings.TrimSpace(strings.ReplaceAll(e.Stderr, `\\n`, "\n"))
+
+	if stderr == "" {
+		return fmt.Sprintf("command execution failed: %s %s, error-code: %v", e.Cmd, args, e.Err)
+	}
+
+	// 按行缩进 stderr，增强可读性
+	lines := strings.Split(stderr, "\n")
+	for i, l := range lines {
+		lines[i] = "\t" + l
+	}
+
+	return fmt.Sprintf("command execution failed: %s %s, error-code: %v\nstderr:\n%s",
+		e.Cmd, args, e.Err, strings.Join(lines, "\n"))
 }
 
 // Unwrap 允许使用 errors.Is 和 errors.As 来检查底层错误

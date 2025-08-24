@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -20,6 +21,7 @@ type Config struct {
 	Tools   ToolsConfig  `mapstructure:"tools"`
 	Plugin  PluginConfig `mapstructure:"plugin"`
 	Doc     DocConfig    `mapstructure:"doc"`
+	Init    InitConfig   `mapstructure:"init"`
 }
 
 // setDefaults 设置默认配置值
@@ -31,13 +33,80 @@ func setDefaults() {
 	setToolsConfigDefaults()
 	setPluginConfigDefaults()
 	setDocConfigDefaults()
+	setInitConfigDefaults()
 }
 
 var globalConfig *Config
 
 // tryLoadConfigFiles 尝试加载不同格式的配置文件
-func tryLoadConfigFiles() bool {
-	// 配置文件搜索路径
+func tryLoadConfigFiles(base string) bool {
+	// 最终搜索路径列表（按优先级）
+	var searchPaths []string
+
+	// 1. 指定 base（模块根或显式目录）
+	if base != "" {
+		searchPaths = append(searchPaths, base, filepath.Join(base, "configs"))
+	}
+
+	// 2. 当前工作目录向上回溯，直到文件系统根或已经包含 base
+	if cwd, err := os.Getwd(); err == nil {
+		// 向上遍历
+		cur := cwd
+		for {
+			// 如果已经添加过则停止
+			already := slices.Contains(searchPaths, cur)
+			if !already {
+				searchPaths = append(searchPaths, cur, filepath.Join(cur, "configs"))
+			}
+			parent := filepath.Dir(cur)
+			if parent == cur { // 到根目录
+				break
+			}
+			cur = parent
+			// 如果 base 非空且我们已回溯到 base 之上，可以继续直到根，确保向上所有层都能检测
+		}
+	}
+
+	// 3. 预定义全局搜索路径（HOME 等）
+	searchPaths = append(searchPaths, GetConfigSearchPaths()...)
+
+	// 去重（保持顺序）
+	dedup := make([]string, 0, len(searchPaths))
+	seen := make(map[string]struct{})
+	for _, p := range searchPaths {
+		if p == "" {
+			continue
+		}
+		if _, ok := seen[p]; ok {
+			continue
+		}
+		seen[p] = struct{}{}
+		dedup = append(dedup, p)
+	}
+	searchPaths = dedup
+
+	configNames := []string{".gocli", "gocli"}
+	extensions := []string{"yaml", "yml", "json", "toml"}
+
+	for _, dir := range searchPaths {
+		for _, name := range configNames {
+			for _, ext := range extensions {
+				configFile := filepath.Join(dir, name+"."+ext)
+				if strings.Contains(configFile, "$") {
+					configFile = os.ExpandEnv(configFile)
+				}
+				if fi, err := os.Stat(configFile); err == nil && !fi.IsDir() {
+					viper.SetConfigFile(configFile)
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// GetConfigSearchPaths 返回配置和资源搜索路径列表，供其他包复用
+func GetConfigSearchPaths() []string {
 	searchPaths := []string{
 		".",
 		"./configs",
@@ -46,7 +115,6 @@ func tryLoadConfigFiles() bool {
 		"$HOME/.config/gocli",
 	}
 
-	// Windows 特殊路径
 	if runtime.GOOS == "windows" {
 		searchPaths = append(searchPaths,
 			"$USERPROFILE",
@@ -56,47 +124,28 @@ func tryLoadConfigFiles() bool {
 		searchPaths = append(searchPaths, "/etc/gocli")
 	}
 
-	// 配置文件名和扩展名的组合
-	configNames := []string{".gocli", "gocli"}
-	extensions := []string{"yaml", "yml", "json", "toml"}
-
-	for _, path := range searchPaths {
-		for _, name := range configNames {
-			for _, ext := range extensions {
-				configFile := filepath.Join(path, name+"."+ext)
-
-				// 展开环境变量
-				if strings.Contains(configFile, "$") {
-					configFile = os.ExpandEnv(configFile)
-				}
-
-				if _, err := os.Stat(configFile); err == nil {
-					viper.SetConfigFile(configFile)
-					return true
-				}
-			}
-		}
-	}
-
-	return false
+	return searchPaths
 }
 
 // LoadConfig 加载配置文件
 func LoadConfig(configPath string) (*Config, error) {
+	// 设置默认值
+	setDefaults()
+
 	if configPath != "" {
 		// 使用指定的配置文件路径
 		viper.SetConfigFile(configPath)
+	} else if moduleRoot := GetModuleRoot(""); moduleRoot != "" {
+		// 使用模块根目录进行搜索（支持在子目录中执行命令）
+		tryLoadConfigFiles(moduleRoot)
 	} else {
 		// 尝试查找多种格式的配置文件
-		tryLoadConfigFiles()
+		tryLoadConfigFiles("")
 	}
 
 	// 设置环境变量前缀
 	viper.SetEnvPrefix("GOCLI")
 	viper.AutomaticEnv()
-
-	// 设置默认值
-	setDefaults()
 
 	// 读取配置文件
 	if err := viper.ReadInConfig(); err != nil {

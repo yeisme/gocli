@@ -77,8 +77,7 @@ Examples:
 
 			// 输出配置
 			if err := configs.OutputData(data, format, cmd.OutOrStdout()); err != nil {
-				fmt.Fprintf(os.Stderr, "Error displaying config: %v\n", err)
-				os.Exit(1)
+				log.Error().Err(err).Msg("Error displaying config")
 			}
 		},
 	}

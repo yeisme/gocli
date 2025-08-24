@@ -33,7 +33,7 @@ func setAppConfigDefaults() {
 	// 热加载配置默认值
 	viper.SetDefault("app.hotload.enabled", false)
 	viper.SetDefault("app.hotload.dir", ".")
-	viper.SetDefault("app.hotload.filter", []string{"*.go", "*.mod", "tpl", "tpl"})
+	viper.SetDefault("app.hotload.filter", []string{"*.go", "*.mod", "*.tpl"})
 	viper.SetDefault("app.hotload.recursive", true)
 	viper.SetDefault("app.hotload.debounce", 300) // 毫秒
 	viper.SetDefault("app.hotload.ignore_patterns", []string{

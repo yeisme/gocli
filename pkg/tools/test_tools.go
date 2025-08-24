@@ -25,7 +25,7 @@ func TestExists(tool string) (string, error) {
 	// 2) 根据内置定义尝试安装
 	it := strings.ToLower(strings.TrimSpace(bi.InstallType.Name))
 	switch it {
-	case "go", "golang":
+	case "", "go", "golang":
 		// 使用统一的安装入口，默认走 release 构建以获得精简产物
 		res, err := InstallTool(InstallOptions{
 			Spec:         ensureVersionSuffix(bi.URL),
@@ -43,23 +43,6 @@ func TestExists(tool string) (string, error) {
 			return p, nil
 		}
 		// 若 PATH 未包含安装目录，尝试在可能的安装位置直接解析
-		if p := tryResolveInstalledPath(tool, res.InstallDir, res.ProbableInstallDir); p != "" {
-			return p, nil
-		}
-		return "", fmt.Errorf("tool '%s' was installed, but not found in PATH. Please add the install dir to PATH (e.g., GOPATH/bin, GOBIN, or tools.path)", tool)
-
-	case "":
-		// 未声明类型，默认按 go 处理
-		res, err := InstallTool(InstallOptions{Spec: ensureVersionSuffix(bi.URL), ReleaseBuild: true})
-		if err != nil {
-			if res.Output != "" {
-				return "", fmt.Errorf("install builtin tool '%s' failed: %w\n%s", tool, err, res.Output)
-			}
-			return "", fmt.Errorf("install builtin tool '%s' failed: %w", tool, err)
-		}
-		if p, lpErr := exec.LookPath(tool); lpErr == nil {
-			return p, nil
-		}
 		if p := tryResolveInstalledPath(tool, res.InstallDir, res.ProbableInstallDir); p != "" {
 			return p, nil
 		}
