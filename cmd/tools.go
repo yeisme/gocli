@@ -352,13 +352,13 @@ func init() {
 	toolInstallCmd.Flags().StringSliceVar(&toolInstallOptions.Env, "env", nil, "Additional build environment variables, e.g.: --env CGO_ENABLED=1 --env CC=clang")
 	toolInstallCmd.Flags().StringVar(&toolInstallOptions.CloneURL, "clone", "", "Clone source code from a Git repository for installation, supports URL#ref syntax to specify branch/tag/commit")
 	toolInstallCmd.Flags().StringVar(&toolInstallOptions.MakeTarget, "make-target", "", "Target name to execute with make in the source directory (default is make)")
-	toolInstallCmd.Flags().StringSliceVar(&toolInstallOptions.BinDirs, "bin", nil, "Directory(ies) where the built binaries are output by make; repeat or separate by platform path list separator")
+	toolInstallCmd.Flags().StringSliceVarP(&toolInstallOptions.BinDirs, "dir", "d", nil, "Directory(ies) where the built binaries are output by make; repeat or separate by platform path list separator")
 	toolInstallCmd.Flags().BoolVarP(&toolInstallGlobal, "global", "g", false, "Install 'tools.global' from config when used without args; when specifying a tool, default install path is $HOME/.gocli/tools")
 	// build presets
-	toolInstallCmd.Flags().BoolVar(&toolInstallOptions.ReleaseBuild, "release-build", false, "Install in release mode (-trimpath -ldflags '-s -w')")
-	toolInstallCmd.Flags().BoolVar(&toolInstallOptions.DebugBuild, "debug-build", false, "Install in debug mode (-gcflags 'all=-N -l')")
+	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.ReleaseBuild, "release-build", "R", false, "Install in release mode (-trimpath -ldflags '-s -w')")
+	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.DebugBuild, "debug-build", "D", false, "Install in debug mode (-gcflags 'all=-N -l')")
 	// binary name override (avoid conflict with --binary-name used for directories)
-	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.BinaryName, "binary-name", "b", "", "Override the output binary name (when determinable)")
+	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.BinaryName, "binary-name", "n", "", "Override the output binary name (when determinable)")
 	// clone build method and options
 	toolInstallCmd.Flags().StringVar(&toolInstallOptions.BuildMethod, "build", "", "Build method when using --clone: make (default) | goreleaser")
 	toolInstallCmd.Flags().StringSliceVar(&toolInstallOptions.BuildArgs, "build-arg", nil, "Extra arguments passed to the build tool (repeatable). For goreleaser, e.g. --build-arg --skip=validate")
