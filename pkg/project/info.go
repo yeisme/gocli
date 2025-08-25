@@ -99,12 +99,6 @@ func printInfoJSON(w io.Writer, res *models.AnalysisResult) error {
 // buildLanguageTable 构建语言统计表数据（含 TOTAL 行）
 func buildLanguageTable(res *models.AnalysisResult, opts InfoOptions) ([]string, [][]string) {
 	headers := []string{"language", "files", "code", "comments", "blanks", "code%", "lines"}
-	if opts.WithFunctions {
-		headers = append(headers, "funcs")
-	}
-	if opts.WithStructs {
-		headers = append(headers, "structs")
-	}
 
 	langs := make([]string, 0, len(res.Languages))
 	for l := range res.Languages {
@@ -175,11 +169,13 @@ func buildLanguageTable(res *models.AnalysisResult, opts InfoOptions) ([]string,
 			"100.0%",
 			fmt.Sprintf("%d", totalLines),
 		}
-		if opts.WithFunctions {
+		if opts.WithFunctions && totalFuncs > 0 {
 			totalRow = append(totalRow, fmt.Sprintf("%d", totalFuncs))
+			headers = append(headers, "funcs")
 		}
-		if opts.WithStructs {
+		if opts.WithStructs && totalStructs > 0 {
 			totalRow = append(totalRow, fmt.Sprintf("%d", totalStructs))
+			headers = append(headers, "structs")
 		}
 		rows = append(rows, totalRow)
 	}

@@ -115,11 +115,10 @@ func applyBuildTemplates(opts *BuildRunOptions) {
 // buildArgsFromOptions dynamically generates command-line arguments from the options struct using reflection.
 func buildArgsFromOptions(options BuildRunOptions) []string {
 	var args []string
+	applyBuildTemplates(&options)
+
 	val := reflect.ValueOf(options)
 	typ := val.Type()
-
-	// First, apply built-in templates to modify values in the options struct.
-	applyBuildTemplates(&options)
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
@@ -197,26 +196,27 @@ func executeGoProcessCommand(command string, options BuildRunOptions, args []str
 	goArgs := []string{command}
 	goArgs = append(goArgs, buildArgsFromOptions(options)...)
 
-	log.Debug().Msgf("Executing %v", goArgs)
-
 	if args[1:] != nil {
 		// 作为子命令提供给 go 命令
 		log.Debug().Msgf("Subcommand args: %v", args[1:])
 	}
 
-	// args 第一个为 run 命令执行时传入的路径，后面的参数多作为参数传递给生成的命令（当 command 为 build 忽略后面的参数）
+	// args 的第一个元素被视作包路径或要构建/运行的目录（如果未提供则使用当前目录）。
+	// 对于 run：会把后续的参数也传给运行的程序；对于 build：只使用第一个参数作为包路径并忽略其余参数。
 	if len(args) == 0 {
 		goArgs = append(goArgs, ".")
-	} else if len(args) == 1 && args[0] == "." {
-		// 第一个参数为路径
-		goArgs = append(goArgs, args...)
-	} else if len(args) > 1 && command == "run" {
-		// 去除 args 中的第一个参数
-		goArgs = append(goArgs, args...)
-	} else if len(args) > 1 && command == "build" {
-		// 仅保留第一个
+	} else {
+		// 始终将第一个参数作为 package/path 传入
 		goArgs = append(goArgs, args[0])
-		log.Warn().Msgf("Ignoring additional arguments for 'build': %v", args[1:])
+
+		if command == "run" && len(args) > 1 {
+			// run 命令会把后续参数也传递给被运行的程序
+			goArgs = append(goArgs, args[1:]...)
+		}
+
+		if command == "build" && len(args) > 1 {
+			log.Warn().Msgf("Ignoring additional arguments for 'build': %v", args[1:])
+		}
 	}
 
 	return runGoCommand(options, goArgs)

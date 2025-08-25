@@ -5,6 +5,7 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -124,6 +125,13 @@ func createFileWriter(config *configs.LogConfig) io.Writer {
 
 // GetLogger 获取全局日志记录器
 func GetLogger() Logger {
+	if globalLogger == nil {
+		config, err := configs.LoadConfig("")
+		if err != nil {
+			fmt.Println("error loading default log config:", err)
+		}
+		InitLogger(context.Background(), &config.Log, &config.App)
+	}
 	return globalLogger
 }
 

@@ -86,7 +86,7 @@ func (i *InitList) String() string {
 }
 
 // ExecConfigInit 执行配置初始化
-func (o *InitOptions) ExecConfigInit() (string, error) {
+func (o *InitOptions) ExecConfigInit() ([]string, error) {
 
 	var initList InitList
 
@@ -127,9 +127,9 @@ func (o *InitOptions) ExecConfigInit() (string, error) {
 	}
 
 	if len(initList.ErrList) > 0 {
-		return initList.String(), &initList
+		return initList.BufList, &initList
 	}
-	return initList.String(), nil
+	return initList.BufList, nil
 }
 
 func (o *InitOptions) execGitInit() (string, error) {

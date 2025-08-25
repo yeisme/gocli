@@ -33,12 +33,52 @@ var (
 	projectInitCmd = &cobra.Command{
 		Use:   "init [name]",
 		Short: "Initialize a new Go project",
-		Long:  `Initialize a new Go project with the necessary files and directories.`,
-		Example: strings.TrimSpace(`
-  gocli project init myproject
+		Long: strings.TrimSpace(`Initialize a new Go project with the necessary files and directories.
+
+Examples:
+  # 1. Initialize in current directory (module name inferred from path)
   gocli project init .
-  gocli project init --name myproject --path /path/to/project
-  gocli project init --name myproject --path /path/to/project --template gin-gorm
+
+  # 2. Initialize a new project directory (creates folder if not exists)
+  gocli project init myapp
+
+  # 3. Specify target directory explicitly
+  gocli project init --dir ./services/api myapi
+
+  # 4. List available templates
+  gocli project init --list
+
+  # 5. Use a template (copies template files then runs go mod init)
+  gocli project init myweb --template basic
+
+  # 6. Disable git init (default is enabled when --git provided / true)
+  gocli project init myapp --git
+
+  # 7. Enable extra tool configs
+  gocli project init myapp --go-task --gocli --goreleaser --docker --makefile
+
+  # 8. Add license & author meta
+  gocli project init mylib --license MIT --author "Alice" --email alice@example.com
+
+  # 9. Output templates as JSON / YAML when listing
+  gocli project init --list --json
+  gocli project init --list --format yaml
+
+  # 10. Force overwrite existing files from template
+  gocli project init myapp --template basic --force
+
+  # 11. Initialize using a template name passed as --type when no explicit --template
+  #     (If the value matches a registered template and type not go, it's treated as template)
+  gocli project init basic --type basic
+
+  # 12. Combine: create dir, apply template, init task & goreleaser
+  gocli project init svc-user --dir ./services/user --template api --go-task --goreleaser
+
+Notes:
+  - If go.mod already exists in the target directory, go mod init is skipped.
+  - --force overwrites files that already exist when copying template content.
+  - --json / --yaml only affect template list output (when --list specified).
+  - Author/email/license insertion depends on template support.
 `),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := project.ExecuteInitCommand(gocliCtx, args, initOptions, cmd.OutOrStdout()); err != nil {
@@ -50,6 +90,7 @@ var (
 				}
 			}
 		},
+		Args: cobra.MaximumNArgs(1),
 	}
 	projectBuildCmd = &cobra.Command{
 		Use:   "build [args...] [packages]",
@@ -128,9 +169,9 @@ Advanced notes:
 gocli project run builds then runs one (or multiple) main entrypoints (main package / main.go).
 
 Core capabilities:
-	- Automatically triggers a build with the provided flags before execution.
-	- Supports changing working directory via -C.
-	- Supports hot reloading (--hot-reload / -r) to auto rebuild & restart on file changes.
+  - Automatically triggers a build with the provided flags before execution.
+  - Supports changing working directory via -C.
+  - Supports hot reloading (--hot-reload / -r) to auto rebuild & restart on file changes.
 
 Examples:
   # 1. Run the main package in the current directory
@@ -240,41 +281,59 @@ Examples:
 	projectInfoCmd = &cobra.Command{
 		Use:   "info [flags]",
 		Short: "Show information about the Go project",
-		Long: `gocli project info provides detailed information about the Go project, including file statistics and language breakdowns.
+		Long: strings.TrimSpace(`
+gocli project info analyzes a Go module or directory and prints useful statistics and metadata.
 
-Examples:
+Capabilities:
+  - Count files, lines, languages and basic code metrics (functions, structs) per-language.
+  - Respect or ignore .gitignore when traversing the tree.
+  - Include per-file details (file-level stats) which are best consumed as JSON.
+  - Follow symlinks, limit file sizes, and control parallelism for large repositories.
+
+Common examples:
+  # Analyze current module (human-readable summary)
   gocli project info
 
-  # Specify a directory and output as JSON
+  # Analyze a directory and get machine-friendly JSON output
   gocli project info ./ --json
 
-  # Only include specified patterns (can be repeated)
-  gocli project info --include "**/*.go" --include "**/*.md"
+  # Only include Go sources and README files
+  gocli project info --include "**/*.go" --include "**/README.md"
 
-  # Exclude specified directory/file patterns
+  # Exclude vendor and testdata directories
   gocli project info --exclude "vendor/**" --exclude "**/testdata/**"
 
-  # Do not respect .gitignore (default is to respect it)
+  # Ignore .gitignore rules (scan everything)
   gocli project info --no-gitignore
 
-  # Explicitly respect .gitignore (default is true, usually not needed)
-  gocli project info --gitignore
-
-  # Follow symbolic links
+  # Follow symbolic links when collecting files
   gocli project info --follow-symlinks
 
-  # Limit the maximum file size (skips files >1MB)
+  # Skip very large files (>1MB)
   gocli project info --max-file-size 1048576
 
-  # Specify the number of concurrent workers
+  # Increase parallel workers for faster analysis on large repos
   gocli project info --concurrency 8
 
-  # Disable function/struct statistics (for Go)
-  gocli project info --with-funcs=false --with-structs=false
+  # Disable counting functions or structs (reduce work)
+  gocli project info --funcs=false --structs=false
 
-  # Include detailed information for each file (more useful with JSON)
+  # Include per-file breakdown (useful with --json)
   gocli project info --with-files --json
-`,
+
+  # Short-form (shorthand) flags example - equivalent to above long-form examples
+  #  - include paths (-i), exclude (-e), respect gitignore (-g), follow symlinks (-L)
+  #  - set max file size (-m), concurrency (-C), disable funcs/structs (-F -S)
+  #  - include per-file details (-f) and output JSON (-j)
+  gocli project info -i "./pkg" -e "vendor/**" -g -L -m 1048576 -C 8 -F=false -S=false -f -j
+
+  # Short-form: include per-language file lists and enable JSON
+  gocli project info -i "**/*.go" -l -j
+
+Notes:
+  - When using --with-files or explicitly supplying language-specific flags, JSON output is auto-enabled to ensure structured data.
+  - Use glob-style patterns for --include/--exclude; Windows backslashes are accepted but forward slashes are recommended.
+`),
 		Run: func(cmd *cobra.Command, args []string) {
 			// determine JSON output
 			jsonOut, _ := cmd.Flags().GetBool("json")
@@ -518,10 +577,30 @@ Notes:
 )
 
 func addInitFlags(cmd *cobra.Command, opts *project.InitOptions) {
+	// List Flags (also output format)
 	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List available templates")
-	cmd.Flags().StringVarP(&opts.Format, "format", "f", "yaml", "Output format (json|yaml)")
+	cmd.Flags().StringVarP(&opts.Format, "format", "f", "", "Output format (json|yaml|plain|table) only used with --list")
 	cmd.Flags().BoolVarP(&opts.JSON, "json", "j", false, "Output in JSON format")
 	cmd.Flags().BoolVarP(&opts.YAML, "yaml", "y", false, "Output in YAML format")
+	cmd.Flags().BoolVarP(&opts.Plain, "plain", "p", true, "Output plain list")
+	cmd.Flags().BoolVarP(&opts.Table, "table", "T", false, "Output in table format")
+
+	cmd.Flags().StringVarP(&opts.LangType, "type", "t", "go", "Set project type (go|cpp|python|node|rust|java|php|dotnet, only 'go' supported now)")
+	cmd.Flags().StringVarP(&opts.Template, "template", "m", "", "Project template name (use --list to see available templates)")
+	cmd.Flags().StringVarP(&opts.Project.Dir, "dir", "d", "", "Project directory (defaults to current directory)")
+	cmd.Flags().BoolVarP(&opts.Force, "force", "F", false, "Force overwrite existing files")
+
+	// Project Init
+	cmd.Flags().BoolVar(&opts.Project.GoTaskInit, "go-task", false, "Initialize go-task configuration")
+	cmd.Flags().BoolVar(&opts.Project.GitInit, "git", false, "Initialize git repository (git init) (use --git=false to disable)")
+	cmd.Flags().BoolVar(&opts.Project.GoCLIInit, "gocli", false, "Initialize gocli config (gocli config init)")
+	cmd.Flags().BoolVar(&opts.Project.GoreleaserInit, "goreleaser", false, "Initialize Goreleaser config (goreleaser init)")
+	cmd.Flags().BoolVar(&opts.Project.DockerInit, "docker", false, "Initialize Docker related files (docker init)")
+	cmd.Flags().BoolVar(&opts.Project.MakefileInit, "makefile", false, "Initialize Makefile (makefile init)")
+	cmd.Flags().StringVar(&opts.Project.License, "license", "", "License identifier to add (e.g. MIT, Apache-2.0)")
+	cmd.Flags().StringVar(&opts.Project.Author, "author", "", "Author name (used in generated files if template supports)")
+	cmd.Flags().StringVar(&opts.Project.Email, "email", "", "Author email (used in generated files if template supports)")
+
 }
 
 // addBuildRunFlags adds the shared build and run flags to the given command.
@@ -559,20 +638,22 @@ func addBuildRunFlags(cmd *cobra.Command, opts *project.BuildRunOptions) {
 }
 
 func addInfoFlags(cmd *cobra.Command, opts *project.InfoOptions) {
-	cmd.Flags().StringSliceVar(&opts.Include, "include", nil, "Only include paths matching these glob patterns (comma or repeated)")
-	cmd.Flags().StringSliceVar(&opts.Exclude, "exclude", nil, "Exclude paths matching these glob patterns")
-	cmd.Flags().BoolVar(&opts.RespectGitignore, "gitignore", true, "Respect .gitignore rules (disable with --no-gitignore)")
+	// add short aliases for common flags to improve ergonomics
+	cmd.Flags().StringSliceVarP(&opts.Include, "include", "i", nil, "Only include paths matching these glob patterns (comma or repeated)")
+	cmd.Flags().StringSliceVarP(&opts.Exclude, "exclude", "e", nil, "Exclude paths matching these glob patterns")
+	cmd.Flags().BoolVarP(&opts.RespectGitignore, "gitignore", "g", true, "Respect .gitignore rules (disable with --no-gitignore)")
+	// keep --no-gitignore without a short alias to avoid confusion with --gitignore
 	cmd.Flags().Bool("no-gitignore", false, "Do not respect .gitignore (overrides --gitignore)")
-	cmd.Flags().BoolVar(&opts.FollowSymlinks, "follow-symlinks", false, "Follow symbolic links")
-	cmd.Flags().Int64Var(&opts.MaxFileSizeBytes, "max-file-size", 0, "Skip files larger than this size in bytes (0 means no limit)")
-	cmd.Flags().IntVar(&opts.Concurrency, "concurrency", 0, "Number of concurrent workers (0 uses CPU cores)")
-	cmd.Flags().BoolVar(&opts.WithFunctions, "funcs", true, "Count functions for supported languages (Go)")
-	cmd.Flags().BoolVar(&opts.WithStructs, "structs", true, "Count structs/types for supported languages (Go)")
-	cmd.Flags().BoolVar(&opts.WithFileDetails, "files", false, "Include per-file details in JSON output")
+	cmd.Flags().BoolVarP(&opts.FollowSymlinks, "follow-symlinks", "L", false, "Follow symbolic links")
+	cmd.Flags().Int64VarP(&opts.MaxFileSizeBytes, "max-file-size", "m", 0, "Skip files larger than this size in bytes (0 means no limit)")
+	cmd.Flags().IntVarP(&opts.Concurrency, "concurrency", "C", 0, "Number of concurrent workers (0 uses CPU cores)")
+	cmd.Flags().BoolVarP(&opts.WithFunctions, "funcs", "F", true, "Count functions for supported languages (Go)")
+	cmd.Flags().BoolVarP(&opts.WithStructs, "structs", "S", true, "Count structs/types for supported languages (Go)")
+	cmd.Flags().BoolVarP(&opts.WithFileDetails, "files", "f", false, "Include per-file details in JSON output")
 
-	cmd.Flags().Bool("json", false, "Output result in JSON format (auto-enabled if --language-files or explicit --lang-specific used)")
-	cmd.Flags().BoolVar(&opts.WithLanguageDetails, "language-files", false, "Include per-file list inside each language (auto enables --json)")
-	cmd.Flags().BoolVar(&opts.WithLanguageSpecific, "lang-specific", true, "Include language specific metadata (e.g. Go imports) (explicit use auto enables --json)")
+	cmd.Flags().BoolP("json", "j", false, "Output result in JSON format (auto-enabled if --language-files or explicit --lang-specific used)")
+	cmd.Flags().BoolVarP(&opts.WithLanguageDetails, "language-files", "l", false, "Include per-file list inside each language (auto enables --json)")
+	cmd.Flags().BoolVarP(&opts.WithLanguageSpecific, "lang-specific", "k", true, "Include language specific metadata (e.g. Go imports) (explicit use auto enables --json)")
 
 }
 
