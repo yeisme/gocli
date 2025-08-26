@@ -657,68 +657,110 @@ func addInfoFlags(cmd *cobra.Command, opts *project.InfoOptions) {
 
 }
 
-func init() {
-	rootCmd.AddCommand(projectCmd)
+func addDepsFlags(cmd *cobra.Command, opts *project.DepsOptions) {
+	cmd.Flags().BoolVarP(&opts.JSON, "json", "j", false, "Output dependencies as JSON (go list -m -json)")
+	cmd.Flags().BoolVarP(&opts.Update, "update", "u", false, "Check for available updates (adds -u)")
+	cmd.Flags().BoolVarP(&opts.Tree, "tree", "t", false, "Display dependency tree (from 'go mod graph')")
+	cmd.Flags().BoolVarP(&opts.Graph, "graph", "g", false, "Display dependency graph (raw 'go mod graph')")
+	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Verbose output")
+	cmd.Flags().BoolVar(&opts.Tidy, "tidy", false, "Run 'go mod tidy'")
+	cmd.Flags().BoolVar(&opts.Vendor, "vendor", false, "Run 'go mod vendor'")
+	cmd.Flags().BoolVar(&opts.Download, "download", false, "Run 'go mod download'")
+	cmd.Flags().BoolVar(&opts.Verify, "verify", false, "Run 'go mod verify'")
+	cmd.Flags().BoolVar(&opts.Why, "why", false, "Run 'go mod why' for given targets (defaults to ./... if none)")
+	cmd.Flags().BoolVar(&opts.WhyModule, "why-module", false, "Explain why modules are needed (adds -m)")
+	cmd.Flags().BoolVar(&opts.WhyVendor, "why-vendor", false, "Explain use of vendored packages (adds -vendor)")
+}
 
+// addListFlags registers flags for the `project list` command.
+func addListFlags(cmd *cobra.Command, opts *project.ListOptions) {
+	cmd.Flags().BoolVarP(&opts.JSON, "json", "j", false, "Output packages as JSON array")
+	cmd.Flags().BoolVar(&opts.Test, "test", false, "Include test packages (adds -test)")
+}
+
+// addLintFlags registers flags for the `project lint` command.
+func addLintFlags(cmd *cobra.Command, opts *project.LintOptions) {
+	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List all available linters")
+	cmd.Flags().BoolVarP(&opts.Fix, "fix", "f", false, "Fix issues where possible")
+	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Verbose output (line by line)")
+	cmd.Flags().BoolVarP(&opts.Config.Validate, "verify", "V", false, "Verify configuration against JSON schema")
+	cmd.Flags().BoolVarP(&opts.Config.Path, "config-path", "C", false, "Specify the configuration file path")
+	cmd.Flags().StringVarP(&opts.ConfigPath, "config", "c", "", "Specify the configuration file path")
+}
+
+// addFmtFlags registers flags for the `project fmt` command.
+func addFmtFlags(cmd *cobra.Command, opts *project.FmtOptions) {
+	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List all available formatters")
+	cmd.Flags().StringVarP(&opts.Path, "path", "p", "", "Target path to format (default current directory)")
+	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Verbose output (line by line)")
+	cmd.Flags().StringVarP(&opts.ConfigPath, "config", "c", "", "Specify the configuration file path")
+}
+
+// addUpdateFlags registers flags for the `project update` command.
+func addUpdateFlags(cmd *cobra.Command, opts *project.UpdateOptions) {
+	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Verbose output (line by line)")
+}
+
+// addDocFlags registers flags for the `project doc` command.
+func addDocFlags(cmd *cobra.Command, opts *project.DocOptions) {
+	cmd.Flags().StringVarP((*string)(&opts.Style), "style", "s", string(doc.StylePlain), "Render style: plain|markdown|html")
+	cmd.Flags().StringVarP((*string)(&opts.Mode), "mode", "m", string(doc.ModeGodoc), "Doc mode: godoc|markdown")
+	cmd.Flags().StringVarP(&opts.Output, "output", "o", "", "Output file path (default stdout)")
+	cmd.Flags().BoolVarP(&opts.IncludePrivate, "private", "p", false, "Include unexported (private) symbols in analysis")
+	cmd.Flags().BoolVarP(&opts.IncludeTests, "tests", "t", false, "Include *_test.go files (auto enables --examples if not set)")
+	cmd.Flags().BoolVarP(&opts.IncludeExamples, "examples", "e", false, "Include example functions (auto-enabled by --tests)")
+	cmd.Flags().BoolVar(&opts.TOC, "toc", true, "Generate table of contents where applicable")
+	cmd.Flags().StringVar(&opts.Theme, "theme", "", "Theme for styled output (markdown renderer)")
+	cmd.Flags().IntVarP(&opts.Width, "width", "w", 0, "Render width (0 auto)")
+	cmd.Flags().BoolVarP(&opts.Detailed, "detailed", "d", false, "Enable detailed output")
+}
+
+// registerProjectFlags centralizes all flag registrations for project subcommands
+// and orders them to match the command registration order in init.
+func registerProjectFlags() {
+	// 1) init
 	addInitFlags(projectInitCmd, &initOptions)
 
-	// Add the shared flags to both build and run commands
+	// 2) build
 	addBuildRunFlags(projectBuildCmd, &buildOptions)
+
+	// 3) run
 	addBuildRunFlags(projectRunCmd, &runOptions)
 
+	// 4) list
+	addListFlags(projectListCmd, &listOptions)
+
+	// 5) info
 	addInfoFlags(projectInfoCmd, &infoOptions)
 
-	// lint flags
-	projectListCmd.Flags().BoolVarP(&listOptions.JSON, "json", "j", false, "Output packages as JSON array")
-	projectListCmd.Flags().BoolVar(&listOptions.Test, "test", false, "Include test packages (adds -test)")
+	// 6) add (no flags currently)
 
-	// lint flags
-	projectLintCmd.Flags().BoolVarP(&lintOptions.List, "list", "l", false, "List all available linters")
-	projectLintCmd.Flags().BoolVarP(&lintOptions.Fix, "fix", "f", false, "Fix issues where possible")
-	projectLintCmd.Flags().BoolVarP(&lintOptions.Verbose, "verbose", "v", false, "Verbose output (line by line)")
-	projectLintCmd.Flags().BoolVarP(&lintOptions.Config.Validate, "verify", "V", false, "Verify configuration against JSON schema")
-	projectLintCmd.Flags().BoolVarP(&lintOptions.Config.Path, "config-path", "C", false, "Specify the configuration file path")
-	projectLintCmd.Flags().StringVarP(&lintOptions.ConfigPath, "config", "c", "", "Specify the configuration file path")
+	// 7) test (no flags currently)
 
-	// fmt flags
-	projectFmtCmd.Flags().BoolVarP(&fmtOptions.List, "list", "l", false, "List all available formatters")
-	projectFmtCmd.Flags().StringVarP(&fmtOptions.Path, "path", "p", "", "Target path to format (default current directory)")
-	projectFmtCmd.Flags().BoolVarP(&fmtOptions.Verbose, "verbose", "v", false, "Verbose output (line by line)")
-	projectFmtCmd.Flags().StringVarP(&fmtOptions.ConfigPath, "config", "c", "", "Specify the configuration file path")
+	// 8) lint
+	addLintFlags(projectLintCmd, &lintOptions)
 
-	// update flags
-	// Usage: gocli project update --verbose ./...
-	projectUpdateCmd.Flags().BoolVarP(&updateOptions.Verbose, "verbose", "v", false, "Verbose output (line by line)")
+	// 9) fmt
+	addFmtFlags(projectFmtCmd, &fmtOptions)
 
-	// deps flags
-	projectDepsCmd.Flags().BoolVarP(&depsOptions.JSON, "json", "j", false, "Output dependencies as JSON (go list -m -json)")
-	projectDepsCmd.Flags().BoolVarP(&depsOptions.Update, "update", "u", false, "Check for available updates (adds -u)")
-	projectDepsCmd.Flags().BoolVarP(&depsOptions.Tree, "tree", "t", false, "Display dependency tree (from 'go mod graph')")
-	projectDepsCmd.Flags().BoolVarP(&depsOptions.Graph, "graph", "g", false, "Display dependency graph (raw 'go mod graph')")
-	projectDepsCmd.Flags().BoolVarP(&depsOptions.Verbose, "verbose", "v", false, "Verbose output")
-	projectDepsCmd.Flags().BoolVar(&depsOptions.Tidy, "tidy", false, "Run 'go mod tidy'")
-	projectDepsCmd.Flags().BoolVar(&depsOptions.Vendor, "vendor", false, "Run 'go mod vendor'")
-	projectDepsCmd.Flags().BoolVar(&depsOptions.Download, "download", false, "Run 'go mod download'")
-	projectDepsCmd.Flags().BoolVar(&depsOptions.Verify, "verify", false, "Run 'go mod verify'")
-	projectDepsCmd.Flags().BoolVar(&depsOptions.Why, "why", false, "Run 'go mod why' for given targets (defaults to ./... if none)")
-	projectDepsCmd.Flags().BoolVar(&depsOptions.WhyModule, "why-module", false, "Explain why modules are needed (adds -m)")
-	projectDepsCmd.Flags().BoolVar(&depsOptions.WhyVendor, "why-vendor", false, "Explain use of vendored packages (adds -vendor)")
+	// 10) update
+	addUpdateFlags(projectUpdateCmd, &updateOptions)
 
-	// Disable sorting for build and run commands to group flags logically
+	// 11) deps
+	addDepsFlags(projectDepsCmd, &depsOptions)
+
+	// Keep build/run flag ordering as originally intended
 	projectBuildCmd.Flags().SortFlags = false
 	projectRunCmd.Flags().SortFlags = false
 
-	// doc flags - bind directly to docOptions where possible to match other commands
-	projectDocCmd.Flags().StringVarP((*string)(&docOptions.Style), "style", "s", string(doc.StylePlain), "Render style: plain|markdown|html")
-	projectDocCmd.Flags().StringVarP((*string)(&docOptions.Mode), "mode", "m", string(doc.ModeGodoc), "Doc mode: godoc|markdown")
-	projectDocCmd.Flags().StringVarP(&docOptions.Output, "output", "o", "", "Output file path (default stdout)")
-	projectDocCmd.Flags().BoolVarP(&docOptions.IncludePrivate, "private", "p", false, "Include unexported (private) symbols in analysis")
-	projectDocCmd.Flags().BoolVarP(&docOptions.IncludeTests, "tests", "t", false, "Include *_test.go files (auto enables --examples if not set)")
-	projectDocCmd.Flags().BoolVarP(&docOptions.IncludeExamples, "examples", "e", false, "Include example functions (auto-enabled by --tests)")
-	projectDocCmd.Flags().BoolVar(&docOptions.TOC, "toc", true, "Generate table of contents where applicable")
-	projectDocCmd.Flags().StringVar(&docOptions.Theme, "theme", "", "Theme for styled output (markdown renderer)")
-	projectDocCmd.Flags().IntVarP(&docOptions.Width, "width", "w", 0, "Render width (0 auto)")
-	projectDocCmd.Flags().BoolVarP(&docOptions.Detailed, "detailed", "d", false, "Enable detailed output")
+	addDocFlags(projectDocCmd, &docOptions)
+}
+
+func init() {
+	rootCmd.AddCommand(projectCmd)
+
+	// register flags and options in the same order as AddCommand below
+	registerProjectFlags()
 
 	projectCmd.AddCommand(
 		projectInitCmd,

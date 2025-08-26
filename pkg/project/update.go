@@ -28,6 +28,11 @@ func RunUpdate(opts UpdateOptions, out io.Writer, args []string) error {
 		runArgs = nil
 	}
 
+	// 先执行 go mod tidy
+	if _, err := deps.RunGoModTidy(); err != nil {
+		return err
+	}
+
 	output, err := deps.RunGoUpdate(runArgs)
 	// Stop spinner before any further output
 	sp.Stop()
