@@ -1,15 +1,21 @@
 version: 3
 
 tasks:
-  defaults:
-    cmds:
-      - go build ./cmd/gocli
-    desc: Build the project using the default Go build command (Without Version Info)
+  default:
+    deps:
+      - gocli
+      - gox
+    desc: Build the project using Go build command
 
-  build:
+  build:single:
     cmds:
       - MOD_SUM=$(sha256sum go.sum | cut -d" " -f1 | cut -c1-16) goreleaser build --snapshot --clean --single-target
     desc: Build the project using GoReleaser
+
+  build:all:
+    cmds:
+      - MOD_SUM=$(sha256sum go.sum | cut -d" " -f1 | cut -c1-16) goreleaser build --snapshot --clean
+    desc: Build the project using GoReleaser in test mode
 
   release:
     cmds:
@@ -20,3 +26,13 @@ tasks:
     cmds:
       - go test ./...
     desc: Run tests
+
+  gocli:
+    cmds:
+      - go build ./cmd/gocli
+    desc: Build the project using the default Go build command (Without Version Info)
+
+  gox:
+    cmds:
+      - go build ./cmd/gox
+    desc: Build the gox tool

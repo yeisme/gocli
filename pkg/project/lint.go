@@ -87,10 +87,10 @@ func RunLint(options LintOptions, out io.Writer) error {
 				disabled = append(disabled, l)
 			}
 		}
-		_, _ = fmt.Fprintln(out)
+		fmt.Fprintln(out)
 		_ = style.PrintHeading(out, "Enabled Linters")
 		_ = style.PrintFormatterList(out, enabled)
-		_, _ = fmt.Fprintln(out)
+		fmt.Fprintln(out)
 		_ = style.PrintHeading(out, "Disabled Linters")
 		_ = style.PrintFormatterList(out, disabled)
 	} else if options.Verbose && output != "" {

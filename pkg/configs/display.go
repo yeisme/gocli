@@ -110,7 +110,7 @@ func OutputData(data any, format OutputFormat, out io.Writer) error {
 
 	case FormatText:
 		// 简单的文本格式输出
-		_, _ = fmt.Fprintf(out, "%+v\n", data)
+		fmt.Fprintf(out, "%+v\n", data)
 
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)

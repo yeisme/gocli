@@ -5,6 +5,7 @@ package version
 import (
 	"fmt"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -53,18 +54,35 @@ func GetVersion() Info {
 func GetVersionString() string {
 	info := GetVersion()
 
-	modifiedStr := fmt.Sprintf(", modified: %s", info.Modified)
+	// Build a list of detail parts and only include non-empty/meaningful fields.
+	parts := []string{}
 
-	// Format similar to golangci-lint
-	return fmt.Sprintf("gocli has version %s built with %s from %s (%s%s, mod sum: \"%s\") on %s",
-		info.Version,
-		info.GoVersion,
-		info.GitCommit,
-		info.Platform,
-		modifiedStr,
-		info.ModSum,
-		info.BuildDate,
-	)
+	if info.GitCommit != "" && info.GitCommit != "unknown" {
+		parts = append(parts, fmt.Sprintf("commit %s", info.GitCommit))
+	}
+	if info.BuildDate != "" {
+		parts = append(parts, fmt.Sprintf("built %s", info.BuildDate))
+	}
+	if info.GoVersion != "" {
+		parts = append(parts, info.GoVersion)
+	}
+	if info.Platform != "" {
+		parts = append(parts, info.Platform)
+	}
+	if info.Modified != "" && info.Modified != "false" {
+		parts = append(parts, fmt.Sprintf("modified: %s", info.Modified))
+	}
+	if info.ModSum != "" {
+		parts = append(parts, fmt.Sprintf("mod sum: \"%s\"", info.ModSum))
+	}
+
+	details := strings.Join(parts, ", ")
+	if details == "" {
+		// Minimal fallback when nothing meaningful is available
+		return fmt.Sprintf("gocli version %s", info.Version)
+	}
+
+	return fmt.Sprintf("gocli version %s (%s)", info.Version, details)
 }
 
 // GetShortVersionString returns a short version string similar to gh
@@ -80,10 +98,17 @@ func GetShortVersionString() string {
 		dateStr = buildTime.Format("2006-01-02")
 	}
 
-	// Format similar to GitHub CLI
-	return fmt.Sprintf("gocli version %s (%s)\nhttps://github.com/yeisme/gocli/releases/tag/v%s",
-		info.Version,
-		dateStr,
-		info.Version,
-	)
+	// Include short commit if available
+	commitPart := ""
+	if info.GitCommit != "" && info.GitCommit != "unknown" {
+		// prefer short (7) like git
+		short := info.GitCommit
+		if len(short) > 7 {
+			short = short[:7]
+		}
+		commitPart = fmt.Sprintf("commit %s, ", short)
+	}
+
+	// Format similar to GitHub CLI but concise
+	return fmt.Sprintf("gocli version %s (%s%s)\n", info.Version, commitPart, dateStr)
 }

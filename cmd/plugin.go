@@ -21,10 +21,11 @@ var pluginCmd = &cobra.Command{
 var pluginListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all available plugins",
-	Long: `List all available gocli plugins from various sources including:
-- User home directory (~/.gocli/plugins)
-- Current directory (./.gocli/plugins)
-- Config file specified path
+	Long: `
+List all available gocli plugins from various sources including:
+  - User home directory (~/.gocli/plugins)
+  - Current directory (./.gocli/plugins)
+  - Config file specified path
 
 Examples:
   gocli plugin list

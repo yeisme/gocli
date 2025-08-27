@@ -57,7 +57,7 @@ func resolveMode(opt Options, root, path string) (string, error) {
 	case ModeGodoc:
 		return GetGoDoc(opt, root, path)
 	case ModeMarkdown:
-		// Markdown 模式：强制手动传入 markdown 文件用于渲染。
+		// Markdown 模式：强制手动传入 markdown 文件用于渲染
 		if path == "" {
 			return "", fmt.Errorf("mode %s requires a markdown file path; pass a file or set mode to ModeGodoc for package docs", opt.Mode)
 		}

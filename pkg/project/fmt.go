@@ -75,10 +75,10 @@ func RunFmt(options FmtOptions, out io.Writer) error {
 				disabled = append(disabled, f)
 			}
 		}
-		_, _ = fmt.Fprintln(out)
+		fmt.Fprintln(out)
 		_ = style.PrintHeading(out, "Enabled Formatters")
 		_ = style.PrintFormatterList(out, enabled)
-		_, _ = fmt.Fprintln(out)
+		fmt.Fprintln(out)
 		_ = style.PrintHeading(out, "Disabled Formatters")
 		_ = style.PrintFormatterList(out, disabled)
 	} else if options.Verbose && output != "" {

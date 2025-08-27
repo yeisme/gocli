@@ -87,7 +87,7 @@ func FormatYAML(v any) (string, error) {
 
 // colorizeYAML 对 YAML 文本进行轻量高亮（键名、标点、数字、布尔、null）
 // 实现策略：按行处理，识别未被引号包裹的键（行首或缩进后直到第一个冒号），
-// 对冒号、连字号（-）等标记使用 punctStyle，并对数值/布尔/null 使用已有样式。
+// 对冒号、连字号（-）等标记使用 punctStyle，并对数值/布尔/null 使用已有样式
 func colorizeYAML(s string) string {
 	keyStyle := lipgloss.NewStyle().Foreground(ColorJSONKey).Bold(true)
 	strStyle := lipgloss.NewStyle().Foreground(ColorJSONValue)

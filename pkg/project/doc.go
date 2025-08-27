@@ -88,7 +88,7 @@ func RunDoc(ctx *context.GocliContext, opts DocOptions, out io.Writer, args []st
 		// 若仍然不是 import path 解析成功的目录，则按原有逻辑解析文件系统路径
 		if !filepath.IsAbs(path) && !isDirectory(path) && filepath.Ext(path) != ".go" && !isMarkdownExt(path) {
 			// 先把相对路径解析为基于当前工作目录的绝对路径，
-			// 这样在子目录中执行 `gocli project doc .` 能正确解析到当前目录下的包。
+			// 这样在子目录中执行 `gocli project doc .` 能正确解析到当前目录下的包
 			if wd, err := os.Getwd(); err == nil {
 				path = filepath.Join(wd, path)
 			} else {

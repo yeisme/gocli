@@ -76,35 +76,35 @@ func handleGoModSubcommands(options DepsOptions, out io.Writer, args []string) (
 		if err != nil {
 			return true, err
 		}
-		_, _ = fmt.Fprint(out, output)
+		fmt.Fprint(out, output)
 		return true, nil
 	case options.Vendor:
 		output, err := deps.RunGoModVendor()
 		if err != nil {
 			return true, err
 		}
-		_, _ = fmt.Fprint(out, output)
+		fmt.Fprint(out, output)
 		return true, nil
 	case options.Download:
 		output, err := deps.RunGoModDownload()
 		if err != nil {
 			return true, err
 		}
-		_, _ = fmt.Fprint(out, output)
+		fmt.Fprint(out, output)
 		return true, nil
 	case options.Verify:
 		output, err := deps.RunGoModVerify()
 		if err != nil {
 			return true, err
 		}
-		_, _ = fmt.Fprint(out, output)
+		fmt.Fprint(out, output)
 		return true, nil
 	case options.Why:
 		output, err := deps.RunGoModWhy(args, struct{ Module, Vendor bool }{Module: options.WhyModule, Vendor: options.WhyVendor})
 		if err != nil {
 			return true, err
 		}
-		_, _ = fmt.Fprint(out, output)
+		fmt.Fprint(out, output)
 		return true, nil
 	default:
 		return false, nil
@@ -193,7 +193,7 @@ func printRawGraph(out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprint(out, raw)
+	fmt.Fprint(out, raw)
 	return nil
 }
 
@@ -209,6 +209,6 @@ func runGoList(options DepsOptions, out io.Writer, args []string) error {
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintf(out, "%s", output)
+	fmt.Fprintf(out, "%s", output)
 	return nil
 }

@@ -12,16 +12,16 @@ import (
 )
 
 var (
+	initOptions   project.InitOptions
 	buildOptions  project.BuildRunOptions
 	runOptions    project.BuildRunOptions
-	infoOptions   project.InfoOptions
-	fmtOptions    project.FmtOptions
-	lintOptions   project.LintOptions
 	listOptions   project.ListOptions
+	infoOptions   project.InfoOptions
+	lintOptions   project.LintOptions
+	fmtOptions    project.FmtOptions
 	updateOptions project.UpdateOptions
 	depsOptions   project.DepsOptions
 	docOptions    project.DocOptions
-	initOptions   project.InitOptions
 
 	projectCmd = &cobra.Command{
 		Use:     "project",
@@ -33,7 +33,11 @@ var (
 	projectInitCmd = &cobra.Command{
 		Use:   "init [name]",
 		Short: "Initialize a new Go project",
-		Long: strings.TrimSpace(`Initialize a new Go project with the necessary files and directories.
+		Long: `
+Initialize a new Go project with the necessary files and directories.
+
+Basic usage:
+  gocli project init [name] [flags]
 
 Examples:
   # 1. Initialize in current directory (module name inferred from path)
@@ -79,7 +83,7 @@ Notes:
   - --force overwrites files that already exist when copying template content.
   - --json / --yaml only affect template list output (when --list specified).
   - Author/email/license insertion depends on template support.
-`),
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := project.ExecuteInitCommand(gocliCtx, args, initOptions, cmd.OutOrStdout()); err != nil {
 				// 如果是 ExecError（包含 stderr），直接把格式化后的错误作为消息打印，避免 zerolog 将换行转义
@@ -95,12 +99,13 @@ Notes:
 	projectBuildCmd = &cobra.Command{
 		Use:   "build [args...] [packages]",
 		Short: "Build the Go project",
-		Long: strings.TrimSpace(`
+		Long: `
 gocli project build compiles Go packages (a superset wrapper of 'go build').
 
 Basic usage:
-  When no package/path is specified, the current directory is used.
-  You may pass a directory, file, or pattern (e.g. ./..., ./cmd/server).
+  gocli project build [flags] [packages]
+	When no package/path is specified, the current directory is used. You may pass a
+	directory, file, or pattern (e.g. ./..., ./cmd/server).
 
 Examples:
   # 1. Build current module (similar to 'go build')
@@ -149,11 +154,11 @@ Examples:
   # 15. Debug-style build (no optimizations, full symbols)
   gocli project build --debug-mode ./cmd/cli
 
-Advanced notes:
+Notes:
   - Most flags map directly to 'go build' counterparts (asmflags/gcflags/ldflags...).
   - --release-mode / --debug-mode are opinionated presets combining common flags.
   - Can be combined with --hot-reload (more commonly used under 'run').
-`),
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			buildOptions.V = gocliCtx.Config.App.Verbose
 			if err := project.ExecuteBuildCommand(gocliCtx, buildOptions, args); err != nil {
@@ -165,13 +170,13 @@ Advanced notes:
 	projectRunCmd = &cobra.Command{
 		Use:   "run [args...] [packages]",
 		Short: "Run the Go project",
-		Long: strings.TrimSpace(`
+		Long: `
 gocli project run builds then runs one (or multiple) main entrypoints (main package / main.go).
 
-Core capabilities:
-  - Automatically triggers a build with the provided flags before execution.
-  - Supports changing working directory via -C.
-  - Supports hot reloading (--hot-reload / -r) to auto rebuild & restart on file changes.
+Basic usage:
+  gocli project run [flags] [packages]
+	By default runs the main package in the current directory; you can specify files
+	or directories (e.g. main.go, ./cmd/server). Flags control build/run behavior and hot reload.
 
 Examples:
   # 1. Run the main package in the current directory
@@ -205,11 +210,11 @@ Examples:
   # 10. Hot reload without respecting .gitignore
   gocli project run -r --no-gitignore ./cmd/server
 
-  # Additional tips:
+Notes:
   - Hot reload is for local dev; for production prefer a static build + external supervisor.
   - --release-mode may also be used here to emulate production flags for a quick run.
   - Use -n / --dry-run to only print the underlying commands.
-`),
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			runOptions.V = gocliCtx.Config.App.Verbose
 			if err := project.ExecuteRunCommand(gocliCtx, runOptions, args); err != nil {
@@ -221,10 +226,13 @@ Examples:
 	projectListCmd = &cobra.Command{
 		Use:   "list [flags] [patterns]",
 		Short: "List Go packages (wrapper around 'go list')",
-		Long: `gocli project list lists Go packages under the current module.
+		Long: `
+gocli project list lists Go packages under the current module.
 
-By default it expands to './...' to list all packages.
-Patterns can be provided (e.g. ./cmd/..., ./pkg/utils, ./... ).
+Basic usage:
+  gocli project list [flags] [patterns]
+	By default it expands to './...' to list all packages. Patterns can be provided
+	(e.g. ./cmd/..., ./pkg/utils, ./... ).
 
 Examples:
   # List all packages
@@ -281,16 +289,14 @@ Examples:
 	projectInfoCmd = &cobra.Command{
 		Use:   "info [flags]",
 		Short: "Show information about the Go project",
-		Long: strings.TrimSpace(`
+		Long: `
 gocli project info analyzes a Go module or directory and prints useful statistics and metadata.
 
-Capabilities:
-  - Count files, lines, languages and basic code metrics (functions, structs) per-language.
-  - Respect or ignore .gitignore when traversing the tree.
-  - Include per-file details (file-level stats) which are best consumed as JSON.
-  - Follow symlinks, limit file sizes, and control parallelism for large repositories.
+Basic usage:
+  gocli project info [flags] [path]
+  Use flags to control inclusion/exclusion, output format (JSON), and traversal behavior.
 
-Common examples:
+Examples:
   # Analyze current module (human-readable summary)
   gocli project info
 
@@ -333,7 +339,7 @@ Common examples:
 Notes:
   - When using --with-files or explicitly supplying language-specific flags, JSON output is auto-enabled to ensure structured data.
   - Use glob-style patterns for --include/--exclude; Windows backslashes are accepted but forward slashes are recommended.
-`),
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// determine JSON output
 			jsonOut, _ := cmd.Flags().GetBool("json")
@@ -390,12 +396,19 @@ Notes:
 			}
 		},
 	}
-	projectAddCmd  = &cobra.Command{Use: "add", Short: "Add a dependency to the Go project"}
+	projectAddCmd = &cobra.Command{
+		Use:   "add",
+		Short: "Add a dependency to the Go project",
+	}
 	projectTestCmd = &cobra.Command{Use: "test", Short: "Run tests for the Go project"}
 	projectLintCmd = &cobra.Command{
 		Use:   "lint",
 		Short: "Lint the Go project",
-		Long: `gocli project lint checks the Go project for common issues and style violations.(use golangci-lint)
+		Long: `
+gocli project lint checks the Go project for common issues and style violations.(use golangci-lint)
+
+Basic usage:
+  gocli project lint [flags] [path]
 
 Examples:
   gocli project lint
@@ -428,15 +441,18 @@ Examples:
 	projectFmtCmd = &cobra.Command{
 		Use:   "fmt",
 		Short: "Format the Go project",
-		Long:  `gocli project fmt formats the Go project code (use golangci-lint).`,
+		Long: `
+gocli project fmt formats the Go project code (use golangci-lint).
 
-		Example: `
+Basic usage:
+  gocli project fmt [flags] [path]
+
+Examples:
   gocli project fmt
 
   # List all available formatters
   gocli project fmt --list
-
-`,
+	`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmtOptions.Verbose = gocliCtx.Config.App.Verbose
 			if len(args) > 0 { // 若用户传入路径，取第一个作为路径
@@ -452,7 +468,11 @@ Examples:
 	projectUpdateCmd = &cobra.Command{
 		Use:   "update",
 		Short: "Update dependencies of the Go project",
-		Long: `Update the dependencies of the Go project (use 'go get -u' under the hood).
+		Long: `
+Update the dependencies of the Go project (use 'go get -u' under the hood).
+
+Basic usage:
+  gocli project update [flags] [packages]
 
 Examples:
   # Update default all dependencies
@@ -461,7 +481,7 @@ Examples:
 
   # Update specific module
   gocli project update github.com/charmbracelet/lipgloss
-`,
+	`,
 		Run: func(cmd *cobra.Command, args []string) {
 			opts := updateOptions
 			if gocliCtx.Config.App.Verbose {
@@ -476,19 +496,71 @@ Examples:
 	projectDepsCmd = &cobra.Command{
 		Use:   "deps",
 		Short: "Manage dependencies of the Go project",
-		Long: `gocli project deps provides commands to manage the dependencies of a Go project.
+		Long: `
+gocli project deps provides commands to manage the dependencies of a Go project and perform module maintenance.
+
+Basic usage:
+  gocli project deps [flags] [targets]
+	Use with no targets to operate on the current module (defaults to ./...).
 
 Examples:
+
+  # 1. List current module dependencies (human readable)
   gocli project deps
-  gocli project deps --tree
-  gocli project deps --graph
+
+  # 2. Output dependencies as JSON (useful for tooling)
   gocli project deps --json
+  gocli project deps -j
+
+  # 3. Show dependency tree (visual hierarchical view)
+  gocli project deps --tree
+  gocli project deps -t
+
+  # 4. Show raw dependency graph (output of 'go mod graph')
+  gocli project deps --graph
+  gocli project deps -g
+
+  # 5. Run maintenance actions (these modify files): tidy, vendor, download
   gocli project deps --tidy
+  gocli project deps -d    # shorthand for tidy
   gocli project deps --vendor
+  gocli project deps -n    # shorthand for vendor
   gocli project deps --download
+  gocli project deps -w    # shorthand for download
+
+  # 6. Verify module checksums (go mod verify)
   gocli project deps --verify
-  gocli project deps --why ./...
+  gocli project deps -f    # shorthand for verify
+
+  # 7. Check for available updates (adds -u) and output JSON
+  gocli project deps --update
+  gocli project deps -u -j
+
+  # 8. Explain why packages/modules are required (defaults to ./... when no target provided)
+  # - basic why for current module
+  gocli project deps --why
+  gocli project deps -y
+
+  # 9. Explain why with module-level context (-m / --why-module) and with vendor-aware hints (-V / --why-vendor)
   gocli project deps --why --why-module std
+  gocli project deps -y -m std
+  gocli project deps --why --why-vendor ./...
+  gocli project deps -y -V ./...
+
+  # 10. Verbose output combined with tree/graph views
+  gocli project deps --tree --verbose
+  gocli project deps -t -v
+
+  # 11. Full example that exercises most flags and uses short forms where available
+  # (lists updates in JSON, shows tree, enables verbose output, and runs verify)
+  gocli project deps -u -j -t -v -f ./...
+
+Notes:
+  - Short flags: -j (json), -u (update), -t (tree), -g (graph), -v (verbose),
+	-d (tidy), -n (vendor), -w (download), -f (verify), -y (why), -m (why-module), -V (why-vendor).
+  - Maintenance actions like --tidy, --vendor and --download modify module files; run intentionally and commit changes if desired.
+  - --why accepts package patterns (e.g. ./... or a specific import path). When no target is provided it defaults to ./...
+  - Use --verbose (-v) to get more diagnostic output when combining views (tree/graph/why).
 `,
 		Aliases: []string{"dep", "mod"},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -517,27 +589,12 @@ Examples:
 	projectDocCmd = &cobra.Command{
 		Use:   "doc [path|import]",
 		Short: "Show docs like 'go doc', with extras",
-		Long: `Display package or file documentation with enriched rendering and extra conveniences.
+		Long: `
+Display package or file documentation with enriched rendering and extra conveniences.
 
-gocli project doc provides a superset of 'go doc' and also supports:
-- Rendering Markdown files (README, docs/*.md) with selectable output styles (plain, markdown, html).
-- Rendering Go package documentation for local packages, relative paths, and remote module paths (e.g. gorm.io/gorm).
-- Including test files, examples and benchmark docs via flags so you can inspect *_test.go information.
-- Output to a file (via -o) for sharing or further processing, and theming for markdown/html renderers.
-
-Key behaviors:
-- If the target is a directory or package import path, package-level docs and symbols are printed.
-- If the target is a Markdown file, it will be rendered according to the chosen style/mode.
-- --tests (-t) will include *_test.go symbols (this also auto-enables --examples unless explicitly set).
-- --examples (-e) focuses on example functions and usage snippets.
-- Use --style to pick the renderer (plain for terminal, markdown for markdown output, html for HTML).
-- Use --mode to control parsing mode (godoc for Go-style docs, markdown to treat inputs as Markdown).
-
-When to use:
-- Quick local inspection: 'gocli project doc ./cmd' to view package docs while developing.
-- Readme preview: 'gocli project doc README.md --style=markdown' to validate generated markdown.
-- Third-party lookup: 'gocli project doc gorm.io/gorm' to fetch and show documentation for remote modules.
-- Produce shareable HTML: 'gocli project doc ./pkg -o docs/pkg.html --style=html'.
+Basic usage:
+  gocli project doc [flags] <path|import>
+	Renders package or file documentation with selectable styles/modes and optional output file.
 
 Examples:
   # Show docs for the current module
@@ -663,13 +720,13 @@ func addDepsFlags(cmd *cobra.Command, opts *project.DepsOptions) {
 	cmd.Flags().BoolVarP(&opts.Tree, "tree", "t", false, "Display dependency tree (from 'go mod graph')")
 	cmd.Flags().BoolVarP(&opts.Graph, "graph", "g", false, "Display dependency graph (raw 'go mod graph')")
 	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Verbose output")
-	cmd.Flags().BoolVar(&opts.Tidy, "tidy", false, "Run 'go mod tidy'")
-	cmd.Flags().BoolVar(&opts.Vendor, "vendor", false, "Run 'go mod vendor'")
-	cmd.Flags().BoolVar(&opts.Download, "download", false, "Run 'go mod download'")
-	cmd.Flags().BoolVar(&opts.Verify, "verify", false, "Run 'go mod verify'")
-	cmd.Flags().BoolVar(&opts.Why, "why", false, "Run 'go mod why' for given targets (defaults to ./... if none)")
-	cmd.Flags().BoolVar(&opts.WhyModule, "why-module", false, "Explain why modules are needed (adds -m)")
-	cmd.Flags().BoolVar(&opts.WhyVendor, "why-vendor", false, "Explain use of vendored packages (adds -vendor)")
+	cmd.Flags().BoolVarP(&opts.Tidy, "tidy", "d", false, "Run 'go mod tidy'")
+	cmd.Flags().BoolVarP(&opts.Vendor, "vendor", "n", false, "Run 'go mod vendor'")
+	cmd.Flags().BoolVarP(&opts.Download, "download", "w", false, "Run 'go mod download'")
+	cmd.Flags().BoolVarP(&opts.Verify, "verify", "f", false, "Run 'go mod verify'")
+	cmd.Flags().BoolVarP(&opts.Why, "why", "y", false, "Run 'go mod why' for given targets (defaults to ./... if none)")
+	cmd.Flags().BoolVarP(&opts.WhyModule, "why-module", "m", false, "Explain why modules are needed (adds -m)")
+	cmd.Flags().BoolVarP(&opts.WhyVendor, "why-vendor", "V", false, "Explain use of vendored packages (adds -vendor)")
 }
 
 // addListFlags registers flags for the `project list` command.

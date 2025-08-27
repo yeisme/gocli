@@ -18,11 +18,23 @@ var (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Show version information",
-	Long: `Display version information for gocli.
+	Long: `
+Display version information for gocli.
 
-By default, shows a short version string similar to GitHub CLI.
-Use --detailed flag to get more comprehensive version information like golangci-lint.
-Use --json flag to output version information in JSON format.`,
+Examples:
+  # Show short version info (default)
+  gocli version
+
+  # Show detailed version info
+  gocli version --detailed
+
+  # Show version info in JSON format
+  gocli version --json
+
+Notes:
+  - By default, shows a short version string similar to GitHub CLI.
+  - Use --detailed flag to get more comprehensive version information like golangci-lint.
+  - Use --json flag to output version information in JSON format.`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		if versionJSON {
 			info := version.GetVersion()
@@ -38,19 +50,11 @@ Use --json flag to output version information in JSON format.`,
 			fmt.Println(version.GetShortVersionString())
 		}
 	},
-	Example: `  # Show short version info (default)
-  gocli version
-
-  # Show detailed version info
-  gocli version --detailed
-
-  # Show version info in JSON format
-  gocli version --json`,
 }
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
 
-	versionCmd.Flags().BoolVar(&versionDetailed, "detailed", false, "show detailed version information")
-	versionCmd.Flags().BoolVar(&versionJSON, "json", false, "output version information in JSON format")
+	versionCmd.Flags().BoolVarP(&versionDetailed, "detailed", "d", false, "show detailed version information")
+	versionCmd.Flags().BoolVarP(&versionJSON, "json", "j", false, "output version information in JSON format")
 }

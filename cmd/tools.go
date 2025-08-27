@@ -28,7 +28,8 @@ var (
 	toolListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List available tools",
-		Long: `gocli tools list displays all available tools that can be used with gocli.
+		Long: `
+gocli tools list displays all available tools that can be used with gocli.
 
 Examples:
   gocli tools list
@@ -54,30 +55,8 @@ Examples:
 				return
 			}
 
-			if v {
-				headers := []string{"name", "source", "size", "modified", "path"}
-				rows := make([][]string, 0, len(tools))
-				for _, t := range tools {
-					rows = append(rows, []string{
-						t.Name,
-						string(t.Source),
-						formatSize(t.Size),
-						t.ModTime.Format("2006-01-02 15:04"),
-						t.Path,
-					})
-				}
-				if err := style.PrintTable(cmd.OutOrStdout(), headers, rows, 0); err != nil {
-					log.Error().Err(err).Msg("failed to print tools list in table format")
-				}
-			} else {
-				headers := []string{"name", "source", "path"}
-				rows := make([][]string, 0, len(tools))
-				for _, t := range tools {
-					rows = append(rows, []string{t.Name, string(t.Source), t.Path})
-				}
-				if err := style.PrintTable(cmd.OutOrStdout(), headers, rows, 0); err != nil {
-					log.Error().Err(err).Msg("failed to print tools list in table format")
-				}
+			if err := toolsPkg.PrintToolsTable(cmd.OutOrStdout(), tools, v); err != nil {
+				log.Error().Err(err).Msg("failed to print tools list in table format")
 			}
 		},
 	}
@@ -85,55 +64,68 @@ Examples:
 	toolInstallCmd = &cobra.Command{
 		Use:   "install",
 		Short: "Install a tool",
-		Long: `gocli tools install allows you to install a specific tool or utility for your Go development environment.
+		Long: `
+Install a Go tool either via module path (go install style) or by cloning a repository and building it.
 
-  # Example 1: Install the latest version of a tool
+Basic usage:
+  gocli tools install <module-or-local-path>
+  gocli tools install --clone <git-url[#ref]> [flags]
+
+Examples:
+  # 1. Install the latest version of a tool
   # This is the most common usage, installing directly from a Go module path.
   gocli tools install github.com/golangci/golangci-lint/cmd/golangci-lint
 
-  # Example 2: Install a specific version of a tool using the '@' symbol
+  # 2. Install a specific version of a tool using the '@' symbol
   # Append '@version' to the tool path to get a stable release.
   gocli tools install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
 
-  # Example 3: Install the tool to a custom directory
+  # 3. Install the tool to a custom directory
   # Use the --path flag to specify where the binary should be placed.
   gocli tools install --path ./bin github.com/golangci/golangci-lint/cmd/golangci-lint
 
-  # Example 4: Install from a local source path
+  # 4. Install from a local source path
   # If you have the tool's source code locally, you can install it by specifying its path.
   gocli tools install ./internal/my-local-tool
 
-  # Example 5: Clone from a Git repository and compile using make
+  # 5. Clone from a Git repository and compile using make
   # For complex projects, you can clone the repository and then run a specific target in the 'make' command to build.
   gocli tools install --clone https://github.com/projectdiscovery/httpx.git --make-target build
 
-  # Example 6: Clone a specific Git tag or branch and install
+  # 6. Clone a specific Git tag or branch and install
   # Use '#tag' or '#branch' after the repository URL to specify the version.
   gocli tools install --clone https://github.com/docker/compose.git#v2.39.2 --make-target build
 
-  # Example 7: Set build environment variables for tools that require CGo
+  # 7. Set build environment variables for tools that require CGo
   # Use the --env flag to pass environment variables required at compile time.
   gocli tools install --env "CGO_ENABLED=1" github.com/example/cgo-tool
 
-  # Example 8: Install in release mode (preconfigured flags)
+  # 8. Install in release mode (preconfigured flags)
   # Equivalent to adding: -trimpath -ldflags="-s -w" (and -v when --verbose)
   gocli tools install --release-build github.com/golangci/golangci-lint/cmd/golangci-lint
 
-  # Example 9: Install in debug mode (preconfigured flags)
+  # 9. Install in debug mode (preconfigured flags)
   # Equivalent to adding: -gcflags=all=-N -l (and -v when --verbose)
   gocli tools install --debug-build github.com/golangci/golangci-lint/cmd/golangci-lint
 
-  # Example 10: Clone + make with custom output directories
+  # 10. Clone + make with custom output directories
   # When the Makefile builds binaries into custom folders, use --bin to tell gocli where to pick them up.
   # You can provide multiple directories by repeating --bin or using the platform path list separator.
   gocli tools install --clone https://github.com/docker/compose.git#v2.39.2 --make-target build --bin ./cmd/build --bin ./bin
 
-  # Example 11: Clone + goreleaser build (auto collect dist/* binaries)
+  # 11. Clone + goreleaser build (auto collect dist/* binaries)
   gocli tools install --clone https://github.com/owner/repo.git#v1.2.3 --build goreleaser --workdir ./cmd/app --binary-name app
 
-  # Example 12: Clone + goreleaser with custom config and extra flags
+  # 12. Clone + goreleaser with custom config and extra flags
   gocli tools install --clone https://github.com/owner/repo.git --build goreleaser --goreleaser-config .goreleaser.yml --build-arg --skip=validate
-`,
+
+Notes:
+  - When invoked without arguments and without --clone, gocli installs tools configured in your config file.
+  - Use --global to install configured global tools or to default single installs to $HOME/.gocli/tools.
+  - --release-build and --debug-build are mutually exclusive.
+  - When a short builtin tool name is provided (no path separator), gocli may map it to a configured module or clone URL from builtin tool mappings.
+  - Do not specify both a module/local spec and --clone at the same time; they are mutually exclusive.
+	`,
 
 		Run: func(cmd *cobra.Command, args []string) {
 			cloneURL := toolInstallOptions.CloneURL
@@ -328,6 +320,68 @@ Examples:
 		Use:   "search",
 		Short: "Search for a tool",
 	}
+	toolRunCmd = &cobra.Command{
+		Use:   "run <tool> [args...]",
+		Short: "Run a tool",
+		Long: `
+Run a tool by configured name or by explicit path and forward all remaining
+arguments to the executed binary unchanged.
+
+Basic usage:
+  gocli tool run <tool> [args...]
+  gox run <tool> [args...]
+
+Examples:
+  # Run a configured tool named "task"
+  gocli tools run task
+  gox run task
+
+  # Execute a binary by path and forward flags/args
+  gocli tools run task --list
+  gox run task --list
+
+Notes:
+  - Use 'gocli tools list' to inspect available configured tools and their
+    install paths.
+  - If the first argument matches a configured tool name (case-insensitive),
+    gocli will run the discovered binary for that tool.
+  - If the argument looks like a path (contains path separators or is absolute),
+    and the file exists, gocli will execute that path directly.
+  - All flags and arguments after the tool name are forwarded verbatim to the
+    invoked executable. Unknown flags are allowed so flags intended for the
+    executed tool are not interpreted by cobra.
+`,
+		// Disable cobra flag parsing so flags after the tool name (including
+		// --help) are forwarded verbatim to the executed binary. We still want
+		// `gocli tools run --help` to show the run command help, so detect that
+		// specific form in PreRun and print help for the run command.
+		DisableFlagParsing: true,
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			argv := os.Args
+			for i := range argv {
+				if argv[i] == "run" || argv[i] == "x" || argv[i] == "exec" {
+					if i+1 < len(argv) {
+						next := argv[i+1]
+						if next == "--help" || next == "-h" {
+							_ = cmd.Help()
+							os.Exit(0)
+						}
+					}
+					break
+				}
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			gocliToolsPath := gocliCtx.Config.Tools.GoCLIToolsPath
+			if err := toolsPkg.ExecuteToolRun(args, cmd.OutOrStdout(), verbose, gocliToolsPath); err != nil {
+				log.Error().Err(err).Msg("failed to execute tool")
+			}
+		},
+		// allow unknown flags so that flags intended for the executed tool
+		// are not treated as errors by cobra and can be forwarded.
+		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
+		Aliases:            []string{"x", "exec"},
+	}
 )
 
 func init() {
@@ -341,7 +395,41 @@ func init() {
 		toolAddCmd,
 		toolUninstallCmd,
 		toolSearchCmd,
+		toolRunCmd,
 	)
+
+	// For the `tools run` command we want to hide all inherited/global flags
+	// from its help output because this command forwards flags to the
+	// executed binary. Print only usage, long text, local flags and
+	// available subcommands.
+	toolRunCmd.SetHelpFunc(func(cmd *cobra.Command, _ []string) {
+		out := cmd.OutOrStdout()
+		// Usage
+		if cmd.Runnable() {
+			fmt.Fprintf(out, "Usage: %s\n\n", cmd.UseLine())
+		}
+		// Long description
+		if cmd.Long != "" {
+			fmt.Fprintln(out, strings.TrimSpace(cmd.Long))
+			fmt.Fprintln(out)
+		}
+		// Local flags only (omits inherited/global flags)
+		if cmd.HasAvailableLocalFlags() {
+			fmt.Fprintln(out, "Flags:")
+			fmt.Fprint(out, cmd.LocalFlags().FlagUsages())
+			fmt.Fprintln(out)
+		}
+		// Subcommands
+		if cmd.HasAvailableSubCommands() {
+			fmt.Fprintln(out, "Available Commands:")
+			for _, c := range cmd.Commands() {
+				if c.IsAvailableCommand() {
+					fmt.Fprintf(out, "  %s\t%s\n", c.Name(), c.Short)
+				}
+			}
+			fmt.Fprintln(out)
+		}
+	})
 
 	// json flags
 	toolListCmd.Flags().BoolP("json", "j", false, "Output the list of tools in JSON format")
@@ -349,9 +437,9 @@ func init() {
 	// flags for install
 	toolInstallCmd.Flags().SortFlags = false
 	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.Path, "path", "p", "", "Installation output directory (effective for go install, equivalent to setting GOBIN)")
-	toolInstallCmd.Flags().StringSliceVar(&toolInstallOptions.Env, "env", nil, "Additional build environment variables, e.g.: --env CGO_ENABLED=1 --env CC=clang")
-	toolInstallCmd.Flags().StringVar(&toolInstallOptions.CloneURL, "clone", "", "Clone source code from a Git repository for installation, supports URL#ref syntax to specify branch/tag/commit")
-	toolInstallCmd.Flags().StringVar(&toolInstallOptions.MakeTarget, "make-target", "", "Target name to execute with make in the source directory (default is make)")
+	toolInstallCmd.Flags().StringSliceVarP(&toolInstallOptions.Env, "env", "e", nil, "Additional build environment variables, e.g.: --env CGO_ENABLED=1 --env CC=clang")
+	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.CloneURL, "clone", "C", "", "Clone source code from a Git repository for installation, supports URL#ref syntax to specify branch/tag/commit")
+	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.MakeTarget, "make-target", "m", "", "Target name to execute with make in the source directory (default is make)")
 	toolInstallCmd.Flags().StringSliceVarP(&toolInstallOptions.BinDirs, "dir", "d", nil, "Directory(ies) where the built binaries are output by make; repeat or separate by platform path list separator")
 	toolInstallCmd.Flags().BoolVarP(&toolInstallGlobal, "global", "g", false, "Install 'tools.global' from config when used without args; when specifying a tool, default install path is $HOME/.gocli/tools")
 	// build presets
@@ -360,11 +448,11 @@ func init() {
 	// binary name override (avoid conflict with --binary-name used for directories)
 	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.BinaryName, "binary-name", "n", "", "Override the output binary name (when determinable)")
 	// clone build method and options
-	toolInstallCmd.Flags().StringVar(&toolInstallOptions.BuildMethod, "build", "", "Build method when using --clone: make (default) | goreleaser")
-	toolInstallCmd.Flags().StringSliceVar(&toolInstallOptions.BuildArgs, "build-arg", nil, "Extra arguments passed to the build tool (repeatable). For goreleaser, e.g. --build-arg --skip=validate")
-	toolInstallCmd.Flags().StringVar(&toolInstallOptions.WorkDir, "workdir", "", "Subdirectory inside the repository to run the build in")
+	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.BuildMethod, "build", "b", "", "Build method when using --clone: make (default) | goreleaser")
+	toolInstallCmd.Flags().StringSliceVarP(&toolInstallOptions.BuildArgs, "build-arg", "a", nil, "Extra arguments passed to the build tool (repeatable). For goreleaser, e.g. --build-arg --skip=validate")
+	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.WorkDir, "workdir", "w", "", "Subdirectory inside the repository to run the build in")
 	toolInstallCmd.Flags().StringVar(&toolInstallOptions.GoreleaserConfig, "goreleaser-config", "", "Path to goreleaser config file (relative to repo root or workdir)")
-	toolInstallCmd.Flags().BoolVar(&toolInstallOptions.RecurseSubmodules, "recurse-submodules", false, "Clone Git submodules recursively when using --clone")
+	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.RecurseSubmodules, "recurse-submodules", "r", false, "Clone Git submodules recursively when using --clone")
 }
 
 // mustUserHome 返回用户 home 目录，若失败直接返回当前目录 (尽量不 panic 保持安装流程继续)

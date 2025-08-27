@@ -3,12 +3,17 @@
 package tools
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/yeisme/gocli/pkg/style"
 )
 
 type toolSourceType string
@@ -28,12 +33,20 @@ type ToolInfo struct {
 	ModTime time.Time `json:"modTime,omitzero"`
 }
 
+type cached struct {
+	once sync.Once
+	val  []ToolInfo
+}
+
+var toolCachesMap sync.Map // map[string]*cached
+
 // FindTools 搜索可用工具，来源包括：
 //   - GOPATH/bin 下的可执行文件
 //   - 用户目录下的 .gocli/tools 下的可执行文件（优先级更高，覆盖同名）
 //
 // verbose 目前保留参数，不影响返回结果，预留将来扩展
-func FindTools(_ bool, gocliToolsPath string) []ToolInfo {
+// findToolsUnlocked 包含原始的扫描逻辑，不包含任何缓存或并发控制
+func findToolsUnlocked(_ bool, gocliToolsPath string) []ToolInfo {
 	// 收集两类目录
 	dirs := make([]struct {
 		path   string
@@ -75,6 +88,33 @@ func FindTools(_ bool, gocliToolsPath string) []ToolInfo {
 	}
 	sortTools(out)
 	return out
+}
+
+// cacheKey 生成缓存 key，目前以 gocliToolsPath 为主键，未来可扩展包含 GOPATH snapshot 等
+func cacheKey(gocliToolsPath string) string {
+	if gocliToolsPath == "" {
+		return "@default"
+	}
+	return gocliToolsPath
+}
+
+// FindTools 在内部使用按-key 的并发安全缓存（每个 key 使用 sync.Once 确保只初始化一次）
+func FindTools(verbose bool, gocliToolsPath string) []ToolInfo {
+	key := cacheKey(gocliToolsPath)
+	v, _ := toolCachesMap.LoadOrStore(key, &cached{})
+	c := v.(*cached)
+	c.once.Do(func() {
+		c.val = findToolsUnlocked(verbose, gocliToolsPath)
+	})
+	return c.val
+}
+
+// ClearToolsCache 清空缓存（可在工具安装/卸载或用户显式请求刷新时调用）
+func ClearToolsCache() {
+	toolCachesMap.Range(func(k, _ any) bool {
+		toolCachesMap.Delete(k)
+		return true
+	})
 }
 
 // --- helpers ---
@@ -193,4 +233,45 @@ func sortTools(ts []ToolInfo) {
 		}
 		return ts[i].Name < ts[j].Name
 	})
+}
+
+// PrintToolsTable prints tools in table format to the provided writer.
+// This is the pkg/tools exported replacement for the previous cmd.printToolsTable.
+func PrintToolsTable(w io.Writer, tools []ToolInfo, verbose bool) error {
+	if verbose {
+		headers := []string{"name", "source", "size", "modified", "path"}
+		rows := make([][]string, 0, len(tools))
+		for _, t := range tools {
+			rows = append(rows, []string{
+				t.Name,
+				string(t.Source),
+				formatSize(t.Size),
+				t.ModTime.Format("2006-01-02 15:04"),
+				t.Path,
+			})
+		}
+		if err := style.PrintTable(w, headers, rows, 0); err != nil {
+			return fmt.Errorf("failed to print tools list in table format: %w", err)
+		}
+		return nil
+	}
+
+	headers := []string{"name", "source", "path"}
+	rows := make([][]string, 0, len(tools))
+	for _, t := range tools {
+		rows = append(rows, []string{t.Name, string(t.Source), t.Path})
+	}
+	if err := style.PrintTable(w, headers, rows, 0); err != nil {
+		return fmt.Errorf("failed to print tools list in table format: %w", err)
+	}
+	return nil
+}
+
+func formatSize(size int64) string {
+	if size < 1024 {
+		return fmt.Sprintf("%dB", size)
+	} else if size < 1024*1024 {
+		return fmt.Sprintf("%.1fK", float64(size)/1024)
+	}
+	return fmt.Sprintf("%.1fM", float64(size)/(1024*1024))
 }

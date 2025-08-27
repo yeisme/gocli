@@ -43,7 +43,7 @@ func ExecuteInfoCommand(gocliCtx *gctx.GocliContext, opts InfoOptions, args []st
 	// 语言表
 	langHeaders, langRows := buildLanguageTable(res, opts)
 	if showProjectHeader {
-		_, _ = fmt.Fprintf(w, "Project: %s\n", root)
+		fmt.Fprintf(w, "Project: %s\n", root)
 	}
 	if err := style.PrintTable(w, langHeaders, langRows, 0); err != nil {
 		log.Error().Err(err).Msg("failed to print info table")
@@ -53,8 +53,8 @@ func ExecuteInfoCommand(gocliCtx *gctx.GocliContext, opts InfoOptions, args []st
 	if opts.WithFileDetails {
 		fileHeaders, fileRows := buildFileTable(res, opts)
 		if len(fileRows) > 0 {
-			_, _ = fmt.Fprintln(w)
-			_, _ = fmt.Fprintln(w, "Files:")
+			fmt.Fprintln(w)
+			fmt.Fprintln(w, "Files:")
 			if err := style.PrintTable(w, fileHeaders, fileRows, 0); err != nil {
 				log.Error().Err(err).Msg("failed to print file table")
 			}

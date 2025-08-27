@@ -48,7 +48,7 @@ type Options struct {
 	// IncludeTests 是否包含 *_test.go 文件（默认 false，不包含）
 	IncludeTests bool `mapstructure:"include_tests"`
 
-	// IncludeExamples 是否渲染示例（go/doc 中的 Examples）。当未显式指定且开启 --tests 时会被自动启用。
+	// IncludeExamples 是否渲染示例（go/doc 中的 Examples）当未显式指定且开启 --tests 时会被自动启用
 	IncludeExamples bool `mapstructure:"include_examples"`
 
 	// TOC 是否生成目录 (table of contents)

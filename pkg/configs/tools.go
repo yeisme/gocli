@@ -17,7 +17,7 @@ type Tool struct {
 	// 兼容：go 类型的安装命令，如 "go install module@ver"
 	Cmd string `mapstructure:"cmd,omitempty"`
 
-	// go 类型直接指定模块路径（优先于 Cmd 的解析）。例如：
+	// go 类型直接指定模块路径（优先于 Cmd 的解析）例如：
 	// module: github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v1.59.1
 	Module string `mapstructure:"module,omitempty"`
 

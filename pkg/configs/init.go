@@ -26,8 +26,8 @@ func setInitConfigDefaults() {
 
 func getFromGit(key string) string {
 	// 尝试按优先级读取 Git 配置：先读取仓库/用户（local or worktree）级别，
-	// 如果未找到再尝试读取 global 级别。
-	// 这样在用户在全局配置中设置了 user.name/user.email 时也能正确读取。
+	// 如果未找到再尝试读取 global 级别
+	// 这样在用户在全局配置中设置了 user.name/user.email 时也能正确读取
 	attempts := [][]string{
 		{"config", "--get", key},
 		{"config", "--global", "--get", key},

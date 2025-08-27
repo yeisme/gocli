@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -21,10 +22,18 @@ func (e *ExecError) Error() string {
 	args := strings.Join(e.Args, " ")
 
 	// 将字面 "\\n" 转为真实换行，便于多行显示
-	stderr := strings.TrimSpace(strings.ReplaceAll(e.Stderr, `\\n`, "\n"))
+	// 使用 CleanStderr 得到已经去 ANSI、修整过的 stderr
+	stderr := strings.TrimSpace(strings.ReplaceAll(e.CleanStderr(), `\\n`, "\n"))
+
+	// 尝试获取数值类型的退出码
+	code := e.ExitCode()
+	codeStr := "unknown"
+	if code >= 0 {
+		codeStr = fmt.Sprintf("%d", code)
+	}
 
 	if stderr == "" {
-		return fmt.Sprintf("command execution failed: %s %s, error-code: %v", e.Cmd, args, e.Err)
+		return fmt.Sprintf("command execution failed: %s %s, exit-code: %s, err: %v", e.Cmd, args, codeStr, e.Err)
 	}
 
 	// 按行缩进 stderr，增强可读性
@@ -33,13 +42,33 @@ func (e *ExecError) Error() string {
 		lines[i] = "\t" + l
 	}
 
-	return fmt.Sprintf("command execution failed: %s %s, error-code: %v\nstderr:\n%s",
-		e.Cmd, args, e.Err, strings.Join(lines, "\n"))
+	return fmt.Sprintf("command execution failed: %s %s, exit-code: %s, err: %v\nstderr:\n%s",
+		e.Cmd, args, codeStr, e.Err, strings.Join(lines, "\n"))
 }
 
 // Unwrap 允许使用 errors.Is 和 errors.As 来检查底层错误
 func (e *ExecError) Unwrap() error {
 	return e.Err
+}
+
+// ansiRegexp 用于匹配 ANSI 颜色/格式化控制序列，例如 "\x1b[31m"
+var ansiRegexp = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+// CleanStderr 返回去除 ANSI 控制码并修整空白的 stderr 文本
+func (e *ExecError) CleanStderr() string {
+	if strings.TrimSpace(e.Stderr) == "" {
+		return ""
+	}
+	s := ansiRegexp.ReplaceAllString(e.Stderr, "")
+	return strings.TrimSpace(s)
+}
+
+// ExitCode 返回底层进程的退出码，若不可用返回 -1
+func (e *ExecError) ExitCode() int {
+	if exitErr, ok := e.Err.(*exec.ExitError); ok {
+		return exitErr.ExitCode()
+	}
+	return -1
 }
 
 // Executor 是一个命令执行器的构建器

@@ -36,18 +36,18 @@ func (s *Spinner) Start() {
 		frames := []rune{'⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'}
 		i := 0
 		// 初始一行
-		_, _ = fmt.Fprintf(s.out, "%s %c\r", s.msg, frames[i])
+		fmt.Fprintf(s.out, "%s %c\r", s.msg, frames[i])
 		ticker := time.NewTicker(s.interval)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-s.stopCh:
 				// 清理行尾
-				_, _ = fmt.Fprintf(s.out, "%s ✔\n", s.msg)
+				fmt.Fprintf(s.out, "%s ✔\n", s.msg)
 				return
 			case <-ticker.C:
 				i = (i + 1) % len(frames)
-				_, _ = fmt.Fprintf(s.out, "%s %c\r", s.msg, frames[i])
+				fmt.Fprintf(s.out, "%s %c\r", s.msg, frames[i])
 			}
 		}
 	}()

@@ -100,13 +100,13 @@ func RunGoModWhy(args []string, options struct {
 	return output, nil
 }
 
-// RunGoModInit 执行 `go mod init [module]`。
+// RunGoModInit 执行 `go mod init [module]`
 //
 // 如果 module 为空字符串，则运行 `go mod init` 让 go 命令自动推断模块路径；
-// 如果指定了 module，则使用该模块路径初始化。
-// 在执行命令前会检查当前目录是否已存在 go.mod，若存在则返回明确的错误信息。
+// 如果指定了 module，则使用该模块路径初始化
+// 在执行命令前会检查当前目录是否已存在 go.mod，若存在则返回明确的错误信息
 //
-// 返回值：命令标准输出，或执行错误（包含底层 stderr 信息）。
+// 返回值：命令标准输出，或执行错误（包含底层 stderr 信息）
 // Opts for RunGoModInit
 func RunGoModInit(module string, dir string) (string, error) {
 	// 检查目标目录下的 go.mod（若 Dir 为空则检查当前工作目录）

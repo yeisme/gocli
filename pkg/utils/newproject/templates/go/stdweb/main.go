@@ -9,7 +9,7 @@ import (
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Set("Content-Type", "text/plain")
-		_, _ = fmt.Fprintln(w, "Hello, World!")
+		fmt.Fprintln(w, "Hello, World!")
 	})
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {

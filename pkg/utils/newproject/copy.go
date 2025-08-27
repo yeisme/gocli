@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// CopyTemplateFSToDir 将提供的 fs.FS(模板) 递归复制到 destDir。
+// CopyTemplateFSToDir 将提供的 fs.FS(模板) 递归复制到 destDir
 // 参数:
 //
 //	src: 模板文件系统（如 embed / zip 解压目录等）

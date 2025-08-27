@@ -201,8 +201,8 @@ func executeGoProcessCommand(command string, options BuildRunOptions, args []str
 		log.Debug().Msgf("Subcommand args: %v", args[1:])
 	}
 
-	// args 的第一个元素被视作包路径或要构建/运行的目录（如果未提供则使用当前目录）。
-	// 对于 run：会把后续的参数也传给运行的程序；对于 build：只使用第一个参数作为包路径并忽略其余参数。
+	// args 的第一个元素被视作包路径或要构建/运行的目录（如果未提供则使用当前目录）
+	// 对于 run：会把后续的参数也传给运行的程序；对于 build：只使用第一个参数作为包路径并忽略其余参数
 	if len(args) == 0 {
 		goArgs = append(goArgs, ".")
 	} else {

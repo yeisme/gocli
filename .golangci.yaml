@@ -15,6 +15,14 @@ linters:
       check-blank: false
       disable-default-exclusions: false
       verbose: false
+      exclude-functions:
+        - fmt.Fprintf
+        - fmt.Fprint
+        - fmt.Fprintln
+        - fmt.Print
+        - fmt.Println
+        - fmt.Printf
+
 
 formatters:
   enable:

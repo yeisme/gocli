@@ -25,7 +25,7 @@ func RunList(opts ListOptions, out io.Writer, args []string) error {
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprint(out, output)
+	fmt.Fprint(out, output)
 	return nil
 }
 

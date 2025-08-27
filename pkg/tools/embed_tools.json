@@ -1,0 +1,128 @@
+{
+    "air": {
+        "name": "air",
+        "url": "github.com/air-verse/air@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "golangci-lint": {
+        "name": "golangci-lint",
+        "url": "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "buf": {
+        "name": "buf",
+        "url": "github.com/bufbuild/buf/cmd/buf@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "httpx": {
+        "name": "httpx",
+        "url": "github.com/projectdiscovery/httpx/cmd/httpx@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "grpcurl": {
+        "name": "grpcurl",
+        "url": "github.com/fullstorydev/grpcurl/cmd/grpcurl@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "goreleaser": {
+        "name": "goreleaser",
+        "url": "github.com/goreleaser/goreleaser/v2@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "gojq": {
+        "name": "gojq",
+        "url": "github.com/itchyny/gojq/cmd/gojq@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "glow": {
+        "name": "glow",
+        "url": "github.com/charmbracelet/glow/cmd/glow@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "jid": {
+        "name": "jid",
+        "url": "github.com/simeji/jid/cmd/jid@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "lazygit": {
+        "name": "lazygit",
+        "url": "github.com/jesseduffield/lazygit@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "dasel": {
+        "name": "dasel",
+        "url": "github.com/tomwright/dasel/v2/cmd/dasel@master",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "lf": {
+        "name": "lf",
+        "url": "github.com/gokcehan/lf@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "yq": {
+        "name": "yq",
+        "url": "github.com/mikefarah/yq/v4/cmd/yq@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "gqlgen": {
+        "name": "gqlgen",
+        "url": "github.com/99designs/gqlgen@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    }
+}

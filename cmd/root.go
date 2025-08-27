@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"runtime/pprof"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/context"
 	log2 "github.com/yeisme/gocli/pkg/utils/log"
+	"github.com/yeisme/gocli/pkg/utils/version"
 )
 
 var (
@@ -15,11 +17,13 @@ var (
 	log      log2.Logger
 
 	// Global flags
-	configPath string
-	debug      bool
-	verbose    bool
-	quiet      bool
-	cpuProfile string
+	globalFlags   = context.GlobalFlags{}
+	configPath    = globalFlags.ConfigPath
+	debug         = globalFlags.Debug
+	verbose       = globalFlags.Verbose
+	quiet         = globalFlags.Quiet
+	cpuProfile    = globalFlags.CPUProfile
+	versionEnable = globalFlags.VersionEnable
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -27,6 +31,16 @@ var rootCmd = &cobra.Command{
 	Use:   "gocli",
 	Short: "gocli is a CLI application for managing your Go projects",
 	Long:  `gocli is a command line interface application that helps you manage your Go projects efficiently.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if versionEnable {
+			fmt.Fprintln(cmd.OutOrStdout(), version.GetShortVersionString())
+			os.Exit(0)
+		}
+		if len(args) == 0 {
+			fmt.Fprintln(cmd.OutOrStdout(), "No arguments provided")
+			_ = cmd.Help()
+		}
+	},
 	PersistentPreRun: func(_ *cobra.Command, _ []string) {
 		if cpuProfile != "" {
 			f, err := os.Create(cpuProfile)
@@ -62,6 +76,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file")
 	rootCmd.PersistentFlags().StringVar(&cpuProfile, "cpu-profile", "", "write cpu profile to `file`")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode (prints additional information)")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output (prints more detailed information)")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "V", false, "enable verbose output (prints more detailed information)")
 	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "suppress all output except errors")
+	rootCmd.Flags().BoolVarP(&versionEnable, "version", "v", false, "show version information")
 }
