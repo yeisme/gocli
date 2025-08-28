@@ -22,6 +22,7 @@ var (
 	updateOptions project.UpdateOptions
 	depsOptions   project.DepsOptions
 	docOptions    project.DocOptions
+	testOptions   project.TestOptions
 
 	projectCmd = &cobra.Command{
 		Use:     "project",
@@ -400,7 +401,73 @@ Notes:
 		Use:   "add",
 		Short: "Add a dependency to the Go project",
 	}
-	projectTestCmd = &cobra.Command{Use: "test", Short: "Run tests for the Go project"}
+	projectTestCmd = &cobra.Command{
+		Use:   "test [flags] [packages]",
+		Short: "Run tests for the Go project",
+		Long: `
+gocli project test runs tests for Go packages (wrapper around 'go test').
+
+Basic usage:
+  gocli project test [flags] [packages]
+	By default runs tests for all packages in the current module. You can specify
+	packages to test specific directories or patterns (e.g. ./pkg/..., ./cmd).
+
+Examples:
+  # Run all tests in the current module
+  gocli project test
+
+  # Run tests for specific packages
+  gocli project test ./pkg/utils
+  gocli project test ./...
+
+  # Run tests with verbose output
+  gocli project test -v
+
+  # Run only tests matching a pattern
+  gocli project test -run TestAdd
+
+  # Run benchmarks
+  gocli project test -bench .
+
+  # Run tests with race detection
+  gocli project test -race
+
+  # Run tests with coverage
+  gocli project test -cover
+  gocli project test -coverprofile=coverage.out
+
+  # Run tests in parallel with timeout
+  gocli project test -parallel 4 -timeout 30s
+
+  # Run tests multiple times
+  gocli project test -count 3
+
+  # Run short tests only
+  gocli project test -short
+
+  # Stop on first failure
+  gocli project test -failfast
+
+  # Output in JSON format
+  gocli project test -json
+
+  # Compile test binary without running
+  gocli project test -c -o mytest
+
+Notes:
+  - Most flags map directly to 'go test' counterparts.
+  - Test output follows 'go test' behavior: successful tests show summary only,
+    failed tests show detailed output.
+  - Supports all standard 'go test' flags for comprehensive test control.
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			testOptions.Verbose = gocliCtx.Config.App.Verbose
+			if err := project.RunTest(testOptions, args, cmd.OutOrStdout()); err != nil {
+				cmd.PrintErrf("Error: %v\n", err)
+				os.Exit(1)
+			}
+		},
+	}
 	projectLintCmd = &cobra.Command{
 		Use:   "lint",
 		Short: "Lint the Go project",
@@ -735,6 +802,29 @@ func addListFlags(cmd *cobra.Command, opts *project.ListOptions) {
 	cmd.Flags().BoolVar(&opts.Test, "test", false, "Include test packages (adds -test)")
 }
 
+// addTestFlags registers flags for the `project test` command.
+func addTestFlags(cmd *cobra.Command, opts *project.TestOptions) {
+	cmd.Flags().BoolVarP(&opts.V, "verbose", "v", false, "Verbose output")
+	cmd.Flags().StringVarP(&opts.Run, "run", "r", "", "Run only tests matching pattern")
+	cmd.Flags().StringVarP(&opts.Bench, "bench", "b", "", "Run benchmarks matching pattern")
+	cmd.Flags().IntVarP(&opts.Count, "count", "C", 0, "Run each test count times")
+	cmd.Flags().StringVarP(&opts.Timeout, "timeout", "t", "", "Timeout for test execution")
+	cmd.Flags().BoolVarP(&opts.Short, "short", "s", false, "Tell long-running tests to shorten their run time")
+	cmd.Flags().BoolVarP(&opts.Failfast, "failfast", "f", false, "Stop on first test failure")
+	cmd.Flags().IntVarP(&opts.Parallel, "parallel", "p", 0, "Maximum test parallelism")
+	cmd.Flags().BoolVar(&opts.Cover, "cover", false, "Enable code coverage")
+	cmd.Flags().StringVar(&opts.Covermode, "covermode", "", "Coverage mode: set, count, atomic")
+	cmd.Flags().StringVar(&opts.Coverpkg, "coverpkg", "", "Apply coverage to packages matching pattern")
+	cmd.Flags().StringVar(&opts.Coverprofile, "coverprofile", "", "Write coverage profile to file")
+	cmd.Flags().BoolVar(&opts.Race, "race", false, "Enable race detection")
+	cmd.Flags().BoolVarP(&opts.JSON, "json", "j", false, "Output in JSON format")
+	cmd.Flags().BoolVar(&opts.C, "compile-only", false, "Compile test binary but do not run")
+	cmd.Flags().StringVarP(&opts.O, "output", "o", "", "Output binary name")
+	cmd.Flags().StringVarP(&opts.Tags, "tags", "g", "", "Build tags")
+	cmd.Flags().StringVarP(&opts.Mod, "mod", "m", "", "Module download mode")
+	cmd.Flags().StringVarP(&opts.ChangeDir, "changedir", "D", "", "Change to dir before running")
+}
+
 // addLintFlags registers flags for the `project lint` command.
 func addLintFlags(cmd *cobra.Command, opts *project.LintOptions) {
 	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List all available linters")
@@ -792,7 +882,8 @@ func registerProjectFlags() {
 
 	// 6) add (no flags currently)
 
-	// 7) test (no flags currently)
+	// 7) test
+	addTestFlags(projectTestCmd, &testOptions)
 
 	// 8) lint
 	addLintFlags(projectLintCmd, &lintOptions)
