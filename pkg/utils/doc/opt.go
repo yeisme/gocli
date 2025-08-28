@@ -34,37 +34,37 @@ const (
 type Options struct {
 
 	// Output 指定生成文档的输出路径（文件或目录），为空则输出到 stdout 或默认位置
-	Output string `mapstructure:"output"`
+	Output string `mapstructure:"output" jsonschema:"title=Output,description=Output path (file or directory); empty for stdout,nullable"`
 
 	// Style 渲染风格，使用什么样式渲染（markdown, html, plain）
-	Style Style `mapstructure:"style"`
+	Style Style `mapstructure:"style" jsonschema:"title=Style,description=Render style: markdown|html|plain|json|yaml,enum=markdown,enum=html,enum=plain,enum=json,enum=yaml"`
 
 	// Mode 指定文档渲染模式 (godoc, markdown, etc.)
-	Mode Mode `mapstructure:"mode"`
+	Mode Mode `mapstructure:"mode" jsonschema:"title=Mode,description=Document mode: godoc|markdown,enum=godoc,enum=markdown"`
 
 	// IncludePrivate 是否包含非导出（private）符号
-	IncludePrivate bool `mapstructure:"include_private"`
+	IncludePrivate bool `mapstructure:"include_private" jsonschema:"title=IncludePrivate,description=Include non-exported symbols"`
 
 	// IncludeTests 是否包含 *_test.go 文件（默认 false，不包含）
-	IncludeTests bool `mapstructure:"include_tests"`
+	IncludeTests bool `mapstructure:"include_tests" jsonschema:"title=IncludeTests,description=Include *_test.go files"`
 
 	// IncludeExamples 是否渲染示例（go/doc 中的 Examples）当未显式指定且开启 --tests 时会被自动启用
-	IncludeExamples bool `mapstructure:"include_examples"`
+	IncludeExamples bool `mapstructure:"include_examples" jsonschema:"title=IncludeExamples,description=Include code examples (auto-enabled with tests)"`
 
 	// TOC 是否生成目录 (table of contents)
-	TOC bool `mapstructure:"toc"`
+	TOC bool `mapstructure:"toc" jsonschema:"title=TOC,description=Generate table of contents"`
 
 	// Verbose 是否开启详细日志输出
-	Verbose bool `mapstructure:"verbose"`
+	Verbose bool `mapstructure:"verbose" jsonschema:"title=Verbose,description=Enable verbose logging"`
 
 	// Theme 用于指定渲染时的主题 (例如 "dracula", "dark", "light")
-	Theme string `mapstructure:"theme"`
+	Theme string `mapstructure:"theme" jsonschema:"title=Theme,description=Render theme name (implementation specific),nullable"`
 
 	// Width 用于指定渲染的宽度，0 表示自动检测终端宽度
-	Width int `mapstructure:"width"`
+	Width int `mapstructure:"width" jsonschema:"title=Width,description=Render width (0=auto),minimum=0"`
 
 	// Detailed 详细模式，是否输出更详细的文档信息，仅在 godoc 模式下有效，用于更详细的文档输出
-	Detailed bool `mapstructure:"detailed"`
+	Detailed bool `mapstructure:"detailed" jsonschema:"title=Detailed,description=Produce more detailed output (godoc mode only)"`
 }
 
 // Validate 检查 Options 的基本有效性

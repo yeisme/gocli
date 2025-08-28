@@ -75,60 +75,60 @@ func loadGoEnv() {
 // EnvConfig 环境变量配置
 type EnvConfig struct {
 	// Go 核心环境变量
-	GoRoot     string `mapstructure:"GOROOT"`     // Go 安装路径
-	GoPath     string `mapstructure:"GOPATH"`     // Go 工作空间路径
-	GoMod      string `mapstructure:"GOMOD"`      // Go modules 目录
-	GoModCache string `mapstructure:"GOMODCACHE"` // Go modules 缓存目录
-	GoSumDB    string `mapstructure:"GOSUMDB"`    // Go checksum 数据库
-	GoProxy    string `mapstructure:"GOPROXY"`    // Go 模块代理
-	GoPrivate  string `mapstructure:"GOPRIVATE"`  // 私有模块路径模式
-	GoNoProxy  string `mapstructure:"GONOPROXY"`  // 不使用代理的模块路径模式
-	GoNoSumDB  string `mapstructure:"GONOSUMDB"`  // 不使用 checksum 数据库的模块路径模式
+	GoRoot     string `mapstructure:"GOROOT" jsonschema:"title=GOROOT,description=Go installation root directory,nullable"`                       // Go 安装路径
+	GoPath     string `mapstructure:"GOPATH" jsonschema:"title=GOPATH,description=Primary workspace path (may contain multiple paths),nullable"`  // Go 工作空间路径
+	GoMod      string `mapstructure:"GOMOD" jsonschema:"title=GOMOD,description=Path to current go.mod file,nullable"`                            // Go modules 目录
+	GoModCache string `mapstructure:"GOMODCACHE" jsonschema:"title=GOMODCACHE,description=Module download/cache directory,nullable"`              // Go modules 缓存目录
+	GoSumDB    string `mapstructure:"GOSUMDB" jsonschema:"title=GOSUMDB,description=Checksum database URL(s),nullable"`                           // Go checksum 数据库
+	GoProxy    string `mapstructure:"GOPROXY" jsonschema:"title=GOPROXY,description=Module proxy list,nullable"`                                  // Go 模块代理
+	GoPrivate  string `mapstructure:"GOPRIVATE" jsonschema:"title=GOPRIVATE,description=Patterns for private modules (comma separated),nullable"` // 私有模块路径模式
+	GoNoProxy  string `mapstructure:"GONOPROXY" jsonschema:"title=GONOPROXY,description=Patterns to bypass proxy,nullable"`                       // 不使用代理的模块路径模式
+	GoNoSumDB  string `mapstructure:"GONOSUMDB" jsonschema:"title=GONOSUMDB,description=Patterns to bypass checksum database,nullable"`           // 不使用 checksum 数据库的模块路径模式
 
 	// 构建相关环境变量
-	GoOS     string `mapstructure:"GOOS"`     // 目标操作系统
-	GoArch   string `mapstructure:"GOARCH"`   // 目标架构
-	Go386    string `mapstructure:"GO386"`    // 386 架构设置
-	GoAMD64  string `mapstructure:"GOAMD64"`  // AMD64 架构设置
-	GoARM    string `mapstructure:"GOARM"`    // ARM 架构设置
-	GoARM64  string `mapstructure:"GOARM64"`  // ARM64 架构设置
-	GoMIPS   string `mapstructure:"GOMIPS"`   // MIPS 架构设置
-	GoMIPS64 string `mapstructure:"GOMIPS64"` // MIPS64 架构设置
-	GoPPC64  string `mapstructure:"GOPPC64"`  // PPC64 架构设置
-	GoWASM   string `mapstructure:"GOWASM"`   // WebAssembly 设置
+	GoOS     string `mapstructure:"GOOS" jsonschema:"title=GOOS,description=Target operating system,nullable"`                                    // 目标操作系统
+	GoArch   string `mapstructure:"GOARCH" jsonschema:"title=GOARCH,description=Target architecture,nullable"`                                    // 目标架构
+	Go386    string `mapstructure:"GO386" jsonschema:"title=GO386,description=386 architecture features (e.g. sse2),nullable"`                    // 386 架构设置
+	GoAMD64  string `mapstructure:"GOAMD64" jsonschema:"title=GOAMD64,description=AMD64 microarchitecture level (v1-v4),nullable"`                // AMD64 架构设置
+	GoARM    string `mapstructure:"GOARM" jsonschema:"title=GOARM,description=ARM architecture version (5,6,7),nullable"`                         // ARM 架构设置
+	GoARM64  string `mapstructure:"GOARM64" jsonschema:"title=GOARM64,description=ARM64 architecture tuning flags,nullable"`                      // ARM64 架构设置
+	GoMIPS   string `mapstructure:"GOMIPS" jsonschema:"title=GOMIPS,description=MIPS architecture settings (hardfloat|softfloat),nullable"`       // MIPS 架构设置
+	GoMIPS64 string `mapstructure:"GOMIPS64" jsonschema:"title=GOMIPS64,description=MIPS64 architecture settings (hardfloat|softfloat),nullable"` // MIPS64 架构设置
+	GoPPC64  string `mapstructure:"GOPPC64" jsonschema:"title=GOPPC64,description=PPC64 architecture level (power8 etc),nullable"`                // PPC64 架构设置
+	GoWASM   string `mapstructure:"GOWASM" jsonschema:"title=GOWASM,description=WebAssembly feature flags,nullable"`                              // WebAssembly 设置
 
 	// 编译器相关环境变量
-	GoGCFlags  string `mapstructure:"GOGCFLAGS"`  // Go 编译器标志
-	GoAsmFlags string `mapstructure:"GOASMFLAGS"` // Go 汇编器标志
-	GoLDFlags  string `mapstructure:"GOLDFLAGS"`  // Go 链接器标志
-	GoFlags    string `mapstructure:"GOFLAGS"`    // Go 命令标志
-	GoInsecure string `mapstructure:"GOINSECURE"` // 允许不安全的 scheme
+	GoGCFlags  string `mapstructure:"GOGCFLAGS" jsonschema:"title=GOGCFLAGS,description=Extra gc compiler flags,nullable"`                            // Go 编译器标志
+	GoAsmFlags string `mapstructure:"GOASMFLAGS" jsonschema:"title=GOASMFLAGS,description=Extra assembler flags,nullable"`                            // Go 汇编器标志
+	GoLDFlags  string `mapstructure:"GOLDFLAGS" jsonschema:"title=GOLDFLAGS,description=Extra linker flags,nullable"`                                 // Go 链接器标志
+	GoFlags    string `mapstructure:"GOFLAGS" jsonschema:"title=GOFLAGS,description=Default go command flags,nullable"`                               // Go 命令标志
+	GoInsecure string `mapstructure:"GOINSECURE" jsonschema:"title=GOINSECURE,description=Allow insecure (non-HTTPS) module paths patterns,nullable"` // 允许不安全的 scheme
 
 	// CGO 相关环境变量
-	CGOEnabled  string `mapstructure:"CGO_ENABLED"`
-	CGOCFlags   string `mapstructure:"CGO_CFLAGS"`
-	CGOCPPFlags string `mapstructure:"CGO_CPPFLAGS"`
-	CGOLDFlags  string `mapstructure:"CGO_LDFLAGS"`
-	CGOCXXFlags string `mapstructure:"CGO_CXXFLAGS"`
+	CGOEnabled  string `mapstructure:"CGO_ENABLED" jsonschema:"title=CGO_ENABLED,description=Enable CGO (0 or 1),nullable"`
+	CGOCFlags   string `mapstructure:"CGO_CFLAGS" jsonschema:"title=CGO_CFLAGS,description=CGO C compiler flags,nullable"`
+	CGOCPPFlags string `mapstructure:"CGO_CPPFLAGS" jsonschema:"title=CGO_CPPFLAGS,description=CGO C preprocessor flags,nullable"`
+	CGOLDFlags  string `mapstructure:"CGO_LDFLAGS" jsonschema:"title=CGO_LDFLAGS,description=CGO linker flags,nullable"`
+	CGOCXXFlags string `mapstructure:"CGO_CXXFLAGS" jsonschema:"title=CGO_CXXFLAGS,description=CGO C++ compiler flags,nullable"`
 
 	// 调试和性能相关环境变量
-	GoTrace        string `mapstructure:"GOTRACE"`        // 跟踪执行
-	GoDebug        string `mapstructure:"GODEBUG"`        // 调试设置
-	GoMemProfile   string `mapstructure:"GOMEMPROFILE"`   // 内存分析文件
-	GoCPUProfile   string `mapstructure:"GOCPUPROFILE"`   // CPU 分析文件
-	GoBlockProfile string `mapstructure:"GOBLOCKPROFILE"` // 阻塞分析文件
-	GoMutexProfile string `mapstructure:"GOMUTEXPROFILE"` // 互斥锁分析文件
+	GoTrace        string `mapstructure:"GOTRACE" jsonschema:"title=GOTRACE,description=Execution trace output path,nullable"`                // 跟踪执行
+	GoDebug        string `mapstructure:"GODEBUG" jsonschema:"title=GODEBUG,description=Runtime debug settings,nullable"`                     // 调试设置
+	GoMemProfile   string `mapstructure:"GOMEMPROFILE" jsonschema:"title=GOMEMPROFILE,description=Memory profile output path,nullable"`       // 内存分析文件
+	GoCPUProfile   string `mapstructure:"GOCPUPROFILE" jsonschema:"title=GOCPUPROFILE,description=CPU profile output path,nullable"`          // CPU 分析文件
+	GoBlockProfile string `mapstructure:"GOBLOCKPROFILE" jsonschema:"title=GOBLOCKPROFILE,description=Blocking profile output path,nullable"` // 阻塞分析文件
+	GoMutexProfile string `mapstructure:"GOMUTEXPROFILE" jsonschema:"title=GOMUTEXPROFILE,description=Mutex profile output path,nullable"`    // 互斥锁分析文件
 
 	// 工具链相关环境变量
-	GoToolchain string `mapstructure:"GOTOOLCHAIN"` // Go 工具链版本
-	GoToolDir   string `mapstructure:"GOTOOLDIR"`   // Go 工具目录
-	GoCache     string `mapstructure:"GOCACHE"`     // 构建缓存目录
-	GoTmpDir    string `mapstructure:"GOTMPDIR"`    // 临时目录
-	GoWork      string `mapstructure:"GOWORK"`      // Go 工作空间文件
-	GoWorkSum   string `mapstructure:"GOWORKSUM"`   // Go 工作空间校验和文件
+	GoToolchain string `mapstructure:"GOTOOLCHAIN" jsonschema:"title=GOTOOLCHAIN,description=Go toolchain selection (auto|go1.x|path),nullable"` // Go 工具链版本
+	GoToolDir   string `mapstructure:"GOTOOLDIR" jsonschema:"title=GOTOOLDIR,description=Go toolchain binaries directory,nullable"`              // Go 工具目录
+	GoCache     string `mapstructure:"GOCACHE" jsonschema:"title=GOCACHE,description=Build cache directory,nullable"`                            // 构建缓存目录
+	GoTmpDir    string `mapstructure:"GOTMPDIR" jsonschema:"title=GOTMPDIR,description=Temporary directory for go commands,nullable"`            // 临时目录
+	GoWork      string `mapstructure:"GOWORK" jsonschema:"title=GOWORK,description=Go workspace file mode (auto|off|path),nullable"`             // Go 工作空间文件
+	GoWorkSum   string `mapstructure:"GOWORKSUM" jsonschema:"title=GOWORKSUM,description=Workspace checksum file path,nullable"`                 // Go 工作空间校验和文件
 
 	// 实验性功能环境变量
-	GoExperiment string `mapstructure:"GOEXPERIMENT"` // 实验性功能
+	GoExperiment string `mapstructure:"GOEXPERIMENT" jsonschema:"title=GOEXPERIMENT,description=Comma separated experimental feature flags,nullable"` // 实验性功能
 	// 常用的 GOEXPERIMENT 选项：
 	// - "rangefunc": 启用 range-over-func 特性
 	// - "arenas": 启用 arenas 内存管理实验
@@ -139,7 +139,7 @@ type EnvConfig struct {
 	// 可以组合使用，用逗号分隔，如: "rangefunc,arenas"
 
 	// 其他环境变量可以通过 map 存储
-	Custom map[string]string `mapstructure:",remain"`
+	Custom map[string]string `mapstructure:",remain" jsonschema:"title=Custom,description=Additional custom environment variables (free-form key/values)"`
 }
 
 // setEnvConfigDefaults 设置环境变量配置的默认值

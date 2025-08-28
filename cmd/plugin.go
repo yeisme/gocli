@@ -57,7 +57,7 @@ func isValidSource(source string) bool {
 func listPlugins(global, verbose bool, sourceFilter string) {
 	// 获取配置的插件路径
 	var configPluginPath string
-	if gocliCtx != nil && gocliCtx.Config.Plugin.DirPath != "" {
+	if gocliCtx != nil && gocliCtx.Config.Plugin.DirPath != "" && gocliCtx.Config.Plugin.Enabled {
 		configPluginPath = gocliCtx.Config.Plugin.DirPath
 	}
 

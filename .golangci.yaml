@@ -23,7 +23,6 @@ linters:
         - fmt.Println
         - fmt.Printf
 
-
 formatters:
   enable:
     - gofmt

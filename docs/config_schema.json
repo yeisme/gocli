@@ -1,0 +1,533 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/yeisme/gocli/pkg/configs/config",
+  "$ref": "#/$defs/Config",
+  "$defs": {
+    "AppConfig": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "debug": {
+          "type": "boolean"
+        },
+        "verbose": {
+          "type": "boolean"
+        },
+        "quiet": {
+          "type": "boolean"
+        },
+        "hotload": {
+          "$ref": "#/$defs/HotloadConfig"
+        }
+      },
+      "type": "object"
+    },
+    "Config": {
+      "properties": {
+        "version": {
+          "type": "integer"
+        },
+        "log": {
+          "$ref": "#/$defs/LogConfig"
+        },
+        "env": {
+          "$ref": "#/$defs/EnvConfig"
+        },
+        "app": {
+          "$ref": "#/$defs/AppConfig"
+        },
+        "tools": {
+          "$ref": "#/$defs/ToolsConfig"
+        },
+        "plugin": {
+          "$ref": "#/$defs/PluginConfig"
+        },
+        "doc": {
+          "$ref": "#/$defs/Options"
+        },
+        "init": {
+          "$ref": "#/$defs/InitOptions"
+        }
+      },
+      "type": "object",
+      "required": [
+        "version"
+      ]
+    },
+    "EnvConfig": {
+      "properties": {
+        "GOROOT": {
+          "type": "string"
+        },
+        "GOPATH": {
+          "type": "string"
+        },
+        "GOMOD": {
+          "type": "string"
+        },
+        "GOMODCACHE": {
+          "type": "string"
+        },
+        "GOSUMDB": {
+          "type": "string"
+        },
+        "GOPROXY": {
+          "type": "string"
+        },
+        "GOPRIVATE": {
+          "type": "string"
+        },
+        "GONOPROXY": {
+          "type": "string"
+        },
+        "GONOSUMDB": {
+          "type": "string"
+        },
+        "GOOS": {
+          "type": "string"
+        },
+        "GOARCH": {
+          "type": "string"
+        },
+        "GO386": {
+          "type": "string"
+        },
+        "GOAMD64": {
+          "type": "string"
+        },
+        "GOARM": {
+          "type": "string"
+        },
+        "GOARM64": {
+          "type": "string"
+        },
+        "GOMIPS": {
+          "type": "string"
+        },
+        "GOMIPS64": {
+          "type": "string"
+        },
+        "GOPPC64": {
+          "type": "string"
+        },
+        "GOWASM": {
+          "type": "string"
+        },
+        "GOGCFLAGS": {
+          "type": "string"
+        },
+        "GOASMFLAGS": {
+          "type": "string"
+        },
+        "GOLDFLAGS": {
+          "type": "string"
+        },
+        "GOFLAGS": {
+          "type": "string"
+        },
+        "GOINSECURE": {
+          "type": "string"
+        },
+        "CGO_ENABLED": {
+          "type": "string"
+        },
+        "CGO_CFLAGS": {
+          "type": "string"
+        },
+        "CGO_CPPFLAGS": {
+          "type": "string"
+        },
+        "CGO_LDFLAGS": {
+          "type": "string"
+        },
+        "CGO_CXXFLAGS": {
+          "type": "string"
+        },
+        "GOTRACE": {
+          "type": "string"
+        },
+        "GODEBUG": {
+          "type": "string"
+        },
+        "GOMEMPROFILE": {
+          "type": "string"
+        },
+        "GOCPUPROFILE": {
+          "type": "string"
+        },
+        "GOBLOCKPROFILE": {
+          "type": "string"
+        },
+        "GOMUTEXPROFILE": {
+          "type": "string"
+        },
+        "GOTOOLCHAIN": {
+          "type": "string"
+        },
+        "GOTOOLDIR": {
+          "type": "string"
+        },
+        "GOCACHE": {
+          "type": "string"
+        },
+        "GOTMPDIR": {
+          "type": "string"
+        },
+        "GOWORK": {
+          "type": "string"
+        },
+        "GOWORKSUM": {
+          "type": "string"
+        },
+        "GOEXPERIMENT": {
+          "type": "string"
+        },
+        "Custom": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "GoFileTemplate": {
+      "properties": {
+        "Path": {
+          "type": "string"
+        },
+        "Type": {
+          "type": "string"
+        },
+        "Language": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GoInitOptions": {
+      "properties": {
+        "Templates": {
+          "additionalProperties": {
+            "$ref": "#/$defs/GoFileTemplate"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "HotloadConfig": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "dir": {
+          "type": "string"
+        },
+        "filter": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "recursive": {
+          "type": "boolean"
+        },
+        "debounce": {
+          "type": "integer"
+        },
+        "ignore_patterns": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "git_ignore": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "InitOptions": {
+      "properties": {
+        "Go": {
+          "$ref": "#/$defs/GoInitOptions"
+        },
+        "git_init": {
+          "type": "boolean"
+        },
+        "license": {
+          "type": "string"
+        },
+        "dir": {
+          "type": "string"
+        },
+        "gocli": {
+          "type": "boolean"
+        },
+        "goreleaser": {
+          "type": "boolean"
+        },
+        "go_task": {
+          "type": "boolean"
+        },
+        "docker": {
+          "type": "boolean"
+        },
+        "makefile": {
+          "type": "boolean"
+        },
+        "author": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LogConfig": {
+      "properties": {
+        "level": {
+          "type": "string"
+        },
+        "json": {
+          "type": "boolean"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "file_path": {
+          "type": "string"
+        },
+        "max_size": {
+          "type": "integer"
+        },
+        "max_backups": {
+          "type": "integer"
+        },
+        "max_age": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "Options": {
+      "properties": {
+        "output": {
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "include_private": {
+          "type": "boolean"
+        },
+        "include_tests": {
+          "type": "boolean"
+        },
+        "include_examples": {
+          "type": "boolean"
+        },
+        "toc": {
+          "type": "boolean"
+        },
+        "verbose": {
+          "type": "boolean"
+        },
+        "theme": {
+          "type": "string"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "detailed": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "PluginConfig": {
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Tool": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "title": "Type",
+          "description": "Tool install type: go | clone | git"
+        },
+        "cmd": {
+          "type": "string",
+          "title": "Cmd",
+          "description": "Legacy install command string (go install ...)"
+        },
+        "module": {
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "Module",
+              "description": "Go module path with optional @version (preferred over cmd)"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "clone": {
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "CloneURL",
+              "description": "Repository URL (optionally with #ref)"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "build": {
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "Build",
+              "description": "Build method for clone/git tool: make|goreleaser"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "make_target": {
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "MakeTarget",
+              "description": "Make target name (empty for default)"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workdir": {
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "WorkDir",
+              "description": "Sub directory inside repository to run build"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bin": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "BinDirs",
+              "description": "Relative directories where build artifacts are produced"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "env": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Env",
+              "description": "Extra build environment variables KEY=VALUE"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "goreleaser_config": {
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GoreleaserConfig",
+              "description": "Path to goreleaser config file"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "binary_name": {
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "BinaryName",
+              "description": "Override output binary name"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recurse_submodules": {
+          "type": "boolean",
+          "title": "RecurseSubmodules",
+          "description": "Clone git submodules recursively"
+        },
+        "release_build": {
+          "type": "boolean",
+          "title": "ReleaseBuild",
+          "description": "Enable release build mode (may enable optimizations)"
+        },
+        "debug_build": {
+          "type": "boolean",
+          "title": "DebugBuild",
+          "description": "Enable debug build mode (extra symbols"
+        }
+      },
+      "type": "object"
+    },
+    "ToolsConfig": {
+      "properties": {
+        "deps": {
+          "items": {
+            "$ref": "#/$defs/Tool"
+          },
+          "type": "array",
+          "title": "Deps",
+          "description": "Project local dependency tools list"
+        },
+        "global": {
+          "items": {
+            "$ref": "#/$defs/Tool"
+          },
+          "type": "array",
+          "title": "Global",
+          "description": "Global (user-wide) tools list"
+        },
+        "path": {
+          "type": "string",
+          "title": "Path",
+          "description": "Root directory storing installed tools (may include env vars)"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

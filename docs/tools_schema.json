@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "BuiltinToolsInfo": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Name",
+          "description": "Tool identifier"
+        },
+        "url": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Go install module path (may include @version); mutually exclusive with CloneURL"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "clone_url": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Repository URL used for git clone; may include #ref (tag/branch/commit)"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "build": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Build method for clone mode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "make_target": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Make target to run (empty for default)"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "work_dir": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Subdirectory within the repository to build in (empty means repo root)"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bin_dirs": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "description": "Directories containing build artifacts (relative to WorkDir/repo root)"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "env": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "description": "Additional environment variables required by the tool (e.g."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "goreleaser_config": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Path to goreleaser config file (relative to WorkDir/repo root)"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "install_type": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InstallType",
+              "description": "Platform constraints for installation; contains name/os/arch; may be null"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "binary_name": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Optional binary filename produced by the tool; if empty default rules apply (e.g."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "url",
+        "clone_url",
+        "build",
+        "make_target",
+        "work_dir",
+        "bin_dirs",
+        "env",
+        "goreleaser_config",
+        "install_type",
+        "binary_name"
+      ]
+    },
+    "InstallType": {
+      "properties": {
+        "name": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Install type name"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "os": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Restricted OS name"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "arch": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Restricted CPU architecture"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "os",
+        "arch"
+      ]
+    }
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/BuiltinToolsInfo"
+  },
+  "type": "object"
+}

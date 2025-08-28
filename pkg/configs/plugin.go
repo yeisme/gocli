@@ -8,7 +8,8 @@ import (
 
 // PluginConfig represents the configuration for plugins.
 type PluginConfig struct {
-	DirPath string `mapstructure:"path"` // 插件目录路径
+	Enabled bool   `mapstructure:"enabled" jsonschema:"title=Enabled,description=Enable or disable the plugin system"`
+	DirPath string `mapstructure:"path" jsonschema:"title=Path,description=Directory where plugins are stored"` // 插件目录路径
 }
 
 func setPluginConfigDefaults() {
