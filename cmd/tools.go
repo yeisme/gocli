@@ -121,7 +121,7 @@ Examples:
 
 Notes:
   - When invoked without arguments and without --clone, gocli installs tools configured in your config file.
-  - Use --global to install configured global tools or to default single installs to $HOME/.gocli/tools.
+	- Use --global to install configured global tools or to default single installs to ~/.gocli/tools.
   - --release-build and --debug-build are mutually exclusive.
   - When a short builtin tool name is provided (no path separator), gocli may map it to a configured module or clone URL from builtin tool mappings.
   - Do not specify both a module/local spec and --clone at the same time; they are mutually exclusive.
@@ -162,7 +162,7 @@ Notes:
 			// 2. 单个工具安装逻辑
 			if pathFlag == "" {
 				if globalFlag {
-					// --global 单个安装默认路径：$HOME/.gocli/tools
+					// --global 单个安装默认路径：~/.gocli/tools
 					pathFlag = filepath.Join(mustUserHome(), ".gocli", "tools")
 					if v {
 						log.Info().Msgf("--global selected: default install path -> %s", filepath.Clean(pathFlag))
@@ -265,6 +265,7 @@ Notes:
 				WorkDir:           toolInstallOptions.WorkDir,
 				GoreleaserConfig:  toolInstallOptions.GoreleaserConfig,
 				RecurseSubmodules: toolInstallOptions.RecurseSubmodules,
+				Force:             toolInstallOptions.Force,
 			}
 
 			if opts.CloneURL == "" && opts.Spec == "" {
@@ -441,7 +442,7 @@ func init() {
 	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.CloneURL, "clone", "C", "", "Clone source code from a Git repository for installation, supports URL#ref syntax to specify branch/tag/commit")
 	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.MakeTarget, "make-target", "m", "", "Target name to execute with make in the source directory (default is make)")
 	toolInstallCmd.Flags().StringSliceVarP(&toolInstallOptions.BinDirs, "dir", "d", nil, "Directory(ies) where the built binaries are output by make; repeat or separate by platform path list separator")
-	toolInstallCmd.Flags().BoolVarP(&toolInstallGlobal, "global", "g", false, "Install 'tools.global' from config when used without args; when specifying a tool, default install path is $HOME/.gocli/tools")
+	toolInstallCmd.Flags().BoolVarP(&toolInstallGlobal, "global", "g", false, "Install 'tools.global' from config when used without args; when specifying a tool, default install path is ~/.gocli/tools")
 	// build presets
 	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.ReleaseBuild, "release-build", "R", false, "Install in release mode (-trimpath -ldflags '-s -w')")
 	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.DebugBuild, "debug-build", "D", false, "Install in debug mode (-gcflags 'all=-N -l')")
@@ -453,6 +454,7 @@ func init() {
 	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.WorkDir, "workdir", "w", "", "Subdirectory inside the repository to run the build in")
 	toolInstallCmd.Flags().StringVar(&toolInstallOptions.GoreleaserConfig, "goreleaser-config", "", "Path to goreleaser config file (relative to repo root or workdir)")
 	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.RecurseSubmodules, "recurse-submodules", "r", false, "Clone Git submodules recursively when using --clone")
+	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.Force, "force", "f", false, "Force reinstallation even if the tool already exists (overwrites existing installation)")
 }
 
 // mustUserHome 返回用户 home 目录，若失败直接返回当前目录 (尽量不 panic 保持安装流程继续)
@@ -498,7 +500,7 @@ func batchInstallConfiguredGlobalTools(cfg *configs.Config, envFlags []string, v
 		return errors.New("config is nil")
 	}
 
-	// 全局安装统一到用户目录 $HOME/.gocli/tools
+	// 全局安装统一到用户目录 ~/.gocli/tools
 	targetPath := filepath.Join(mustUserHome(), ".gocli", "tools")
 
 	total, failed := installConfiguredToolsFromList(cfg.Tools.Global, targetPath, "global", envFlags, verbose)

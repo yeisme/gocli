@@ -126,20 +126,7 @@
         }
       },
       "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "name",
-        "url",
-        "clone_url",
-        "build",
-        "make_target",
-        "work_dir",
-        "bin_dirs",
-        "env",
-        "goreleaser_config",
-        "install_type",
-        "binary_name"
-      ]
+      "type": "object"
     },
     "InstallType": {
       "properties": {
@@ -178,12 +165,7 @@
         }
       },
       "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "name",
-        "os",
-        "arch"
-      ]
+      "type": "object"
     }
   },
   "additionalProperties": {

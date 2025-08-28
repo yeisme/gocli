@@ -49,6 +49,9 @@ type InstallOptions struct {
 	BinaryName string
 	// Clone: 是否递归克隆子模块
 	RecurseSubmodules bool
+
+	// Force: 强制模型，如果目标目录已存在则覆盖，否则就复用
+	Force bool
 }
 
 // InstallResult 统一返回值
@@ -112,6 +115,7 @@ func InstallTool(opts InstallOptions) (InstallResult, error) {
 			GoreleaserConfig:  opts.GoreleaserConfig,
 			BinDirs:           binDirs,
 			BinaryName:        opts.BinaryName,
+			Force:             opts.Force,
 		})
 		res.Output = out
 		res.Mode = "clone_build"

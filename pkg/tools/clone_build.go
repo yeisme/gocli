@@ -20,12 +20,13 @@ type CloneBuildOptions struct {
 	GoreleaserConfig  string
 	BinDirs           []string
 	BinaryName        string
+	Force             bool // 强制模型，如果目标目录已存在则覆盖，否则就复用
 }
 
 // CloneAndBuildInstall 克隆仓库并按指定构建方式构建，然后从 bin 目录收集产物
 func CloneAndBuildInstall(o CloneBuildOptions) (string, error) {
-	// 解析 clone 输入
-	repoURL, resolvedRef, displayRef, absBase, repoDir, env2, err := resolveCloneInputs(o.CloneURL, o.InstallDir, o.Env)
+	// 解析 clone 输入（不删除已有目录；是否删除由复用逻辑控制）
+	repoURL, resolvedRef, displayRef, absBase, repoDir, env2, err := resolveCloneInputs(o.CloneURL, o.InstallDir, o.Env, o.Force)
 	if err != nil {
 		return "", err
 	}

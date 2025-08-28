@@ -124,5 +124,40 @@
             "os": "",
             "arch": ""
         }
+    },
+    "delve": {
+        "name": "delve",
+        "url": "github.com/go-delve/delve/cmd/dlv@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "go-cover-treemap": {
+        "name": "go-cover-treemap",
+        "url": "github.com/nikolaydubina/go-cover-treemap@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "gofr": {
+        "name": "gofr",
+        "url": "gofr.dev/cli/gofr@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "docker-compose": {
+        "name": "compose",
+        "clone_url": "https://github.com/docker/compose.git",
+        "make_target": "build",
+        "bin_dirs": [
+            "./bin/build"
+        ]
     }
 }

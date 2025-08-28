@@ -10,7 +10,7 @@ import (
 )
 
 // resolveCloneInputs 解析 clone 规格、latest 标签、基础目录与目标仓库目录，并补全 GOBIN
-func resolveCloneInputs(cloneURL, installDir string, env []string) (repoURL, resolvedRef, displayRef, absBase, repoDir string, env2 []string, err error) {
+func resolveCloneInputs(cloneURL, installDir string, env []string, force bool) (repoURL, resolvedRef, displayRef, absBase, repoDir string, env2 []string, err error) {
 	env2 = append([]string{}, env...)
 	repoURL, ref := splitRepoAndRef(cloneURL)
 
@@ -64,7 +64,9 @@ func resolveCloneInputs(cloneURL, installDir string, env []string) (repoURL, res
 		return
 	}
 	// 清理旧目录
-	_ = os.RemoveAll(repoDir)
+	if force {
+		_ = os.RemoveAll(repoDir)
+	}
 	return
 }
 

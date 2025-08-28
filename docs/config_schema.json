@@ -6,19 +6,29 @@
     "AppConfig": {
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "Name",
+          "description": "Application display name"
         },
         "debug": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Debug",
+          "description": "Enable debug mode (more verbose internal logging)"
         },
         "verbose": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Verbose",
+          "description": "Enable verbose output for commands"
         },
         "quiet": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Quiet",
+          "description": "Suppress non-error output"
         },
         "hotload": {
-          "$ref": "#/$defs/HotloadConfig"
+          "$ref": "#/$defs/HotloadConfig",
+          "title": "Hotload",
+          "description": "File watching / hot reload settings"
         }
       },
       "type": "object"
@@ -26,28 +36,45 @@
     "Config": {
       "properties": {
         "version": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1,
+          "title": "Version",
+          "description": "Configuration file version"
         },
         "log": {
-          "$ref": "#/$defs/LogConfig"
+          "$ref": "#/$defs/LogConfig",
+          "title": "Log",
+          "description": "Logging related settings"
         },
         "env": {
-          "$ref": "#/$defs/EnvConfig"
+          "$ref": "#/$defs/EnvConfig",
+          "title": "Env",
+          "description": "Go related environment variables (auto-detected + overrides)"
         },
         "app": {
-          "$ref": "#/$defs/AppConfig"
+          "$ref": "#/$defs/AppConfig",
+          "title": "App",
+          "description": "General application behavior flags"
         },
         "tools": {
-          "$ref": "#/$defs/ToolsConfig"
+          "$ref": "#/$defs/ToolsConfig",
+          "title": "Tools",
+          "description": "Project and global tool installation configuration"
         },
         "plugin": {
-          "$ref": "#/$defs/PluginConfig"
+          "$ref": "#/$defs/PluginConfig",
+          "title": "Plugin",
+          "description": "Plugin loading and search path configuration"
         },
         "doc": {
-          "$ref": "#/$defs/Options"
+          "$ref": "#/$defs/Options",
+          "title": "Doc",
+          "description": "Documentation generation options"
         },
         "init": {
-          "$ref": "#/$defs/InitOptions"
+          "$ref": "#/$defs/InitOptions",
+          "title": "Init",
+          "description": "Project initialization template settings"
         }
       },
       "type": "object",
@@ -58,136 +85,516 @@
     "EnvConfig": {
       "properties": {
         "GOROOT": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOROOT",
+              "description": "Go installation root directory"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOPATH": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOPATH",
+              "description": "Primary workspace path (may contain multiple paths)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOMOD": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOMOD",
+              "description": "Path to current go.mod file"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOMODCACHE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOMODCACHE",
+              "description": "Module download/cache directory"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOSUMDB": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOSUMDB",
+              "description": "Checksum database URL(s)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOPROXY": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOPROXY",
+              "description": "Module proxy list"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOPRIVATE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOPRIVATE",
+              "description": "Patterns for private modules (comma separated)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GONOPROXY": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GONOPROXY",
+              "description": "Patterns to bypass proxy"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GONOSUMDB": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GONOSUMDB",
+              "description": "Patterns to bypass checksum database"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOOS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOOS",
+              "description": "Target operating system"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOARCH": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOARCH",
+              "description": "Target architecture"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GO386": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GO386",
+              "description": "386 architecture features (e.g. sse2)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOAMD64": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOAMD64",
+              "description": "AMD64 microarchitecture level (v1-v4)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOARM": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOARM",
+              "description": "ARM architecture version (5"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOARM64": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOARM64",
+              "description": "ARM64 architecture tuning flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOMIPS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOMIPS",
+              "description": "MIPS architecture settings (hardfloat|softfloat)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOMIPS64": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOMIPS64",
+              "description": "MIPS64 architecture settings (hardfloat|softfloat)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOPPC64": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOPPC64",
+              "description": "PPC64 architecture level (power8 etc)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOWASM": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOWASM",
+              "description": "WebAssembly feature flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOGCFLAGS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOGCFLAGS",
+              "description": "Extra gc compiler flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOASMFLAGS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOASMFLAGS",
+              "description": "Extra assembler flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOLDFLAGS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOLDFLAGS",
+              "description": "Extra linker flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOFLAGS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOFLAGS",
+              "description": "Default go command flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOINSECURE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOINSECURE",
+              "description": "Allow insecure (non-HTTPS) module paths patterns"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "CGO_ENABLED": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "CGO_ENABLED",
+              "description": "Enable CGO (0 or 1)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "CGO_CFLAGS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "CGO_CFLAGS",
+              "description": "CGO C compiler flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "CGO_CPPFLAGS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "CGO_CPPFLAGS",
+              "description": "CGO C preprocessor flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "CGO_LDFLAGS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "CGO_LDFLAGS",
+              "description": "CGO linker flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "CGO_CXXFLAGS": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "CGO_CXXFLAGS",
+              "description": "CGO C++ compiler flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOTRACE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOTRACE",
+              "description": "Execution trace output path"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GODEBUG": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GODEBUG",
+              "description": "Runtime debug settings"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOMEMPROFILE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOMEMPROFILE",
+              "description": "Memory profile output path"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOCPUPROFILE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOCPUPROFILE",
+              "description": "CPU profile output path"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOBLOCKPROFILE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOBLOCKPROFILE",
+              "description": "Blocking profile output path"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOMUTEXPROFILE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOMUTEXPROFILE",
+              "description": "Mutex profile output path"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOTOOLCHAIN": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOTOOLCHAIN",
+              "description": "Go toolchain selection (auto|go1.x|path)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOTOOLDIR": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOTOOLDIR",
+              "description": "Go toolchain binaries directory"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOCACHE": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOCACHE",
+              "description": "Build cache directory"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOTMPDIR": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOTMPDIR",
+              "description": "Temporary directory for go commands"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOWORK": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOWORK",
+              "description": "Go workspace file mode (auto|off|path)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOWORKSUM": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOWORKSUM",
+              "description": "Workspace checksum file path"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "GOEXPERIMENT": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "GOEXPERIMENT",
+              "description": "Comma separated experimental feature flags"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "Custom": {
           "additionalProperties": {
             "type": "string"
           },
-          "type": "object"
+          "type": "object",
+          "title": "Custom",
+          "description": "Additional custom environment variables (free-form key/values)"
         }
       },
       "type": "object"
@@ -220,31 +627,46 @@
     "HotloadConfig": {
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Enabled",
+          "description": "Enable hot file watching"
         },
         "dir": {
-          "type": "string"
+          "type": "string",
+          "title": "Dir",
+          "description": "Root directory to watch"
         },
         "filter": {
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "title": "Filter",
+          "description": "Glob patterns to include for watching"
         },
         "recursive": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Recursive",
+          "description": "Watch directories recursively"
         },
         "debounce": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "title": "Debounce",
+          "description": "Event debounce time in milliseconds"
         },
         "ignore_patterns": {
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "title": "IgnorePatterns",
+          "description": "Glob patterns to ignore"
         },
         "git_ignore": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "GitIgnore",
+          "description": "Honor .gitignore exclusions"
         }
       },
       "type": "object"
@@ -255,34 +677,83 @@
           "$ref": "#/$defs/GoInitOptions"
         },
         "git_init": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "GitInit",
+          "description": "Run 'git init' automatically"
         },
         "license": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "License",
+              "description": "SPDX license identifier (e.g. MIT"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "dir": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "Dir",
+              "description": "Target directory to initialize project in (relative or absolute)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "gocli": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "GoCLIInit",
+          "description": "Create gocli configuration file"
         },
         "goreleaser": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "GoreleaserInit",
+          "description": "Generate goreleaser config"
         },
         "go_task": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "GoTaskInit",
+          "description": "Generate go-task Taskfile"
         },
         "docker": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "DockerInit",
+          "description": "Generate Docker related files"
         },
         "makefile": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "MakefileInit",
+          "description": "Generate Makefile"
         },
         "author": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "Author",
+              "description": "Project author name"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "email": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "email",
+              "title": "Email",
+              "description": "Project author email"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "type": "object"
@@ -290,25 +761,63 @@
     "LogConfig": {
       "properties": {
         "level": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "fatal",
+            "panic"
+          ],
+          "title": "Level",
+          "description": "Log level: trace|debug|info|warn|error|fatal|panic"
         },
         "json": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "JSON",
+          "description": "Output logs in JSON format"
         },
         "mode": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "console",
+            "file",
+            "both"
+          ],
+          "title": "Mode",
+          "description": "Log output mode: console|file|both"
         },
         "file_path": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "FilePath",
+              "description": "Log file path when mode includes file"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "max_size": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1,
+          "title": "MaxSize",
+          "description": "Maximum log file size in MB before rotation"
         },
         "max_backups": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "title": "MaxBackups",
+          "description": "Number of rotated log files to retain"
         },
         "max_age": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "title": "MaxAge",
+          "description": "Maximum age in days to retain old log files"
         }
       },
       "type": "object"
@@ -316,45 +825,100 @@
     "Options": {
       "properties": {
         "output": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "Output",
+              "description": "Output path (file or directory); empty for stdout"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "style": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "markdown",
+            "html",
+            "plain",
+            "json",
+            "yaml"
+          ],
+          "title": "Style",
+          "description": "Render style: markdown|html|plain|json|yaml"
         },
         "mode": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "godoc",
+            "markdown"
+          ],
+          "title": "Mode",
+          "description": "Document mode: godoc|markdown"
         },
         "include_private": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "IncludePrivate",
+          "description": "Include non-exported symbols"
         },
         "include_tests": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "IncludeTests",
+          "description": "Include *_test.go files"
         },
         "include_examples": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "IncludeExamples",
+          "description": "Include code examples (auto-enabled with tests)"
         },
         "toc": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "TOC",
+          "description": "Generate table of contents"
         },
         "verbose": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Verbose",
+          "description": "Enable verbose logging"
         },
         "theme": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "title": "Theme",
+              "description": "Render theme name (implementation specific)"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "width": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "title": "Width",
+          "description": "Render width (0=auto)"
         },
         "detailed": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "Detailed",
+          "description": "Produce more detailed output (godoc mode only)"
         }
       },
       "type": "object"
     },
     "PluginConfig": {
       "properties": {
+        "enabled": {
+          "type": "boolean",
+          "title": "Enabled",
+          "description": "Enable or disable the plugin system"
+        },
         "path": {
-          "type": "string"
+          "type": "string",
+          "title": "Path",
+          "description": "Directory where plugins are stored"
         }
       },
       "type": "object"
@@ -363,8 +927,13 @@
       "properties": {
         "type": {
           "type": "string",
+          "enum": [
+            "go",
+            "clone",
+            "git"
+          ],
           "title": "Type",
-          "description": "Tool install type: go | clone | git"
+          "description": "Tool install type: go|clone|git"
         },
         "cmd": {
           "type": "string",

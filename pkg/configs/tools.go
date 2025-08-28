@@ -57,5 +57,5 @@ func setToolsConfigDefaults() {
 			Cmd:  "go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest",
 		},
 	})
-	viper.SetDefault("tools.path", "$HOME/.gocli/tools")
+	viper.SetDefault("tools.path", "~/.gocli/tools")
 }
