@@ -17,7 +17,7 @@ func GenToolsSchema(out io.Writer) error {
 		FieldNameTag:               "mapstructure",
 		RequiredFromJSONSchemaTags: true,
 	}
-	toolSchema := reflector.Reflect(map[string]tools.BuiltinToolsInfo{})
+	toolSchema := reflector.Reflect(map[string]tools.InstallToolsInfo{})
 	schemaJSON, err := json.MarshalIndent(toolSchema, "", "  ")
 	if err != nil {
 		return err

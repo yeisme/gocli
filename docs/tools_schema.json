@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
-    "BuiltinToolsInfo": {
+    "InstallToolsInfo": {
       "properties": {
         "name": {
           "type": "string",
@@ -169,7 +169,7 @@
     }
   },
   "additionalProperties": {
-    "$ref": "#/$defs/BuiltinToolsInfo"
+    "$ref": "#/$defs/InstallToolsInfo"
   },
   "type": "object"
 }

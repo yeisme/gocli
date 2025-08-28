@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/configs"
@@ -125,7 +128,7 @@ Notes:
   - --release-build and --debug-build are mutually exclusive.
   - When a short builtin tool name is provided (no path separator), gocli may map it to a configured module or clone URL from builtin tool mappings.
   - Do not specify both a module/local spec and --clone at the same time; they are mutually exclusive.
-	`,
+`,
 
 		Run: func(cmd *cobra.Command, args []string) {
 			cloneURL := toolInstallOptions.CloneURL
@@ -173,8 +176,10 @@ Notes:
 			}
 
 			var spec string
+			var origInput string
 			if len(args) > 0 {
 				spec = args[0]
+				origInput = spec
 				// 支持内置工具短名：例如 `gocli tools install golangci-lint` -> 使用 pkg/tools.BuiltinTools 中配置的 URL
 				// 仅当输入不包含路径分隔符时才尝试映射（避免覆盖模块路径或本地路径）
 				if !strings.Contains(spec, "/") && !strings.Contains(spec, "\\") {
@@ -185,23 +190,28 @@ Notes:
 						name = orig[:i]
 						ver = orig[i:] // keep leading '@'
 					}
-					if bi, ok := toolsPkg.BuiltinTools[name]; ok {
-						// 若配置了 CloneURL，则走 clone 构建路径；否则回退到 go install URL
-						if strings.TrimSpace(bi.CloneURL) != "" {
-							// 将 @version（若有）映射为 #ref
+					// 1) 精确 key 匹配
+					bi := toolsPkg.SearchTools(name, gocliCtx.Config.Tools.ToolsConfigDir)
+					// 2) 若未命中，尝试按 Name 字段匹配（如 key 为 docker-compose, name 为 compose）
+					if bi == nil {
+						for _, t := range toolsPkg.BuiltinTools {
+							if t.Name == name {
+								tt := t
+								bi = &tt
+								break
+							}
+						}
+					}
+					if bi != nil {
+						if strings.TrimSpace(bi.CloneURL) != "" { // clone 模式
 							clone := bi.CloneURL
-							if ver != "" {
-								ref := ver[1:] // strip leading '@'
-								// 若 CloneURL 已经包含 #，则替换或追加？这里追加优先（通常 CloneURL 不带 ref）
-								if strings.Contains(clone, "#") {
-									// 简单策略：去掉原有片段，使用新的
-									if p := strings.Index(clone, "#"); p >= 0 {
-										clone = clone[:p]
-									}
+							if ver != "" { // 将 @version（若有）映射为 #ref
+								ref := ver[1:]                              // strip '@'
+								if p := strings.Index(clone, "#"); p >= 0 { // 去掉旧 ref
+									clone = clone[:p]
 								}
 								clone = clone + "#" + ref
 							}
-							// 将 clone 相关字段灌入选项（用户显式 flags 优先生效）
 							cloneURL = clone
 							if toolInstallOptions.BuildMethod == "" && strings.TrimSpace(bi.Build) != "" {
 								toolInstallOptions.BuildMethod = bi.Build
@@ -224,12 +234,11 @@ Notes:
 							if bi.BinaryName != "" && toolInstallOptions.BinaryName == "" {
 								toolInstallOptions.BinaryName = bi.BinaryName
 							}
-							// 清空 go install 的 spec，避免歧义
-							spec = ""
+							spec = "" // 走 clone 路径
 							if v {
 								log.Info().Msgf("mapped builtin tool %s -> clone %s (build=%s)", orig, cloneURL, toolInstallOptions.BuildMethod)
 							}
-						} else {
+						} else { // go install 模式
 							mapped := bi.URL + ver
 							spec = mapped
 							if bi.BinaryName != "" && toolInstallOptions.BinaryName == "" {
@@ -289,6 +298,17 @@ Notes:
 			}
 			printInstallOutput(res.Output, err, v)
 			if err != nil {
+				// 针对常见短名未映射导致的 go install malformed module path，提供提示
+				if res.Mode == "go_install" && origInput != "" && !strings.Contains(origInput, ".") && !strings.Contains(origInput, "/") && !strings.Contains(origInput, "\\") {
+					// 检测是否存在 Name 等于输入的内置工具（但 key 不同）
+					for k, t := range toolsPkg.BuiltinTools {
+						if t.Name == origInput && k != origInput {
+							log.Error().Msgf("unrecognized short name '%s'. Did you mean builtin tool '%s'? Try: gocli tools install %s", origInput, k, k)
+							break
+						}
+					}
+					log.Error().Msgf("if this is a builtin tool name, run 'gocli tools search %s' to inspect details", origInput)
+				}
 				if res.Mode != "go_install" {
 					log.Error().Err(err).Msg("install via clone failed")
 				} else {
@@ -318,8 +338,131 @@ Notes:
 		Short: "Uninstall a tool",
 	}
 	toolSearchCmd = &cobra.Command{
-		Use:   "search",
+		Use:   "search [query]",
 		Short: "Search for a tool",
+		Long: `
+Search builtin (and user-defined) tools.
+Behaviour change:
+  - With a query argument: perform fuzzy search (non-interactive) using github.com/lithammer/fuzzysearch, output results directly.
+  - Without any argument: enter interactive selection (fuzzy finder) to pick a tool, then print it.
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// format flags
+			fmtFlag, _ := cmd.Flags().GetString("format")
+			listJSON, _ := cmd.Flags().GetBool("json")
+			listYAML, _ := cmd.Flags().GetBool("yaml")
+			listTable, _ := cmd.Flags().GetBool("table")
+
+			setCount := 0
+			if cmd.Flags().Changed("format") {
+				setCount++
+			}
+			if listJSON {
+				setCount++
+			}
+			if listYAML {
+				setCount++
+			}
+			if listTable {
+				setCount++
+			}
+			if setCount > 1 {
+				cmd.PrintErrf("only one of --format, --json, --yaml, --table may be specified\n")
+				return
+			}
+			if listJSON {
+				fmtFlag = "json"
+			} else if listYAML {
+				fmtFlag = "yaml"
+			} else if listTable {
+				fmtFlag = "table"
+			}
+			if fmtFlag == "" {
+				fmtFlag = "table"
+			}
+
+			out := cmd.OutOrStdout()
+
+			// No args -> interactive selection over ALL tools
+			if len(args) == 0 {
+				if len(toolsPkg.BuiltinTools) == 0 {
+					cmd.PrintErrln("no tools available")
+					return
+				}
+				all := make([]toolsPkg.InstallToolsInfo, 0, len(toolsPkg.BuiltinTools))
+				for _, t := range toolsPkg.BuiltinTools {
+					all = append(all, t)
+				}
+				sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
+				sel, err := toolsPkg.InteractiveSelect(all)
+				if err != nil {
+					cmd.PrintErrf("interactive select failed: %v\n", err)
+					return
+				}
+				printSingleTool(sel, fmtFlag, out, cmd)
+				return
+			}
+
+			// With query -> non-interactive fuzzy search
+			query := args[0]
+			// exact / unique match logic; but we want all fuzzy matches when not exact
+			if bi := toolsPkg.SearchTools(query, gocliCtx.Config.Tools.ToolsConfigDir); bi != nil {
+				printSingleTool(bi, fmtFlag, out, cmd)
+				return
+			}
+			matches := toolsPkg.FindToolsFuzzy(query, gocliCtx.Config.Tools.ToolsConfigDir)
+			if len(matches) == 0 {
+				if fmtFlag == "json" || fmtFlag == "yaml" {
+					fmt.Fprintln(out, "null")
+				} else {
+					cmd.PrintErrf("tool not found: %s\n", query)
+				}
+				return
+			}
+			// One match -> print single; multi -> print list directly
+			if len(matches) == 1 {
+				m := matches[0]
+				printSingleTool(&m, fmtFlag, out, cmd)
+				return
+			}
+			// multi
+			switch strings.ToLower(fmtFlag) {
+			case "json":
+				if err := style.PrintJSON(out, matches); err != nil {
+					b, _ := json.MarshalIndent(matches, "", "  ")
+					fmt.Fprintln(out, string(b))
+				}
+			case "yaml":
+				if err := style.PrintYAML(out, matches); err != nil {
+					b, _ := yaml.Marshal(matches)
+					fmt.Fprintln(out, string(b))
+				}
+			case "table":
+				headers := []string{"Name", "URL", "CloneURL", "Build"}
+				rows := make([][]string, 0, len(matches))
+				for _, m := range matches {
+					rows = append(rows, []string{m.Name, m.URL, m.CloneURL, m.Build})
+				}
+				if err := style.PrintTable(out, headers, rows, 0); err != nil {
+					for _, m := range matches {
+						fmt.Fprintf(out, "%s: %s %s %s\n", m.Name, m.URL, m.CloneURL, m.Build)
+					}
+				}
+			default:
+				cmd.PrintErrf("unsupported format: %s\n", fmtFlag)
+			}
+		},
+		Aliases: []string{"s"},
+		PreRun: func(_ *cobra.Command, _ []string) {
+			// load user tools then list all
+			for _, p := range gocliCtx.Config.Tools.ToolsConfigDir {
+				if err := toolsPkg.LoadUserTools(p); err != nil {
+					log.Warn().Err(err).Msgf("failed to load user tools from: %s", p)
+				} else {
+					log.Debug().Msgf("loaded user tools from: %s", p)
+				}
+			}
+		},
 	}
 	toolRunCmd = &cobra.Command{
 		Use:   "run <tool> [args...]",
@@ -455,14 +598,18 @@ func init() {
 	toolInstallCmd.Flags().StringVar(&toolInstallOptions.GoreleaserConfig, "goreleaser-config", "", "Path to goreleaser config file (relative to repo root or workdir)")
 	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.RecurseSubmodules, "recurse-submodules", "r", false, "Clone Git submodules recursively when using --clone")
 	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.Force, "force", "f", false, "Force reinstallation even if the tool already exists (overwrites existing installation)")
+
+	// search output format: json|yaml|table (default table)
+	toolSearchCmd.Flags().StringP("format", "f", "table", "Output format: json|yaml|table (default table)")
+	toolSearchCmd.Flags().BoolP("json", "j", false, "Output the search result in JSON format")
+	toolSearchCmd.Flags().BoolP("yaml", "y", false, "Output the search result in YAML format (overrides -f)")
+	toolSearchCmd.Flags().BoolP("table", "t", false, "Output the search result in table format (default)")
+
 }
 
-// mustUserHome 返回用户 home 目录，若失败直接返回当前目录 (尽量不 panic 保持安装流程继续)
+// mustUserHome 返回用户 home 目录
 func mustUserHome() string {
-	h, err := os.UserHomeDir()
-	if err != nil || h == "" {
-		return "."
-	}
+	h, _ := os.UserHomeDir()
 	return h
 }
 
@@ -635,5 +782,60 @@ func printInstallOutput(output string, err error, verbose bool) {
 		} else {
 			log.Info().Msg(line)
 		}
+	}
+}
+
+// printSingleTool 根据格式打印单个工具信息
+func printSingleTool(bi *toolsPkg.InstallToolsInfo, fmtFlag string, out interface{ Write([]byte) (int, error) }, cmd *cobra.Command) {
+	switch strings.ToLower(fmtFlag) {
+	case "json":
+		if err := style.PrintJSON(out, bi); err != nil {
+			b, _ := json.MarshalIndent(bi, "", "  ")
+			fmt.Fprintln(out, string(b))
+		}
+	case "yaml":
+		if err := style.PrintYAML(out, bi); err != nil {
+			b, _ := json.MarshalIndent(bi, "", "  ")
+			fmt.Fprintln(out, string(b))
+		}
+	case "table":
+		// Vertical key-value table for readability
+		kv := func(k, v string) []string { return []string{k, v} }
+		rows := make([][]string, 0, 16)
+		add := func(k, v string) {
+			if strings.TrimSpace(v) == "" {
+				return
+			}
+			rows = append(rows, kv(k, v))
+		}
+		add("Name", bi.Name)
+		add("URL", bi.URL)
+		add("CloneURL", bi.CloneURL)
+		add("Build", bi.Build)
+		add("MakeTarget", bi.MakeTarget)
+		add("WorkDir", bi.WorkDir)
+		if len(bi.BinDirs) > 0 {
+			add("BinDirs", strings.Join(bi.BinDirs, ", "))
+		}
+		if len(bi.Env) > 0 {
+			add("Env", strings.Join(bi.Env, ", "))
+		}
+		add("GoreleaserConfig", bi.GoreleaserConfig)
+		add("BinaryName", bi.BinaryName)
+		if bi.InstallType != nil {
+			add("InstallType.Name", bi.InstallType.Name)
+			add("InstallType.OS", bi.InstallType.OS)
+			add("InstallType.Arch", bi.InstallType.Arch)
+		}
+		if len(rows) == 0 {
+			rows = append(rows, kv("Name", ""))
+		}
+		if err := style.PrintTable(out, []string{"Field", "Value"}, rows, 0); err != nil {
+			for _, r := range rows {
+				fmt.Fprintf(out, "%s: %s\n", r[0], r[1])
+			}
+		}
+	default:
+		cmd.PrintErrf("unsupported format: %s\n", fmtFlag)
 	}
 }

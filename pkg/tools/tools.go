@@ -99,7 +99,8 @@ func findToolsUnlocked(_ bool, gocliToolsPath string) []ToolInfo {
 	return out
 }
 
-// cacheKey 生成缓存 key，目前以 gocliToolsPath 为主键，未来可扩展包含 GOPATH snapshot 等
+// cacheKey 生成缓存 key，目前以 gocliToolsPath 为主键，
+// TODO 未来可扩展包含 GOPATH snapshot 等
 func cacheKey(gocliToolsPath string) string {
 	if gocliToolsPath == "" {
 		return "@default"

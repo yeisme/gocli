@@ -158,6 +158,57 @@
         "make_target": "build",
         "bin_dirs": [
             "./bin/build"
-        ]
+        ],
+        "build": "make",
+        "install_type": {
+            "name": "Make",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "sampler": {
+        "name": "sampler",
+        "url": "github.com/sqshq/sampler@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "mcp-language-server": {
+        "name": "mcp-language-server",
+        "url": "github.com/isaacphi/mcp-language-server@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "gopls": {
+        "name": "gopls",
+        "url": "golang.org/x/tools/gopls@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "task": {
+        "name": "task",
+        "url": "github.com/go-task/task/v3/cmd/task@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "vhs": {
+        "name": "vhs",
+        "url": "github.com/charmbracelet/vhs@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
     }
 }

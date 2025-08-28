@@ -4,7 +4,6 @@ tasks:
   default:
     deps:
       - gocli
-      - gox
     desc: Build the project using Go build command
 
   build:single:
@@ -31,8 +30,3 @@ tasks:
     cmds:
       - go build ./cmd/gocli
     desc: Build the project using the default Go build command (Without Version Info)
-
-  gox:
-    cmds:
-      - go build ./cmd/gox
-    desc: Build the gox tool

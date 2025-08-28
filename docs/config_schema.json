@@ -1094,6 +1094,14 @@
           "type": "string",
           "title": "Path",
           "description": "Root directory storing installed tools (may include env vars)"
+        },
+        "tools_config_dir": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "title": "ToolsConfigDir",
+          "description": "Directory containing tool definitions"
         }
       },
       "type": "object"
