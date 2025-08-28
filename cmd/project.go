@@ -22,6 +22,7 @@ var (
 	updateOptions project.UpdateOptions
 	depsOptions   project.DepsOptions
 	docOptions    project.DocOptions
+	addOptions    project.AddOptions
 	testOptions   project.TestOptions
 
 	projectCmd = &cobra.Command{
@@ -398,8 +399,16 @@ Notes:
 		},
 	}
 	projectAddCmd = &cobra.Command{
-		Use:   "add",
-		Short: "Add a dependency to the Go project",
+		Use:     "add",
+		Short:   "Add a dependency to the Go project",
+		Aliases: []string{"get", "g", "a"},
+		Run: func(cmd *cobra.Command, args []string) {
+			addOptions.Verbose = gocliCtx.Config.App.Verbose
+			if err := project.RunAdd(addOptions, args, cmd.OutOrStdout()); err != nil {
+				cmd.PrintErrf("Error: %v\n", err)
+				os.Exit(1)
+			}
+		},
 	}
 	projectTestCmd = &cobra.Command{
 		Use:   "test [flags] [packages]",
@@ -802,6 +811,15 @@ func addListFlags(cmd *cobra.Command, opts *project.ListOptions) {
 	cmd.Flags().BoolVar(&opts.Test, "test", false, "Include test packages (adds -test)")
 }
 
+// addAddFlags registers flags for the `project add` command.
+func addAddFlags(cmd *cobra.Command, opts *project.AddOptions) {
+	cmd.Flags().BoolVarP(&opts.T, "test", "t", false, "Consider modules needed to build tests")
+	cmd.Flags().BoolVarP(&opts.U, "update", "u", false, "Update modules providing dependencies")
+	cmd.Flags().BoolVar(&opts.UPatch, "update-patch", false, "Update to patch releases (equivalent to -u=patch)")
+	cmd.Flags().BoolVar(&opts.Tool, "tool", false, "Add tool line to go.mod")
+	cmd.Flags().BoolVarP(&opts.X, "print-commands", "x", false, "Print commands as they are executed")
+}
+
 // addTestFlags registers flags for the `project test` command.
 func addTestFlags(cmd *cobra.Command, opts *project.TestOptions) {
 	cmd.Flags().BoolVarP(&opts.V, "verbose", "v", false, "Verbose output")
@@ -881,6 +899,7 @@ func registerProjectFlags() {
 	addInfoFlags(projectInfoCmd, &infoOptions)
 
 	// 6) add (no flags currently)
+	addAddFlags(projectAddCmd, &addOptions)
 
 	// 7) test
 	addTestFlags(projectTestCmd, &testOptions)
