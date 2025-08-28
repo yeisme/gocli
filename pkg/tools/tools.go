@@ -19,8 +19,9 @@ import (
 type toolSourceType string
 
 const (
-	goPath    toolSourceType = "$GOPATH/bin"
-	goCliPath toolSourceType = "$GOCLI_TOOLS_PATH"
+	goPath        toolSourceType = "$GOPATH/bin"
+	goCliPath     toolSourceType = "$GOCLI_TOOLS_PATH"
+	goUserCliPath toolSourceType = "$HOME/.gocli/tools"
 )
 
 // ToolInfo 描述一个可用的工具
@@ -64,12 +65,20 @@ func findToolsUnlocked(_ bool, gocliToolsPath string) []ToolInfo {
 		}{path: joinPath(gp, "bin"), source: goPath})
 	}
 
-	// 2) 用户目录下的 .gocli/tools
-	if userTools := getUserToolsDir(gocliToolsPath); userTools != "" {
+	// 2) 用户配置的 .gocli/tools
+	if userCfgTools := getUserToolsDir(gocliToolsPath); userCfgTools != "" {
 		dirs = append(dirs, struct {
 			path   string
 			source toolSourceType
-		}{path: userTools, source: goCliPath})
+		}{path: userCfgTools, source: goCliPath})
+	}
+
+	// 3) 用户目录的 .gocli/tools
+	if userTools := getUserToolsDir(""); userTools != "" {
+		dirs = append(dirs, struct {
+			path   string
+			source toolSourceType
+		}{path: userTools, source: goUserCliPath})
 	}
 
 	// 先扫描 GOPATH/bin，再用 .gocli/tools 覆盖（保证用户自定义优先）
