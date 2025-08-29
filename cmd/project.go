@@ -715,7 +715,7 @@ func addInitFlags(cmd *cobra.Command, opts *project.InitOptions) {
 	cmd.Flags().StringVarP(&opts.Format, "format", "f", "", "Output format (json|yaml|plain|table) only used with --list")
 	cmd.Flags().BoolVarP(&opts.JSON, "json", "j", false, "Output in JSON format")
 	cmd.Flags().BoolVarP(&opts.YAML, "yaml", "y", false, "Output in YAML format")
-	cmd.Flags().BoolVarP(&opts.Plain, "plain", "p", true, "Output plain list")
+	cmd.Flags().BoolVarP(&opts.Plain, "plain", "p", false, "Output plain list")
 	cmd.Flags().BoolVarP(&opts.Table, "table", "T", false, "Output in table format")
 
 	cmd.Flags().StringVarP(&opts.LangType, "type", "t", "go", "Set project type (go|cpp|python|node|rust|java|php|dotnet, only 'go' supported now)")

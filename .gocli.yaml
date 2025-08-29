@@ -46,18 +46,12 @@ app:
 tools:
   deps:
     - type: go
-      cmd: go install github.com/air-verse/air@v1.62.0
-    - type: go
       cmd: go install golang.org/x/tools/cmd/goimports@latest
 
   global:
     - type: go
       cmd: go install github.com/goreleaser/goreleaser/v2@latest
 
-  path: .gocli/tools
+  path: ~/.gocli/tools
   tools_config_dir:
-    - .gocli/tools.json
-
-plugin:
-  enabled: true
-  path: .gocli/plugins
+    - ~/.gocli/tools.json

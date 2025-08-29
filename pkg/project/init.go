@@ -84,7 +84,7 @@ func ExecuteInitCommand(ctx *context.GocliContext, args []string, opts InitOptio
 		return fmt.Errorf("unsupported project type: %s", opts.LangType)
 	}
 
-	_, err := opts.Project.ExecConfigInit()
+	_, err := opts.Project.ExecConfigInit(args)
 	if err != nil {
 		return err
 	}
@@ -293,6 +293,10 @@ func initFormatCfg(opts *InitOptions) error {
 	if cut > 1 {
 		return fmt.Errorf("format / json / yaml / plain / table cannot be set at the same time")
 	}
+	if cut == 0 {
+		// 默认 plain
+		opts.Plain = true
+	}
 
 	if opts.Format != "" {
 		switch opts.Format {
@@ -326,11 +330,11 @@ func listTemplates(opts *InitOptions, out io.Writer) error {
 
 // listGoTemplates 输出 Go 模板
 func listGoTemplates(opts *InitOptions, out io.Writer) error {
-	if _, err := fmt.Fprintf(out, "Available templates for language %q:\n", opts.LangType); err != nil {
-		return fmt.Errorf("write output failed: %w", err)
-	}
 	tm := opts.Project.Go.Templates
 	if opts.JSON {
+		if _, err := fmt.Fprintf(out, "Available templates for language %q:\n", opts.LangType); err != nil {
+			return fmt.Errorf("write output failed: %w", err)
+		}
 		b, err := json.MarshalIndent(tm, "", "  ")
 		if err != nil {
 			return fmt.Errorf("marshal templates failed: %v", err)
@@ -339,6 +343,9 @@ func listGoTemplates(opts *InitOptions, out io.Writer) error {
 		return nil
 	}
 	if opts.YAML {
+		if _, err := fmt.Fprintf(out, "Available templates for language %q:\n", opts.LangType); err != nil {
+			return fmt.Errorf("write output failed: %w", err)
+		}
 		b, err := yaml.Marshal(tm)
 		if err != nil {
 			return fmt.Errorf("marshal templates failed: %v", err)
@@ -346,7 +353,36 @@ func listGoTemplates(opts *InitOptions, out io.Writer) error {
 		_ = style.PrintYAML(out, b)
 		return nil
 	}
+	if opts.Table {
+		if _, err := fmt.Fprintf(out, "Available templates for language %q:\n", opts.LangType); err != nil {
+			return fmt.Errorf("write output failed: %w", err)
+		}
+		// 构建表格数据
+		headers := []string{"Name", "Language", "Type", "Path"}
+		var rows [][]string
+
+		// 按名称排序
+		names := make([]string, 0, len(tm))
+		for k := range tm {
+			names = append(names, k)
+		}
+		sort.Strings(names)
+
+		for _, name := range names {
+			t := tm[name]
+			lang := t.Language
+			if lang == "" {
+				lang = "go"
+			}
+			rows = append(rows, []string{name, lang, t.Type, t.Path})
+		}
+
+		return style.PrintTable(out, headers, rows, 0)
+	}
 	// Plain 输出：按名称排序
+	if _, err := fmt.Fprintf(out, "Available templates for language %q:\n", opts.LangType); err != nil {
+		return fmt.Errorf("write output failed: %w", err)
+	}
 	names := make([]string, 0, len(tm))
 	for k := range tm {
 		names = append(names, k)
@@ -358,7 +394,7 @@ func listGoTemplates(opts *InitOptions, out io.Writer) error {
 		if lang == "" {
 			lang = "go"
 		}
-		if _, err := fmt.Fprintf(out, "- %s\t(lang=%s type=%s path=%s)\n", name, lang, t.Type, t.Path); err != nil {
+		if _, err := fmt.Fprintf(out, "  - %s\t(lang=%s type=%s path=%s)\n", name, lang, t.Type, t.Path); err != nil {
 			return fmt.Errorf("write output failed: %w", err)
 		}
 	}

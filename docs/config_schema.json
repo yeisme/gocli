@@ -61,11 +61,6 @@
           "title": "Tools",
           "description": "Project and global tool installation configuration"
         },
-        "plugin": {
-          "$ref": "#/$defs/PluginConfig",
-          "title": "Plugin",
-          "description": "Plugin loading and search path configuration"
-        },
         "doc": {
           "$ref": "#/$defs/Options",
           "title": "Doc",
@@ -904,21 +899,6 @@
           "type": "boolean",
           "title": "Detailed",
           "description": "Produce more detailed output (godoc mode only)"
-        }
-      },
-      "type": "object"
-    },
-    "PluginConfig": {
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "title": "Enabled",
-          "description": "Enable or disable the plugin system"
-        },
-        "path": {
-          "type": "string",
-          "title": "Path",
-          "description": "Directory where plugins are stored"
         }
       },
       "type": "object"

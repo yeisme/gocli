@@ -3,8 +3,11 @@ package newproject
 
 import (
 	"embed"
+	"fmt"
+	"os"
 	"strings"
 
+	"github.com/yeisme/gocli/pkg/tools"
 	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
@@ -86,7 +89,11 @@ func (i *InitList) String() string {
 }
 
 // ExecConfigInit 执行配置初始化
-func (o *InitOptions) ExecConfigInit() ([]string, error) {
+func (o *InitOptions) ExecConfigInit(args []string) ([]string, error) {
+	argsPath, err := NormalizeGoProjectName(args)
+	if err != nil {
+		return nil, err
+	}
 
 	var initList InitList
 
@@ -121,7 +128,7 @@ func (o *InitOptions) ExecConfigInit() ([]string, error) {
 		initList.AddError(err)
 	}
 	if o.License != "" {
-		str, err := o.execLicenseInit()
+		str, err := o.execLicenseInit(argsPath)
 		initList.AddOutput(str)
 		initList.AddError(err)
 	}
@@ -137,7 +144,24 @@ func (o *InitOptions) execGitInit() (string, error) {
 }
 
 func (o *InitOptions) execGoTaskInit() (string, error) {
-	return executor.NewExecutor("task", "--init").WithDir(o.Dir).Output()
+	out, err := executor.NewExecutor("task", "--init").WithDir(o.Dir).Output()
+	if err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(o.Dir + "/Taskfile.yml"); os.IsNotExist(err) {
+		f, err := os.Open(o.Dir + "/Taskfile.yml")
+		if err != nil {
+			return "", err
+		}
+		defer func() {
+			if closeErr := f.Close(); closeErr != nil {
+				fmt.Fprintf(os.Stderr, "Warning: failed to close Taskfile.yml: %v\n", closeErr)
+			}
+		}()
+
+		// TODO 根据项目语言类型生成不同的 Taskfile
+	}
+	return out, nil
 }
 
 func (o *InitOptions) execGoCLIInit() (string, error) {
@@ -153,9 +177,35 @@ func (o *InitOptions) execDockerInit() (string, error) {
 }
 
 func (o *InitOptions) execMakefileInit() (string, error) {
-	return executor.NewExecutor("makefile", "init").WithDir(o.Dir).Output()
+	if o.Dir != "" {
+		if err := os.Chdir(o.Dir); err != nil {
+			return "", err
+		}
+	}
+	f, err := os.Create("Makefile")
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	// TODO 根据项目语言类型生成不同的 Makefile
+
+	return "", nil
 }
 
-func (o *InitOptions) execLicenseInit() (string, error) {
-	return executor.NewExecutor("license", "init").WithDir(o.Dir).Output()
+func (o *InitOptions) execLicenseInit(argsPath string) (string, error) {
+	args := []string{}
+	p, err := tools.TestExists("license")
+	if err != nil {
+		return "", err
+	}
+	if o.Author != "" {
+		args = append(args, "-n", o.Author)
+	}
+	if argsPath != "" {
+		args = append(args, "-p", argsPath)
+	}
+	args = append(args, "-o", "LICENSE", o.License)
+
+	return executor.NewExecutor(p, args...).WithDir(o.Dir).Output()
 }

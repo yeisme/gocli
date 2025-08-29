@@ -199,3 +199,35 @@ func GetConfig() *Config {
 func GetViperInstance() *viper.Viper {
 	return viper.GetViper()
 }
+
+// CreateDefaultConfig 创建默认配置文件
+func CreateDefaultConfig(filePath string, format OutputFormat) error {
+	// 设置默认值
+	setDefaults()
+
+	// 创建配置实例
+	var config Config
+	if err := viper.Unmarshal(&config); err != nil {
+		return fmt.Errorf("failed to create default config: %w", err)
+	}
+
+	// 确保配置目录存在
+	dir := filepath.Dir(filePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	// 创建配置文件
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create config file: %w", err)
+	}
+	defer file.Close()
+
+	// 根据指定格式输出配置
+	if err := OutputData(config, format, file); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
+}
