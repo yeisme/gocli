@@ -4,7 +4,7 @@ package list
 import (
 	"context"
 
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // RunGoList executes the `go list` command with the provided arguments and options.
@@ -26,7 +26,7 @@ func RunGoList(ctx context.Context, opts struct {
 
 	args = append([]string{"list"}, listArgs...)
 
-	goList := tools.NewExecutor("go", args...)
+	goList := executor.NewExecutor("go", args...)
 	output, err := goList.Output()
 	if err != nil {
 		return "", err

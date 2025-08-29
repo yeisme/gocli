@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // TestExists 检查指定的工具是否存在于系统的 PATH 中；
@@ -76,7 +78,7 @@ func tryResolveInstalledPath(tool string, dirs ...string) string {
 		}
 	}
 	// 解析 go env GOPATH（可能为多路径）
-	if out, err := NewExecutor("go", "env", "GOPATH").Output(); err == nil {
+	if out, err := executor.NewExecutor("go", "env", "GOPATH").Output(); err == nil {
 		for gp := range strings.SplitSeq(strings.TrimSpace(out), string(os.PathListSeparator)) {
 			gp = strings.TrimSpace(gp)
 			if gp == "" {

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // ExecuteToolRun finds and executes a tool by name or path. This is an exported
@@ -54,9 +56,9 @@ func ExecuteToolRun(args []string, out io.Writer, verbose bool, gocliToolsPath s
 		execArgs = raw[1:]
 	}
 
-	exec := NewExecutor(execPath, execArgs...)
+	exec := executor.NewExecutor(execPath, execArgs...)
 	if err := exec.RunStreaming(os.Stdout, os.Stderr); err != nil {
-		if ee, ok := err.(*ExecError); ok {
+		if ee, ok := err.(*executor.ExecError); ok {
 			return fmt.Errorf("tool %s failed: exit=%d stderr=%s", execPath, ee.ExitCode(), ee.CleanStderr())
 		}
 		return err

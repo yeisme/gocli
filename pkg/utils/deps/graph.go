@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // Module 表示一个 Go 模块以及可选的版本号.
@@ -159,7 +159,7 @@ func RunGoModGraph(args ...string) (string, error) {
 	if len(args) > 0 {
 		base = append(base, args...)
 	}
-	return tools.NewExecutor("go", base...).Output()
+	return executor.NewExecutor("go", base...).Output()
 }
 
 // parseModuleToken 辅助函数：将 token（如 "github.com/foo/bar@v1.2.3" 或无版本）解析为 Module.

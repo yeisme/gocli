@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // resolveCloneInputs 解析 clone 规格、latest 标签、基础目录与目标仓库目录，并补全 GOBIN
@@ -77,15 +78,15 @@ func gitCloneAndCheckoutWithOpts(repoURL, repoDir, absBase, resolvedRef string, 
 		args = append(args, "--recurse-submodules")
 	}
 	args = append(args, repoURL, repoDir)
-	if out, err := NewExecutor("git", args...).WithDir(absBase).CombinedOutput(); err != nil {
+	if out, err := executor.NewExecutor("git", args...).WithDir(absBase).CombinedOutput(); err != nil {
 		return out, fmt.Errorf("git clone failed: %w", err)
 	}
 	if strings.TrimSpace(resolvedRef) == "" {
 		return "", nil
 	}
-	if out, err := NewExecutor("git", "checkout", resolvedRef).WithDir(repoDir).CombinedOutput(); err != nil {
+	if out, err := executor.NewExecutor("git", "checkout", resolvedRef).WithDir(repoDir).CombinedOutput(); err != nil {
 		// 回退尝试 tags/<ref>
-		if out2, err2 := NewExecutor("git", "checkout", "tags/"+resolvedRef).WithDir(repoDir).CombinedOutput(); err2 == nil {
+		if out2, err2 := executor.NewExecutor("git", "checkout", "tags/"+resolvedRef).WithDir(repoDir).CombinedOutput(); err2 == nil {
 			return out + "\n" + out2, nil
 		}
 		return out, fmt.Errorf("git checkout %s failed: %w", resolvedRef, err)

@@ -1,7 +1,7 @@
 // Package deps provides utilities for managing Go module dependencies.
 package deps
 
-import "github.com/yeisme/gocli/pkg/tools"
+import "github.com/yeisme/gocli/pkg/utils/executor"
 
 // RunGoUpdate 执行 `go get -u <targets>` 以更新模块依赖到最新次要/补丁版本
 //
@@ -16,7 +16,7 @@ func RunGoUpdate(args []string) (string, error) {
 	if args == nil {
 		args = []string{"./..."} // Default to updating all dependencies
 	}
-	output, err := tools.NewExecutor("go", append([]string{"get", "-u"}, args...)...).Output()
+	output, err := executor.NewExecutor("go", append([]string{"get", "-u"}, args...)...).Output()
 	if err != nil {
 		return "", err
 	}

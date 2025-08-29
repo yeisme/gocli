@@ -8,9 +8,8 @@ import (
 	"strings"
 
 	"github.com/yeisme/gocli/pkg/context"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 	"github.com/yeisme/gocli/pkg/utils/hotload"
-
-	"github.com/yeisme/gocli/pkg/tools"
 )
 
 // BuildRunOptions defines shared options for building and running a project.
@@ -158,7 +157,7 @@ func buildArgsFromOptions(options BuildRunOptions) []string {
 
 // runGoCommand runs a go command using tools.Executor. (This function remains unchanged)
 func runGoCommand(options BuildRunOptions, goCmdArgs []string) error {
-	executor := tools.NewExecutor("go", goCmdArgs...)
+	executor := executor.NewExecutor("go", goCmdArgs...)
 	if options.ChangeDir != "" {
 		executor.WithDir(options.ChangeDir)
 	}

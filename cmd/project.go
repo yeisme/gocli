@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/yeisme/gocli/pkg/project"
 	"github.com/yeisme/gocli/pkg/style"
-	"github.com/yeisme/gocli/pkg/tools"
 	"github.com/yeisme/gocli/pkg/utils/doc"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 var (
@@ -89,7 +89,7 @@ Notes:
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := project.ExecuteInitCommand(gocliCtx, args, initOptions, cmd.OutOrStdout()); err != nil {
 				// 如果是 ExecError（包含 stderr），直接把格式化后的错误作为消息打印，避免 zerolog 将换行转义
-				if ee, ok := err.(*tools.ExecError); ok {
+				if ee, ok := err.(*executor.ExecError); ok {
 					log.Error().Msgf("failed to initialize project: %s", ee.Error())
 				} else {
 					log.Error().Err(err).Msg("failed to initialize project")

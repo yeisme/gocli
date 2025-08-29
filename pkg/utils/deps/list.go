@@ -1,6 +1,6 @@
 package deps
 
-import "github.com/yeisme/gocli/pkg/tools"
+import "github.com/yeisme/gocli/pkg/utils/executor"
 
 // RunGoModList 执行 `go list -m` 相关命令以列出模块依赖，支持：
 //   - JSON: 追加 `-json`，以 JSON 结构输出（每个模块一段 JSON）；
@@ -33,7 +33,7 @@ func RunGoModList(args []string, option struct {
 		base = append(base, args...)
 	}
 
-	output, err := tools.NewExecutor("go", base...).Output()
+	output, err := executor.NewExecutor("go", base...).Output()
 	if err != nil {
 		return "", err
 	}

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 	"github.com/yeisme/gocli/pkg/utils/newproject"
 )
 
@@ -34,7 +34,7 @@ func getFromGit(key string) string {
 	}
 
 	for _, args := range attempts {
-		exe := tools.NewExecutor("git", args...)
+		exe := executor.NewExecutor("git", args...)
 		output, err := exe.CombinedOutput()
 		if err != nil {
 			// 如果命令失败，继续尝试下一个来源

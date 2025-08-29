@@ -7,11 +7,13 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // DetermineGoBinDir 尝试通过 `go env` 推断 GOBIN 或 GOPATH/bin
 func DetermineGoBinDir() string {
-	gobin, _ := NewExecutor("go", "env", "GOBIN").Output()
+	gobin, _ := executor.NewExecutor("go", "env", "GOBIN").Output()
 	gobin = strings.TrimSpace(gobin)
 	if gobin != "" {
 		if abs, _ := filepath.Abs(expandPath(gobin)); abs != "" {
@@ -19,7 +21,7 @@ func DetermineGoBinDir() string {
 		}
 		return expandPath(gobin)
 	}
-	gopath, _ := NewExecutor("go", "env", "GOPATH").Output()
+	gopath, _ := executor.NewExecutor("go", "env", "GOPATH").Output()
 	gopath = strings.TrimSpace(gopath)
 	if gopath == "" {
 		return ""

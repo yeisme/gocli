@@ -5,7 +5,7 @@ import (
 	"embed"
 	"strings"
 
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 //go:embed templates/*
@@ -133,29 +133,29 @@ func (o *InitOptions) ExecConfigInit() ([]string, error) {
 }
 
 func (o *InitOptions) execGitInit() (string, error) {
-	return tools.NewExecutor("git", "init").WithDir(o.Dir).Output()
+	return executor.NewExecutor("git", "init").WithDir(o.Dir).Output()
 }
 
 func (o *InitOptions) execGoTaskInit() (string, error) {
-	return tools.NewExecutor("task", "--init").WithDir(o.Dir).Output()
+	return executor.NewExecutor("task", "--init").WithDir(o.Dir).Output()
 }
 
 func (o *InitOptions) execGoCLIInit() (string, error) {
-	return tools.NewExecutor("gocli", "config", "init").WithDir(o.Dir).Output()
+	return executor.NewExecutor("gocli", "config", "init").WithDir(o.Dir).Output()
 }
 
 func (o *InitOptions) execGoreleaserInit() (string, error) {
-	return tools.NewExecutor("goreleaser", "init").WithDir(o.Dir).Output()
+	return executor.NewExecutor("goreleaser", "init").WithDir(o.Dir).Output()
 }
 
 func (o *InitOptions) execDockerInit() (string, error) {
-	return tools.NewExecutor("docker", "init").WithDir(o.Dir).Output()
+	return executor.NewExecutor("docker", "init").WithDir(o.Dir).Output()
 }
 
 func (o *InitOptions) execMakefileInit() (string, error) {
-	return tools.NewExecutor("makefile", "init").WithDir(o.Dir).Output()
+	return executor.NewExecutor("makefile", "init").WithDir(o.Dir).Output()
 }
 
 func (o *InitOptions) execLicenseInit() (string, error) {
-	return tools.NewExecutor("license", "init").WithDir(o.Dir).Output()
+	return executor.NewExecutor("license", "init").WithDir(o.Dir).Output()
 }

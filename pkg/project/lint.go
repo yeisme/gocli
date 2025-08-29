@@ -10,6 +10,7 @@ import (
 
 	"github.com/yeisme/gocli/pkg/style"
 	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // LintOptions 是用于 lint 代码的选项
@@ -111,7 +112,7 @@ func execGolangCILint(args []string, stdout, stderr io.Writer) (string, error) {
 		return "", err
 	}
 
-	exec := tools.NewExecutor("golangci-lint", args...)
+	exec := executor.NewExecutor("golangci-lint", args...)
 	if stdout == nil && stderr == nil {
 		output, err := exec.Output()
 		if err != nil {

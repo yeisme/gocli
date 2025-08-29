@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/yeisme/gocli/pkg/style"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 type toolSourceType string
@@ -135,7 +136,7 @@ func getGoPaths() []string {
 		return splitList(gp)
 	}
 	// 备用从 `go env GOPATH` 获取
-	out, err := NewExecutor("go", "env", "GOPATH").Output()
+	out, err := executor.NewExecutor("go", "env", "GOPATH").Output()
 	if err == nil {
 		return splitList(strings.TrimSpace(out))
 	}

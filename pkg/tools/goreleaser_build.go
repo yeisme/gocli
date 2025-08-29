@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // runGoreleaserWithContext 执行 goreleaser build，并在 verbose 模式下打印上下文
@@ -16,7 +18,7 @@ func runGoreleaserWithContext(dir string, env []string, verbose bool, absBase, r
 	if len(extraArgs) > 0 {
 		args = append(args, extraArgs...)
 	}
-	out, err := NewExecutor("goreleaser", args...).WithDir(dir).WithEnv(env...).CombinedOutput()
+	out, err := executor.NewExecutor("goreleaser", args...).WithDir(dir).WithEnv(env...).CombinedOutput()
 	if err != nil {
 		return out, fmt.Errorf("goreleaser build failed: %w", err)
 	}

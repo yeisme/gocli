@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // AddOptions defines options for adding dependencies.
@@ -77,7 +77,7 @@ func RunAdd(options AddOptions, args []string, out io.Writer) error {
 		goArgs = append(goArgs, options.Args...)
 	}
 
-	executor := tools.NewExecutor("go", goArgs...)
+	executor := executor.NewExecutor("go", goArgs...)
 
 	if options.Verbose {
 		fullCmdString := "go " + strings.Join(goArgs, " ")

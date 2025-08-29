@@ -1,4 +1,4 @@
-package tools
+package executor
 
 import (
 	"path/filepath"

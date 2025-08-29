@@ -1,4 +1,5 @@
-package tools
+// Package executor 提供了一个用于执行外部命令的工具，支持捕获输出、错误处理和流式输出等功能
+package executor
 
 import (
 	"bytes"

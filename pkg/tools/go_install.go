@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // goInstallWithEnv 支持传入额外环境变量（如 GOBIN）
@@ -18,7 +20,7 @@ func goInstallWithEnv(spec string, env []string, verbose bool, buildArgs []strin
 		args = append(args, buildArgs...)
 	}
 	args = append(args, spec)
-	ex := NewExecutor("go", args...)
+	ex := executor.NewExecutor("go", args...)
 	if len(env) > 0 {
 		ex = ex.WithEnv(env...)
 	}

@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/yeisme/gocli/pkg/utils/executor"
 	"golang.org/x/mod/semver"
 )
 
 // resolveLatestGitTag 使用 git ls-remote --tags 列出所有 tag，选择最新的语义化版本
 // 优先返回稳定版本（无预发布后缀），若不存在稳定版本，则返回最高的预发布版本
 func resolveLatestGitTag(repoURL string) (string, error) {
-	out, err := NewExecutor("git", "--no-pager", "ls-remote", "--tags", repoURL).CombinedOutput()
+	out, err := executor.NewExecutor("git", "--no-pager", "ls-remote", "--tags", repoURL).CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("git ls-remote failed: %w", err)
 	}

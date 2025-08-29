@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // RunGoModTidy 执行 `go mod tidy`，同步 go.mod 与 go.sum：
@@ -19,7 +19,7 @@ import (
 //
 // 注意: 不会修改当前进程的工作目录；在调用方的当前工作目录下执行
 func RunGoModTidy() (string, error) {
-	output, err := tools.NewExecutor("go", "mod", "tidy").Output()
+	output, err := executor.NewExecutor("go", "mod", "tidy").Output()
 	if err != nil {
 		return "", err
 	}
@@ -30,7 +30,7 @@ func RunGoModTidy() (string, error) {
 //
 // 返回值与错误约定同 RunGoModTidy
 func RunGoModVendor() (string, error) {
-	output, err := tools.NewExecutor("go", "mod", "vendor").Output()
+	output, err := executor.NewExecutor("go", "mod", "vendor").Output()
 	if err != nil {
 		return "", err
 	}
@@ -41,7 +41,7 @@ func RunGoModVendor() (string, error) {
 //
 // 返回值与错误约定同 RunGoModTidy
 func RunGoModDownload() (string, error) {
-	output, err := tools.NewExecutor("go", "mod", "download").Output()
+	output, err := executor.NewExecutor("go", "mod", "download").Output()
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +52,7 @@ func RunGoModDownload() (string, error) {
 //
 // 返回值与错误约定同 RunGoModTidy
 func RunGoModVerify() (string, error) {
-	output, err := tools.NewExecutor("go", "mod", "verify").Output()
+	output, err := executor.NewExecutor("go", "mod", "verify").Output()
 	if err != nil {
 		return "", err
 	}
@@ -93,7 +93,7 @@ func RunGoModWhy(args []string, options struct {
 	} else {
 		base = append(base, args...)
 	}
-	output, err := tools.NewExecutor("go", base...).Output()
+	output, err := executor.NewExecutor("go", base...).Output()
 	if err != nil {
 		return "", err
 	}
@@ -131,7 +131,7 @@ func RunGoModInit(module string, dir string) (string, error) {
 		args = append(args, module)
 	}
 
-	exec := tools.NewExecutor("go", args...)
+	exec := executor.NewExecutor("go", args...)
 	if strings.TrimSpace(dir) != "" {
 		exec = exec.WithDir(dir)
 	}

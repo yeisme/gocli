@@ -3,6 +3,8 @@ package tools
 import (
 	"fmt"
 	"strings"
+
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // MakeRunner 实现 BuildRunner
@@ -21,7 +23,7 @@ func (MakeRunner) Build(ctx BuildContext, params BuildParams) (string, error) {
 		err error
 	)
 	if params.MakeTarget != "" {
-		out, err = NewExecutor("make", params.MakeTarget).WithDir(ctx.BuildDir).WithEnv(ctx.Env...).CombinedOutput()
+		out, err = executor.NewExecutor("make", params.MakeTarget).WithDir(ctx.BuildDir).WithEnv(ctx.Env...).CombinedOutput()
 		if err != nil {
 			return out, fmt.Errorf("make %s failed: %w", params.MakeTarget, err)
 		}
@@ -47,7 +49,7 @@ func (MakeRunner) Build(ctx BuildContext, params BuildParams) (string, error) {
 		return out, nil
 	}
 
-	out, err = NewExecutor("make").WithDir(ctx.BuildDir).WithEnv(ctx.Env...).CombinedOutput()
+	out, err = executor.NewExecutor("make").WithDir(ctx.BuildDir).WithEnv(ctx.Env...).CombinedOutput()
 	if err != nil {
 		return out, fmt.Errorf("make failed: %w", err)
 	}

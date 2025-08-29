@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/spf13/viper"
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 var (
@@ -25,7 +25,7 @@ func loadGoEnv() {
 	loadGoEnvOnce.Do(func() {
 		goEnvCache = make(map[string]string)
 		// The most reliable source is the `go env` command itself.
-		output, err := tools.NewExecutor("go", "env").Output()
+		output, err := executor.NewExecutor("go", "env").Output()
 		if err != nil {
 			// Fallback to reading default go.env file if `go env` fails
 			goRoot := os.Getenv("GOROOT")

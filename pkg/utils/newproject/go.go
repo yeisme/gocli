@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // GoInitOptions golang 项目的初始化配置选项
@@ -325,7 +325,7 @@ func cloneGitToTemp(repo string) (fs.FS, error) {
 		return nil, fmt.Errorf("create temp dir for git template: %w", err)
 	}
 	// 使用 --depth 1 以提高速度
-	if _, err := tools.NewExecutor("git", "clone", "--depth", "1", repo, dir).Output(); err != nil {
+	if _, err := executor.NewExecutor("git", "clone", "--depth", "1", repo, dir).Output(); err != nil {
 		return nil, fmt.Errorf("git clone %q failed: %w", repo, err)
 	}
 	if err := ensureGoMod(dir); err != nil {

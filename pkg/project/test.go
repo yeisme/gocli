@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yeisme/gocli/pkg/tools"
+	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
 // TestOptions defines options for running tests.
@@ -97,7 +97,7 @@ func RunTest(options TestOptions, args []string, out io.Writer) error {
 		goArgs = append(goArgs, options.Args...)
 	}
 
-	executor := tools.NewExecutor("go", goArgs...)
+	executor := executor.NewExecutor("go", goArgs...)
 	if options.ChangeDir != "" {
 		executor.WithDir(options.ChangeDir)
 	}
