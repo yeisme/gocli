@@ -23,6 +23,11 @@ builds:
       - linux
       - windows
       - darwin
+    goarch:
+      - amd64
+      - "386"
+      - arm64
+      - arm
     ldflags:
       - -s -w
       - -X "github.com/yeisme/gocli/pkg/utils/version.Version={{.Version}}"
@@ -32,9 +37,38 @@ builds:
       - -X "github.com/yeisme/gocli/pkg/utils/version.Modified={{.IsGitClean}}"
       - -X "github.com/yeisme/gocli/pkg/utils/version.ModSum={{.Env.MOD_SUM}}"
 
+  - id: gox
+    binary: gox
+    main: ./cmd/gox
+    flags:
+      - -trimpath
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - "386"
+      - arm64
+      - arm
+
 archives:
   - id: gocli-archive
     builds: [gocli]
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+  - id: gox-archive
+    builds: [gox]
     formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_
