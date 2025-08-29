@@ -4,12 +4,12 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
+	"github.com/yeisme/gocli/pkg/models"
 	"github.com/yeisme/gocli/pkg/utils/executor"
-	"github.com/yeisme/gocli/pkg/utils/newproject"
 )
 
 // InitConfig newproject.InitOptions 的别名，简化引用
-type InitConfig = newproject.InitOptions
+type InitConfig = models.InitOptions
 
 func setInitConfigDefaults() {
 	viper.SetDefault("init.git_init", false)

@@ -255,5 +255,14 @@
             "os": "",
             "arch": ""
         }
+    },
+    "gum": {
+        "name": "gum",
+        "url": "github.com/charmbracelet/gum@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
     }
 }

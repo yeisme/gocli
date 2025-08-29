@@ -3,8 +3,10 @@ package tools
 import (
 	"bytes"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"maps"
 	"os"
 	"path/filepath"
@@ -15,6 +17,8 @@ import (
 	"github.com/ktr0731/go-fuzzyfinder"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/spf13/viper"
+	"github.com/yeisme/gocli/pkg/style"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -298,4 +302,150 @@ func InteractiveSelect(matches []InstallToolsInfo) (*InstallToolsInfo, error) {
 	}
 	sel := matches[idx]
 	return &sel, nil
+}
+
+// SearchCommandOptions 定义了search命令的选项
+type SearchCommandOptions struct {
+	Query     string
+	Format    string
+	JSON      bool
+	YAML      bool
+	Table     bool
+	ConfigDir []string
+}
+
+// ExecuteSearchCommand 执行search命令的封装函数
+func ExecuteSearchCommand(opts SearchCommandOptions, outputWriter io.Writer) error {
+	query := opts.Query
+	fmtFlag := opts.Format
+
+	// 格式校验
+	setCount := 0
+	if opts.Format != "" {
+		setCount++
+	}
+	if opts.JSON {
+		setCount++
+	}
+	if opts.YAML {
+		setCount++
+	}
+	if opts.Table {
+		setCount++
+	}
+	if setCount > 1 {
+		return fmt.Errorf("only one of --format, --json, --yaml, --table may be specified")
+	}
+	if opts.JSON {
+		fmtFlag = "json"
+	} else if opts.YAML {
+		fmtFlag = "yaml"
+	} else if opts.Table {
+		fmtFlag = "table"
+	}
+	if fmtFlag == "" {
+		fmtFlag = "table"
+	}
+
+	// No args -> interactive selection over ALL tools
+	if query == "" {
+		if len(BuiltinTools) == 0 {
+			return fmt.Errorf("no tools available")
+		}
+		all := make([]InstallToolsInfo, 0, len(BuiltinTools))
+		for _, t := range BuiltinTools {
+			all = append(all, t)
+		}
+		sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
+		sel, err := InteractiveSelect(all)
+		if err != nil {
+			return fmt.Errorf("interactive select failed: %w", err)
+		}
+		return printSingleTool(sel, fmtFlag, outputWriter)
+	}
+
+	// With query -> non-interactive fuzzy search
+	if bi := SearchTools(query, opts.ConfigDir); bi != nil {
+		return printSingleTool(bi, fmtFlag, outputWriter)
+	}
+	matches := FindToolsFuzzy(query, opts.ConfigDir)
+	if len(matches) == 0 {
+		if fmtFlag == "json" || fmtFlag == "yaml" {
+			fmt.Fprintln(outputWriter, "null")
+		} else {
+			return fmt.Errorf("tool not found: %s", query)
+		}
+		return nil
+	}
+	// One match -> print single; multi -> print list directly
+	if len(matches) == 1 {
+		m := matches[0]
+		return printSingleTool(&m, fmtFlag, outputWriter)
+	}
+	// multi
+	return printMultipleTools(matches, fmtFlag, outputWriter)
+}
+
+// printSingleTool 打印单个工具信息
+func printSingleTool(bi *InstallToolsInfo, fmtFlag string, out io.Writer) error {
+	switch strings.ToLower(fmtFlag) {
+	case "json":
+		return json.NewEncoder(out).Encode(bi)
+	case "yaml":
+		return yaml.NewEncoder(out).Encode(bi)
+	case "table":
+		// Vertical key-value table for readability
+		kv := func(k, v string) []string { return []string{k, v} }
+		rows := make([][]string, 0, 16)
+		add := func(k, v string) {
+			if strings.TrimSpace(v) == "" {
+				return
+			}
+			rows = append(rows, kv(k, v))
+		}
+		add("Name", bi.Name)
+		add("URL", bi.URL)
+		add("CloneURL", bi.CloneURL)
+		add("Build", bi.Build)
+		add("MakeTarget", bi.MakeTarget)
+		add("WorkDir", bi.WorkDir)
+		if len(bi.BinDirs) > 0 {
+			add("BinDirs", strings.Join(bi.BinDirs, ", "))
+		}
+		if len(bi.Env) > 0 {
+			add("Env", strings.Join(bi.Env, ", "))
+		}
+		add("GoreleaserConfig", bi.GoreleaserConfig)
+		add("BinaryName", bi.BinaryName)
+		if bi.InstallType != nil {
+			add("InstallType.Name", bi.InstallType.Name)
+			add("InstallType.OS", bi.InstallType.OS)
+			add("InstallType.Arch", bi.InstallType.Arch)
+		}
+		if len(rows) == 0 {
+			rows = append(rows, kv("Name", ""))
+		}
+		return style.PrintTable(out, []string{"Field", "Value"}, rows, 0)
+	default:
+		return fmt.Errorf("unsupported format: %s", fmtFlag)
+	}
+}
+
+// printMultipleTools 打印多个工具信息
+func printMultipleTools(matches []InstallToolsInfo, fmtFlag string, out io.Writer) error {
+	switch strings.ToLower(fmtFlag) {
+	case "json":
+		return json.NewEncoder(out).Encode(matches)
+	case "yaml":
+		return yaml.NewEncoder(out).Encode(matches)
+	case "table":
+		headers := []string{"Name", "URL", "CloneURL", "Build"}
+		rows := make([][]string, 0, len(matches))
+		for _, m := range matches {
+			rows = append(rows, []string{m.Name, m.URL, m.CloneURL, m.Build})
+		}
+		return style.PrintTable(out, headers, rows, 0)
+	default:
+		return fmt.Errorf("unsupported format: %s", fmtFlag)
+	}
 }

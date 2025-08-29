@@ -13,30 +13,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/yeisme/gocli/pkg/models"
 	"github.com/yeisme/gocli/pkg/utils/executor"
 )
 
-// GoInitOptions golang 项目的初始化配置选项
-type GoInitOptions struct {
-	// TemplateType 模板类型
-	// 短名 builtinGoTemplates 中的键（例如 "basic", "empty" etc.）
-	// 或直接指向一个包含 go.mod 的目录/仓库
-	// 默认: "empty"
-	Templates map[string]GoFileTemplate `json:"templates"`
-}
-
-// GoFileTemplate 用于指定 Go 模板文件的配置
-type GoFileTemplate struct {
-	// Path 用于指定模板文件的路径
-	// 例如 `stdweb` 对应 templates/go/stdweb
-	Path string `json:"path"`
-
-	// Type embed/http(s)/git/file_system
-	Type string `json:"type"`
-
-	// Language 模板所属编程语言（可选，默认 go）
-	Language string `json:"language"`
-}
+type (
+	// GoFileTemplate Go 项目模板的信息
+	GoFileTemplate = models.GoFileTemplate
+	// GoInitOptions Go 项目初始化选项
+	GoInitOptions = models.GoInitOptions
+)
 
 var builtinGoTemplates = map[string]GoFileTemplate{
 	"empty":  {Path: "", Type: "empty", Language: "go"},

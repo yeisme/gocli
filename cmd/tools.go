@@ -2,18 +2,12 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/spf13/cobra"
-	"github.com/yeisme/gocli/pkg/configs"
-	"github.com/yeisme/gocli/pkg/style"
 	toolsPkg "github.com/yeisme/gocli/pkg/tools"
 )
 
@@ -151,12 +145,12 @@ Notes:
 			// 1. 无参数 && 无 --clone -> 批量安装配置中工具
 			if cloneURL == "" && len(args) == 0 {
 				if globalFlag {
-					if err := batchInstallConfiguredGlobalTools(gocliCtx.Config, envFlags, v); err != nil {
+					if err := toolsPkg.BatchInstallConfiguredGlobalTools(gocliCtx.Config, envFlags, v); err != nil {
 						log.Error().Err(err).Msg("batch install (global) finished with errors")
 					}
 					return
 				}
-				if err := batchInstallConfiguredTools(gocliCtx.Config, envFlags, v); err != nil {
+				if err := toolsPkg.BatchInstallConfiguredTools(gocliCtx.Config, envFlags, v); err != nil {
 					log.Error().Err(err).Msg("batch install finished with errors")
 				}
 				return
@@ -176,10 +170,8 @@ Notes:
 			}
 
 			var spec string
-			var origInput string
 			if len(args) > 0 {
 				spec = args[0]
-				origInput = spec
 				// 支持内置工具短名：例如 `gocli tools install golangci-lint` -> 使用 pkg/tools.BuiltinTools 中配置的 URL
 				// 仅当输入不包含路径分隔符时才尝试映射（避免覆盖模块路径或本地路径）
 				if !strings.Contains(spec, "/") && !strings.Contains(spec, "\\") {
@@ -258,70 +250,34 @@ Notes:
 				return
 			}
 
-			opts := toolsPkg.InstallOptions{
-				Spec:              spec,
-				CloneURL:          cloneURL,
-				MakeTarget:        makeTarget,
-				Path:              pathFlag,
-				Env:               envFlags,
-				BinDirs:           binDirs,
-				Verbose:           v,
-				ReleaseBuild:      releaseBuild,
-				DebugBuild:        debugBuild,
-				BinaryName:        toolInstallOptions.BinaryName,
-				BuildMethod:       toolInstallOptions.BuildMethod,
-				BuildArgs:         toolInstallOptions.BuildArgs,
-				WorkDir:           toolInstallOptions.WorkDir,
-				GoreleaserConfig:  toolInstallOptions.GoreleaserConfig,
-				RecurseSubmodules: toolInstallOptions.RecurseSubmodules,
-				Force:             toolInstallOptions.Force,
+			installOpts := toolsPkg.InstallCommandOptions{
+				Args: args,
+				InstallOptions: toolsPkg.InstallOptions{
+					CloneURL:          cloneURL,
+					MakeTarget:        makeTarget,
+					Path:              pathFlag,
+					Env:               envFlags,
+					BinDirs:           binDirs,
+					ReleaseBuild:      releaseBuild,
+					DebugBuild:        debugBuild,
+					BinaryName:        toolInstallOptions.BinaryName,
+					BuildMethod:       toolInstallOptions.BuildMethod,
+					BuildArgs:         toolInstallOptions.BuildArgs,
+					WorkDir:           toolInstallOptions.WorkDir,
+					GoreleaserConfig:  toolInstallOptions.GoreleaserConfig,
+					RecurseSubmodules: toolInstallOptions.RecurseSubmodules,
+					Force:             toolInstallOptions.Force,
+					Verbose:           v,
+				},
+				Global:         globalFlag,
+				Quiet:          quiet,
+				GoCLIToolsPath: gocliCtx.Config.Tools.GoCLIToolsPath,
+				ToolsConfigDir: gocliCtx.Config.Tools.ToolsConfigDir,
 			}
 
-			if opts.CloneURL == "" && opts.Spec == "" {
-				log.Error().Msg("missing tool spec. Provide a module path or use --clone.")
+			if err := toolsPkg.ExecuteInstallCommand(installOpts, cmd.OutOrStdout()); err != nil {
+				log.Error().Err(err).Msg("install failed")
 				return
-			}
-
-			var sp *style.Spinner
-			if !v && !quiet {
-				label := "Installing"
-				if opts.CloneURL != "" {
-					label = "Cloning and building"
-				}
-				sp = style.NewSpinner(cmd.OutOrStdout(), label)
-				sp.Start()
-			}
-
-			res, err := toolsPkg.InstallTool(opts)
-			if sp != nil {
-				sp.Stop()
-			}
-			printInstallOutput(res.Output, err, v)
-			if err != nil {
-				// 针对常见短名未映射导致的 go install malformed module path，提供提示
-				if res.Mode == "go_install" && origInput != "" && !strings.Contains(origInput, ".") && !strings.Contains(origInput, "/") && !strings.Contains(origInput, "\\") {
-					// 检测是否存在 Name 等于输入的内置工具（但 key 不同）
-					for k, t := range toolsPkg.BuiltinTools {
-						if t.Name == origInput && k != origInput {
-							log.Error().Msgf("unrecognized short name '%s'. Did you mean builtin tool '%s'? Try: gocli tools install %s", origInput, k, k)
-							break
-						}
-					}
-					log.Error().Msgf("if this is a builtin tool name, run 'gocli tools search %s' to inspect details", origInput)
-				}
-				if res.Mode != "go_install" {
-					log.Error().Err(err).Msg("install via clone failed")
-				} else {
-					log.Error().Err(err).Msg("go install failed")
-				}
-				return
-			}
-
-			if res.InstallDir != "" {
-				log.Info().Msgf("installed to: %s", filepath.Clean(res.InstallDir))
-			}
-			if res.ProbableInstallDir != "" && res.InstallDir == "" {
-				log.Info().Msgf("probable install dir: %s", filepath.Clean(res.ProbableInstallDir))
 			}
 		},
 	}
@@ -383,73 +339,23 @@ Behaviour change:
 
 			out := cmd.OutOrStdout()
 
-			// No args -> interactive selection over ALL tools
-			if len(args) == 0 {
-				if len(toolsPkg.BuiltinTools) == 0 {
-					cmd.PrintErrln("no tools available")
-					return
-				}
-				all := make([]toolsPkg.InstallToolsInfo, 0, len(toolsPkg.BuiltinTools))
-				for _, t := range toolsPkg.BuiltinTools {
-					all = append(all, t)
-				}
-				sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
-				sel, err := toolsPkg.InteractiveSelect(all)
-				if err != nil {
-					cmd.PrintErrf("interactive select failed: %v\n", err)
-					return
-				}
-				printSingleTool(sel, fmtFlag, out, cmd)
-				return
+			query := ""
+			if len(args) > 0 {
+				query = args[0]
 			}
 
-			// With query -> non-interactive fuzzy search
-			query := args[0]
-			// exact / unique match logic; but we want all fuzzy matches when not exact
-			if bi := toolsPkg.SearchTools(query, gocliCtx.Config.Tools.ToolsConfigDir); bi != nil {
-				printSingleTool(bi, fmtFlag, out, cmd)
-				return
+			searchOpts := toolsPkg.SearchCommandOptions{
+				Query:     query,
+				Format:    fmtFlag,
+				JSON:      listJSON,
+				YAML:      listYAML,
+				Table:     listTable,
+				ConfigDir: gocliCtx.Config.Tools.ToolsConfigDir,
 			}
-			matches := toolsPkg.FindToolsFuzzy(query, gocliCtx.Config.Tools.ToolsConfigDir)
-			if len(matches) == 0 {
-				if fmtFlag == "json" || fmtFlag == "yaml" {
-					fmt.Fprintln(out, "null")
-				} else {
-					cmd.PrintErrf("tool not found: %s\n", query)
-				}
+
+			if err := toolsPkg.ExecuteSearchCommand(searchOpts, out); err != nil {
+				cmd.PrintErrf("search failed: %v\n", err)
 				return
-			}
-			// One match -> print single; multi -> print list directly
-			if len(matches) == 1 {
-				m := matches[0]
-				printSingleTool(&m, fmtFlag, out, cmd)
-				return
-			}
-			// multi
-			switch strings.ToLower(fmtFlag) {
-			case "json":
-				if err := style.PrintJSON(out, matches); err != nil {
-					b, _ := json.MarshalIndent(matches, "", "  ")
-					fmt.Fprintln(out, string(b))
-				}
-			case "yaml":
-				if err := style.PrintYAML(out, matches); err != nil {
-					b, _ := yaml.Marshal(matches)
-					fmt.Fprintln(out, string(b))
-				}
-			case "table":
-				headers := []string{"Name", "URL", "CloneURL", "Build"}
-				rows := make([][]string, 0, len(matches))
-				for _, m := range matches {
-					rows = append(rows, []string{m.Name, m.URL, m.CloneURL, m.Build})
-				}
-				if err := style.PrintTable(out, headers, rows, 0); err != nil {
-					for _, m := range matches {
-						fmt.Fprintf(out, "%s: %s %s %s\n", m.Name, m.URL, m.CloneURL, m.Build)
-					}
-				}
-			default:
-				cmd.PrintErrf("unsupported format: %s\n", fmtFlag)
 			}
 		},
 		Aliases: []string{"s"},
@@ -528,6 +434,53 @@ Notes:
 	}
 )
 
+// addListFlags registers flags for the `tools list` command.
+func addToolsListFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolP("json", "j", false, "Output the list of tools in JSON format")
+}
+
+// addToolsInstallFlags registers flags for the `tools install` command.
+func addToolsInstallFlags(cmd *cobra.Command, opts *toolsPkg.InstallOptions, global *bool) {
+	cmd.Flags().SortFlags = false
+	cmd.Flags().StringVarP(&opts.Path, "path", "p", "", "Installation output directory (effective for go install, equivalent to setting GOBIN)")
+	cmd.Flags().StringSliceVarP(&opts.Env, "env", "e", nil, "Additional build environment variables, e.g.: --env CGO_ENABLED=1 --env CC=clang")
+	cmd.Flags().StringVarP(&opts.CloneURL, "clone", "C", "", "Clone source code from a Git repository for installation, supports URL#ref syntax to specify branch/tag/commit")
+	cmd.Flags().StringVarP(&opts.MakeTarget, "make-target", "m", "", "Target name to execute with make in the source directory (default is make)")
+	cmd.Flags().StringSliceVarP(&opts.BinDirs, "dir", "d", nil, "Directory(ies) where the built binaries are output by make; repeat or separate by platform path list separator")
+	cmd.Flags().BoolVarP(global, "global", "g", false, "Install 'tools.global' from config when used without args; when specifying a tool, default install path is ~/.gocli/tools")
+	// build presets
+	cmd.Flags().BoolVarP(&opts.ReleaseBuild, "release-build", "R", false, "Install in release mode (-trimpath -ldflags '-s -w')")
+	cmd.Flags().BoolVarP(&opts.DebugBuild, "debug-build", "D", false, "Install in debug mode (-gcflags 'all=-N -l')")
+	// binary name override (avoid conflict with --binary-name used for directories)
+	cmd.Flags().StringVarP(&opts.BinaryName, "binary-name", "n", "", "Override the output binary name (when determinable)")
+	// clone build method and options
+	cmd.Flags().StringVarP(&opts.BuildMethod, "build", "b", "", "Build method when using --clone: make (default) | goreleaser")
+	cmd.Flags().StringSliceVarP(&opts.BuildArgs, "build-arg", "a", nil, "Extra arguments passed to the build tool (repeatable). For goreleaser, e.g. --build-arg --skip=validate")
+	cmd.Flags().StringVarP(&opts.WorkDir, "workdir", "w", "", "Subdirectory inside the repository to run the build in")
+	cmd.Flags().StringVar(&opts.GoreleaserConfig, "goreleaser-config", "", "Path to goreleaser config file (relative to repo root or workdir)")
+	cmd.Flags().BoolVarP(&opts.RecurseSubmodules, "recurse-submodules", "r", false, "Clone Git submodules recursively when using --clone")
+	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Force reinstallation even if the tool already exists (overwrites existing installation)")
+}
+
+// addToolsSearchFlags registers flags for the `tools search` command.
+func addToolsSearchFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("format", "f", "table", "Output format: json|yaml|table (default table)")
+	cmd.Flags().BoolP("json", "j", false, "Output the search result in JSON format")
+	cmd.Flags().BoolP("yaml", "y", false, "Output the search result in YAML format (overrides -f)")
+	cmd.Flags().BoolP("table", "t", false, "Output the search result in table format (default)")
+}
+
+// addToolsRunFlags registers flags for the `tools run` command.
+// Currently the run command intentionally disables flag parsing, but we
+// keep this function as a placeholder to match the project-style organization.
+func addToolsRunFlags(_ *cobra.Command) {
+}
+
+func mustUserHome() string {
+	h, _ := os.UserHomeDir()
+	return h
+}
+
 func init() {
 	rootCmd.AddCommand(toolsCmd)
 
@@ -575,267 +528,9 @@ func init() {
 		}
 	})
 
-	// json flags
-	toolListCmd.Flags().BoolP("json", "j", false, "Output the list of tools in JSON format")
-
-	// flags for install
-	toolInstallCmd.Flags().SortFlags = false
-	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.Path, "path", "p", "", "Installation output directory (effective for go install, equivalent to setting GOBIN)")
-	toolInstallCmd.Flags().StringSliceVarP(&toolInstallOptions.Env, "env", "e", nil, "Additional build environment variables, e.g.: --env CGO_ENABLED=1 --env CC=clang")
-	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.CloneURL, "clone", "C", "", "Clone source code from a Git repository for installation, supports URL#ref syntax to specify branch/tag/commit")
-	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.MakeTarget, "make-target", "m", "", "Target name to execute with make in the source directory (default is make)")
-	toolInstallCmd.Flags().StringSliceVarP(&toolInstallOptions.BinDirs, "dir", "d", nil, "Directory(ies) where the built binaries are output by make; repeat or separate by platform path list separator")
-	toolInstallCmd.Flags().BoolVarP(&toolInstallGlobal, "global", "g", false, "Install 'tools.global' from config when used without args; when specifying a tool, default install path is ~/.gocli/tools")
-	// build presets
-	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.ReleaseBuild, "release-build", "R", false, "Install in release mode (-trimpath -ldflags '-s -w')")
-	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.DebugBuild, "debug-build", "D", false, "Install in debug mode (-gcflags 'all=-N -l')")
-	// binary name override (avoid conflict with --binary-name used for directories)
-	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.BinaryName, "binary-name", "n", "", "Override the output binary name (when determinable)")
-	// clone build method and options
-	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.BuildMethod, "build", "b", "", "Build method when using --clone: make (default) | goreleaser")
-	toolInstallCmd.Flags().StringSliceVarP(&toolInstallOptions.BuildArgs, "build-arg", "a", nil, "Extra arguments passed to the build tool (repeatable). For goreleaser, e.g. --build-arg --skip=validate")
-	toolInstallCmd.Flags().StringVarP(&toolInstallOptions.WorkDir, "workdir", "w", "", "Subdirectory inside the repository to run the build in")
-	toolInstallCmd.Flags().StringVar(&toolInstallOptions.GoreleaserConfig, "goreleaser-config", "", "Path to goreleaser config file (relative to repo root or workdir)")
-	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.RecurseSubmodules, "recurse-submodules", "r", false, "Clone Git submodules recursively when using --clone")
-	toolInstallCmd.Flags().BoolVarP(&toolInstallOptions.Force, "force", "f", false, "Force reinstallation even if the tool already exists (overwrites existing installation)")
-
-	// search output format: json|yaml|table (default table)
-	toolSearchCmd.Flags().StringP("format", "f", "table", "Output format: json|yaml|table (default table)")
-	toolSearchCmd.Flags().BoolP("json", "j", false, "Output the search result in JSON format")
-	toolSearchCmd.Flags().BoolP("yaml", "y", false, "Output the search result in YAML format (overrides -f)")
-	toolSearchCmd.Flags().BoolP("table", "t", false, "Output the search result in table format (default)")
-
-}
-
-// mustUserHome 返回用户 home 目录
-func mustUserHome() string {
-	h, _ := os.UserHomeDir()
-	return h
-}
-
-// batchInstallConfiguredTools 批量安装配置文件中的 go 工具（deps -> tools.path, global -> 用户home .gocli/tools）
-func batchInstallConfiguredTools(cfg *configs.Config, envFlags []string, verbose bool) error {
-	if cfg == nil {
-		return errors.New("config is nil")
-	}
-
-	depsPath := cfg.Tools.GoCLIToolsPath
-	if strings.TrimSpace(depsPath) == "" {
-		depsPath = filepath.Join(mustUserHome(), ".gocli", "tools")
-	}
-	globalPath := filepath.Join(mustUserHome(), ".gocli", "tools")
-
-	// 支持 go 与 clone/git 两种类型
-	totalDeps, failedDeps := installConfiguredToolsFromList(cfg.Tools.Deps, depsPath, "dep", envFlags, verbose)
-	totalGlobal, failedGlobal := installConfiguredToolsFromList(cfg.Tools.Global, globalPath, "global", envFlags, verbose)
-
-	total := totalDeps + totalGlobal
-	failed := failedDeps + failedGlobal
-
-	if total == 0 && failed == 0 {
-		log.Warn().Msg("no go tools found in config for installation")
-	}
-	if failed > 0 {
-		return fmt.Errorf("%d tool(s) failed", failed)
-	}
-	return nil
-}
-
-// batchInstallConfiguredGlobalTools 仅安装配置中的 global 工具到 GOROOT/bin（若可用）
-func batchInstallConfiguredGlobalTools(cfg *configs.Config, envFlags []string, verbose bool) error {
-	if cfg == nil {
-		return errors.New("config is nil")
-	}
-
-	// 全局安装统一到用户目录 ~/.gocli/tools
-	targetPath := filepath.Join(mustUserHome(), ".gocli", "tools")
-
-	total, failed := installConfiguredToolsFromList(cfg.Tools.Global, targetPath, "global", envFlags, verbose)
-
-	if total == 0 && failed == 0 {
-		log.Warn().Msg("no go tools found in config.tools.global for installation")
-	}
-	if failed > 0 {
-		return fmt.Errorf("%d tool(s) failed", failed)
-	}
-	return nil
-}
-
-// installGoToolsFromList 安装一组 go 类型的工具；返回成功个数与失败个数
-func installConfiguredToolsFromList(list []configs.Tool, targetPath, category string, envFlags []string, verbose bool) (int, int) {
-	total := 0
-	failed := 0
-
-	for _, t := range list {
-		ttype := strings.ToLower(strings.TrimSpace(t.Type))
-		envMerged := append([]string{}, envFlags...)
-		if len(t.Env) > 0 {
-			envMerged = append(envMerged, t.Env...)
-		}
-
-		switch ttype {
-		case "", "go":
-			// 兼容：优先 Module，其次解析 Cmd
-			spec := strings.TrimSpace(t.Module)
-			if spec == "" {
-				if strings.TrimSpace(t.Cmd) == "" {
-					// 跳过空项
-					continue
-				}
-				s, err := parseGoInstallSpec(t.Cmd)
-				if err != nil {
-					failed++
-					log.Error().Err(err).Msgf("parse %s tool cmd failed: %s", category, t.Cmd)
-					continue
-				}
-				spec = s
-			}
-			res, err := toolsPkg.InstallTool(toolsPkg.InstallOptions{
-				Spec:         spec,
-				Path:         targetPath,
-				Env:          envMerged,
-				Verbose:      verbose,
-				ReleaseBuild: t.ReleaseBuild,
-				DebugBuild:   t.DebugBuild,
-				BinaryName:   t.BinaryName,
-			})
-			printInstallOutput(res.Output, err, verbose)
-			if err != nil {
-				failed++
-				log.Error().Err(err).Msgf("install %s tool failed: %s", category, spec)
-				continue
-			}
-			if res.InstallDir != "" {
-				log.Info().Msgf("installed %s(go): %s -> %s", category, spec, filepath.Clean(res.InstallDir))
-			}
-			total++
-
-		case "clone", "git":
-			if strings.TrimSpace(t.CloneURL) == "" {
-				failed++
-				log.Error().Msgf("install %s tool failed: missing clone url", category)
-				continue
-			}
-			res, err := toolsPkg.InstallTool(toolsPkg.InstallOptions{
-				CloneURL:          t.CloneURL,
-				BuildMethod:       t.Build,
-				MakeTarget:        t.MakeTarget,
-				WorkDir:           t.WorkDir,
-				BinDirs:           t.BinDirs,
-				Env:               envMerged,
-				GoreleaserConfig:  t.GoreleaserConfig,
-				BinaryName:        t.BinaryName,
-				RecurseSubmodules: t.RecurseSubmodules,
-				ReleaseBuild:      t.ReleaseBuild,
-				DebugBuild:        t.DebugBuild,
-				Path:              targetPath,
-				Verbose:           verbose,
-			})
-			printInstallOutput(res.Output, err, verbose)
-			if err != nil {
-				failed++
-				log.Error().Err(err).Msgf("install %s tool (clone) failed: %s", category, t.CloneURL)
-				continue
-			}
-			if res.InstallDir != "" {
-				log.Info().Msgf("installed %s(clone): %s -> %s", category, t.CloneURL, filepath.Clean(res.InstallDir))
-			}
-			total++
-
-		default:
-			// 未知类型：跳过并提示
-			log.Warn().Msgf("skip %s tool with unsupported type: %s", category, ttype)
-		}
-	}
-	return total, failed
-}
-
-// parseGoInstallSpec 从诸如 "go install pkg@v1" 的命令中提取 spec
-func parseGoInstallSpec(cmd string) (string, error) {
-	fields := strings.Fields(cmd)
-	if len(fields) < 3 || fields[0] != "go" || fields[1] != "install" {
-		return "", fmt.Errorf("unsupported go tool cmd: %s", cmd)
-	}
-	for _, f := range fields[2:] {
-		if strings.HasPrefix(f, "-") { // 忽略构建 flag
-			continue
-		}
-		return f, nil
-	}
-	return "", fmt.Errorf("cannot find spec in: %s", cmd)
-}
-
-// printInstallOutput 按 verbose/err 级别打印安装输出
-func printInstallOutput(output string, err error, verbose bool) {
-	if strings.TrimSpace(output) == "" {
-		return
-	}
-	for _, line := range strings.Split(output, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		if err != nil {
-			log.Error().Msg(line)
-		} else if verbose {
-			log.Debug().Msg(line)
-		} else {
-			log.Info().Msg(line)
-		}
-	}
-}
-
-// printSingleTool 根据格式打印单个工具信息
-func printSingleTool(bi *toolsPkg.InstallToolsInfo, fmtFlag string, out interface{ Write([]byte) (int, error) }, cmd *cobra.Command) {
-	switch strings.ToLower(fmtFlag) {
-	case "json":
-		if err := style.PrintJSON(out, bi); err != nil {
-			b, _ := json.MarshalIndent(bi, "", "  ")
-			fmt.Fprintln(out, string(b))
-		}
-	case "yaml":
-		if err := style.PrintYAML(out, bi); err != nil {
-			b, _ := json.MarshalIndent(bi, "", "  ")
-			fmt.Fprintln(out, string(b))
-		}
-	case "table":
-		// Vertical key-value table for readability
-		kv := func(k, v string) []string { return []string{k, v} }
-		rows := make([][]string, 0, 16)
-		add := func(k, v string) {
-			if strings.TrimSpace(v) == "" {
-				return
-			}
-			rows = append(rows, kv(k, v))
-		}
-		add("Name", bi.Name)
-		add("URL", bi.URL)
-		add("CloneURL", bi.CloneURL)
-		add("Build", bi.Build)
-		add("MakeTarget", bi.MakeTarget)
-		add("WorkDir", bi.WorkDir)
-		if len(bi.BinDirs) > 0 {
-			add("BinDirs", strings.Join(bi.BinDirs, ", "))
-		}
-		if len(bi.Env) > 0 {
-			add("Env", strings.Join(bi.Env, ", "))
-		}
-		add("GoreleaserConfig", bi.GoreleaserConfig)
-		add("BinaryName", bi.BinaryName)
-		if bi.InstallType != nil {
-			add("InstallType.Name", bi.InstallType.Name)
-			add("InstallType.OS", bi.InstallType.OS)
-			add("InstallType.Arch", bi.InstallType.Arch)
-		}
-		if len(rows) == 0 {
-			rows = append(rows, kv("Name", ""))
-		}
-		if err := style.PrintTable(out, []string{"Field", "Value"}, rows, 0); err != nil {
-			for _, r := range rows {
-				fmt.Fprintf(out, "%s: %s\n", r[0], r[1])
-			}
-		}
-	default:
-		cmd.PrintErrf("unsupported format: %s\n", fmtFlag)
-	}
+	// register flags via helper functions (extracted for clarity / reuse)
+	addToolsListFlags(toolListCmd)
+	addToolsInstallFlags(toolInstallCmd, &toolInstallOptions, &toolInstallGlobal)
+	addToolsSearchFlags(toolSearchCmd)
+	addToolsRunFlags(toolRunCmd)
 }

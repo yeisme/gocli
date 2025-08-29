@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -184,4 +185,225 @@ func InstallTool(opts InstallOptions) (InstallResult, error) {
 		}
 	}
 	return res, err
+}
+
+// InstallCommandOptions 定义了install命令的选项和上下文
+type InstallCommandOptions struct {
+	// 命令行参数
+	Args []string
+	// 嵌入 InstallOptions 以复用安装相关字段
+	InstallOptions
+
+	// 额外命令行上下文字段
+	// Global indicates --global was set on the install command
+	Global         bool
+	Quiet          bool
+	GoCLIToolsPath string
+	ToolsConfigDir []string
+}
+
+// ExecuteInstallCommand 执行install命令的封装函数
+func ExecuteInstallCommand(opts InstallCommandOptions, outputWriter io.Writer) error {
+	// validate basic flags and batch case
+	if err := validateInstallCmdOptions(opts); err != nil {
+		return err
+	}
+
+	// resolve install path
+	pathFlag, msg, err := resolveInstallPath(opts)
+	if err != nil {
+		return err
+	}
+	if msg != "" {
+		fmt.Fprintln(outputWriter, msg)
+	}
+
+	// prepare variables
+	cloneURL := opts.CloneURL
+	makeTarget := opts.MakeTarget
+	envFlags := append([]string{}, opts.Env...)
+	binDirs := append([]string{}, opts.BinDirs...)
+	releaseBuild := opts.ReleaseBuild
+	debugBuild := opts.DebugBuild
+	v := opts.Verbose
+
+	// map builtin short-name to spec/clone when applicable
+	var spec string
+	if len(opts.Args) > 0 {
+		spec = opts.Args[0]
+	}
+	spec, cloneURL, makeTarget, binDirs, envFlags, addBuildMethod, workDir, goreleaserConfig, binaryName :=
+		mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget, binDirs, envFlags, opts.ToolsConfigDir, v, outputWriter)
+
+	// mutual exclusion check
+	if cloneURL != "" && spec != "" {
+		return fmt.Errorf("please specify either a module/local path or --clone, not both")
+	}
+
+	installOpts := buildInstallOptions(spec, cloneURL, makeTarget, pathFlag, envFlags, binDirs, v, releaseBuild, debugBuild, binaryName, addBuildMethod, opts.BuildArgs, workDir, goreleaserConfig, opts)
+
+	if installOpts.CloneURL == "" && installOpts.Spec == "" {
+		return fmt.Errorf("missing tool spec provide a module path or use --clone")
+	}
+
+	res, err := InstallTool(installOpts)
+
+	// print outputs and results
+	printInstallResult(res, err, outputWriter)
+
+	return err
+}
+
+// validateInstallCmdOptions checks mutual exclusions and batch-case handling
+func validateInstallCmdOptions(opts InstallCommandOptions) error {
+	if opts.ReleaseBuild && opts.DebugBuild {
+		return fmt.Errorf("--release-build and --debug-build cannot be used together")
+	}
+	if opts.CloneURL == "" && len(opts.Args) == 0 {
+		return fmt.Errorf("batch install not implemented in pkg/tools yet")
+	}
+	return nil
+}
+
+// resolveInstallPath returns effective pathFlag and optional message to print
+func resolveInstallPath(opts InstallCommandOptions) (string, string, error) {
+	pathFlag := opts.Path
+	if pathFlag == "" {
+		if opts.Global {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return "", "", fmt.Errorf("failed to get user home: %w", err)
+			}
+			pathFlag = filepath.Join(home, ".gocli", "tools")
+			return pathFlag, fmt.Sprintf("--global selected: default install path -> %s", filepath.Clean(pathFlag)), nil
+		}
+		pathFlag = opts.GoCLIToolsPath
+	}
+	return pathFlag, "", nil
+}
+
+// mapBuiltinToolIfNeeded maps short builtin names to spec/clone and augments flags
+func mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget string, binDirs, envFlags []string, toolsConfigDir []string, v bool, outputWriter io.Writer) (string, string, string, []string, []string, string, string, string, string) {
+	var buildMethod, workDir, goreleaserConfig, binaryName string
+	if spec == "" {
+		return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+	}
+	if strings.Contains(spec, "/") || strings.Contains(spec, "\\") {
+		return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+	}
+
+	// load user tools
+	for _, p := range toolsConfigDir {
+		_ = LoadUserTools(p)
+	}
+
+	orig := spec
+	name := orig
+	ver := ""
+	if i := strings.Index(orig, "@"); i > 0 {
+		name = orig[:i]
+		ver = orig[i:]
+	}
+
+	bi := SearchTools(name, toolsConfigDir)
+	if bi == nil {
+		for _, t := range BuiltinTools {
+			if t.Name == name {
+				tt := t
+				bi = &tt
+				break
+			}
+		}
+	}
+
+	if bi == nil {
+		return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+	}
+
+	if strings.TrimSpace(bi.CloneURL) != "" {
+		clone := bi.CloneURL
+		if ver != "" {
+			ref := ver[1:]
+			if p := strings.Index(clone, "#"); p >= 0 {
+				clone = clone[:p]
+			}
+			clone = clone + "#" + ref
+		}
+		cloneURL = clone
+		if bi.Build != "" {
+			buildMethod = bi.Build
+		}
+		if bi.MakeTarget != "" {
+			makeTarget = bi.MakeTarget
+		}
+		if bi.WorkDir != "" {
+			workDir = bi.WorkDir
+		}
+		if len(bi.BinDirs) > 0 {
+			binDirs = append(binDirs, bi.BinDirs...)
+		}
+		if len(bi.Env) > 0 {
+			envFlags = append(envFlags, bi.Env...)
+		}
+		if bi.GoreleaserConfig != "" {
+			goreleaserConfig = bi.GoreleaserConfig
+		}
+		if bi.BinaryName != "" {
+			binaryName = bi.BinaryName
+		}
+		spec = ""
+		if v {
+			fmt.Fprintf(outputWriter, "mapped builtin tool %s -> clone %s (build=%s)\n", orig, cloneURL, buildMethod)
+		}
+		return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+	}
+
+	// go install 模式
+	mapped := bi.URL + ver
+	spec = mapped
+	if bi.BinaryName != "" {
+		binaryName = bi.BinaryName
+	}
+	if v {
+		fmt.Fprintf(outputWriter, "mapped builtin tool %s -> %s\n", orig, spec)
+	}
+	return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+}
+
+// buildInstallOptions builds InstallOptions from resolved inputs
+func buildInstallOptions(spec, cloneURL, makeTarget, pathFlag string, envFlags, binDirs []string, verbose bool, releaseBuild, debugBuild bool, binaryName, buildMethod string, buildArgs []string, workDir, goreleaserConfig string, opts InstallCommandOptions) InstallOptions {
+	return InstallOptions{
+		Spec:              spec,
+		CloneURL:          cloneURL,
+		MakeTarget:        makeTarget,
+		Path:              pathFlag,
+		Env:               envFlags,
+		BinDirs:           binDirs,
+		Verbose:           verbose,
+		ReleaseBuild:      releaseBuild,
+		DebugBuild:        debugBuild,
+		BinaryName:        binaryName,
+		BuildMethod:       buildMethod,
+		BuildArgs:         buildArgs,
+		WorkDir:           workDir,
+		GoreleaserConfig:  goreleaserConfig,
+		RecurseSubmodules: opts.RecurseSubmodules,
+		Force:             opts.Force,
+	}
+}
+
+// printInstallResult prints the install output and locations
+func printInstallResult(res InstallResult, err error, out io.Writer) {
+	if strings.TrimSpace(res.Output) != "" {
+		fmt.Fprint(out, res.Output)
+	}
+	if err != nil {
+		return
+	}
+	if res.InstallDir != "" {
+		fmt.Fprintf(out, "installed to: %s\n", filepath.Clean(res.InstallDir))
+	}
+	if res.ProbableInstallDir != "" && res.InstallDir == "" {
+		fmt.Fprintf(out, "probable install dir: %s\n", filepath.Clean(res.ProbableInstallDir))
+	}
 }
