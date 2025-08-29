@@ -133,6 +133,11 @@ func SetRunHelpFunc(cmd *cobra.Command) {
 // a command's PreRun to preserve flags intended for the executed tool.
 func ShowRunHelpIfRequested(cmd *cobra.Command) {
 	argv := os.Args
+	if argv[0] == "--help" || argv[0] == "-h" {
+		_ = cmd.Help()
+		os.Exit(0)
+	}
+
 	for i := range argv {
 		if argv[i] == "run" || argv[i] == "x" || argv[i] == "exec" {
 			if i+1 < len(argv) {
@@ -143,9 +148,6 @@ func ShowRunHelpIfRequested(cmd *cobra.Command) {
 				}
 			}
 			break
-		} else if argv[i] == "--help" || argv[i] == "-h" {
-			_ = cmd.Help()
-			os.Exit(0)
 		}
 	}
 }
