@@ -213,7 +213,7 @@
     },
     "kitex": {
         "name": "kitex",
-        "url": "github.com/cloudwego/kitex@latest",
+        "url": "github.com/cloudwego/kitex/tool/cmd/kitex@latest",
         "install_type": {
             "name": "Go",
             "os": "",
@@ -223,6 +223,33 @@
     "thriftgo": {
         "name": "thriftgo",
         "url": "github.com/cloudwego/thriftgo@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "nishanths-license": {
+        "name": "license",
+        "url": "github.com/nishanths/license/v5@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "kitexcall": {
+        "name": "kitexcall",
+        "url": "github.com/kitex-contrib/kitexcall@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "hertz-hz": {
+        "name": "hz",
+        "url": "github.com/cloudwego/hertz/cmd/hz@latest",
         "install_type": {
             "name": "Go",
             "os": "",
