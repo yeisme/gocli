@@ -210,5 +210,23 @@
             "os": "",
             "arch": ""
         }
+    },
+    "kitex": {
+        "name": "kitex",
+        "url": "github.com/cloudwego/kitex@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "thriftgo": {
+        "name": "thriftgo",
+        "url": "github.com/cloudwego/thriftgo@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
     }
 }
