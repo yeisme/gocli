@@ -14,14 +14,13 @@ import (
 
 // Config 应用配置结构
 type Config struct {
-	Version int          `mapstructure:"version" jsonschema:"title=Version,description=Configuration file version,minimum=1,required"`
-	Log     LogConfig    `mapstructure:"log" jsonschema:"title=Log,description=Logging related settings"`
-	Env     EnvConfig    `mapstructure:"env" jsonschema:"title=Env,description=Go related environment variables (auto-detected + overrides)"`
-	App     AppConfig    `mapstructure:"app" jsonschema:"title=App,description=General application behavior flags"`
-	Tools   ToolsConfig  `mapstructure:"tools" jsonschema:"title=Tools,description=Project and global tool installation configuration"`
-	Plugin  PluginConfig `mapstructure:"plugin" jsonschema:"title=Plugin,description=Plugin loading and search path configuration"`
-	Doc     DocConfig    `mapstructure:"doc" jsonschema:"title=Doc,description=Documentation generation options"`
-	Init    InitConfig   `mapstructure:"init" jsonschema:"title=Init,description=Project initialization template settings"`
+	Version int         `mapstructure:"version" jsonschema:"title=Version,description=Configuration file version,minimum=1,required"`
+	Log     LogConfig   `mapstructure:"log" jsonschema:"title=Log,description=Logging related settings"`
+	Env     EnvConfig   `mapstructure:"env" jsonschema:"title=Env,description=Go related environment variables (auto-detected + overrides)"`
+	App     AppConfig   `mapstructure:"app" jsonschema:"title=App,description=General application behavior flags"`
+	Tools   ToolsConfig `mapstructure:"tools" jsonschema:"title=Tools,description=Project and global tool installation configuration"`
+	Doc     DocConfig   `mapstructure:"doc" jsonschema:"title=Doc,description=Documentation generation options"`
+	Init    InitConfig  `mapstructure:"init" jsonschema:"title=Init,description=Project initialization template settings"`
 }
 
 // setDefaults 设置默认配置值
@@ -31,7 +30,6 @@ func setDefaults() {
 	setEnvConfigDefaults()
 	setAppConfigDefaults()
 	setToolsConfigDefaults()
-	setPluginConfigDefaults()
 	setDocConfigDefaults()
 	setInitConfigDefaults()
 }
