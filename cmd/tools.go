@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -18,6 +17,7 @@ var (
 	toolUninstallYes   bool
 	toolUninstallDry   bool
 	toolUninstallFuzzy bool
+	toolUninstallAll   bool
 
 	toolsCmd = &cobra.Command{
 		Use:     "tools",
@@ -315,119 +315,29 @@ Notes:
 		Run: func(cmd *cobra.Command, args []string) {
 			out := cmd.OutOrStdout()
 			if len(args) == 0 {
-				cmd.PrintErrf("please provide one or more tool names to uninstall\n")
-				return
+				_ = cmd.Help()
+				os.Exit(0)
 			}
 
-			// 对于每个传入的参数，使用 SearchTools/FindToolsFuzzy 的语义进行查找
-			reader := bufio.NewReader(cmd.InOrStdin())
-			for _, name := range args {
-				// 优先尝试精确匹配或内置映射
-				bi := toolsPkg.SearchTools(name, gocliCtx.Config.Tools.ToolsConfigDir)
-				var candidates []toolsPkg.InstallToolsInfo
-				if bi != nil {
-					// 如果内置配置映射到 CloneURL 或 URL，尝试推导二进制名
-					bn := bi.BinaryName
-					if bn == "" {
-						// 回退到提供的名称
-						bn = name
-					}
-					// 使用 FindTools 查找实际已安装并与 bn 匹配的文件
-					tools := toolsPkg.FindTools(verbose, gocliCtx.Config.Tools.GoCLIToolsPath)
-					for _, t := range tools {
-						if strings.EqualFold(t.Name, bn) {
-							candidates = append(candidates, toolsPkg.InstallToolsInfo{Name: t.Name, CloneURL: "", URL: "", BinaryName: t.Name})
-						}
-					}
-				}
-				// 若没有从内置映射得到直接匹配，则在已安装工具中搜索
-				// 默认要求精确（不区分大小写）匹配以避免误删
-				// 使用 --fuzzy 可启用子串模糊匹配
-				if len(candidates) == 0 {
-					// Search installed tool list
-					tools := toolsPkg.FindTools(verbose, gocliCtx.Config.Tools.GoCLIToolsPath)
-					lname := strings.ToLower(name)
-					if toolUninstallFuzzy {
-						for _, t := range tools {
-							if strings.Contains(strings.ToLower(t.Name), lname) {
-								candidates = append(candidates, toolsPkg.InstallToolsInfo{Name: t.Name, BinaryName: t.Name})
-							}
-						}
-					} else {
-						for _, t := range tools {
-							if strings.EqualFold(t.Name, name) {
-								candidates = append(candidates, toolsPkg.InstallToolsInfo{Name: t.Name, BinaryName: t.Name})
-							}
-						}
-						if len(candidates) == 0 {
-							fmt.Fprintf(out, "no installed binaries found for: %s (use --fuzzy to enable substring matching)\n", name)
-							continue
-						}
-					}
-				}
+			opts := toolsPkg.UninstallCommandOptions{
+				Args:           args,
+				Yes:            toolUninstallYes,
+				Dry:            toolUninstallDry,
+				Fuzzy:          toolUninstallFuzzy,
+				All:            toolUninstallAll,
+				Verbose:        verbose,
+				GoCLIToolsPath: gocliCtx.Config.Tools.GoCLIToolsPath,
+				ToolsConfigDir: gocliCtx.Config.Tools.ToolsConfigDir,
+				Input:          cmd.InOrStdin(),
+			}
 
-				if len(candidates) == 0 {
-					fmt.Fprintf(out, "no installed binaries found for: %s\n", name)
-					continue
-				}
-
-				// 按二进制名去重
-				seen := map[string]struct{}{}
-				for _, c := range candidates {
-					if _, ok := seen[c.BinaryName]; ok {
-						continue
-					}
-					seen[c.BinaryName] = struct{}{}
-
-					// 在已知位置中定位该二进制的实际安装路径
-					exeName := c.BinaryName
-					if exeName == "" {
-						exeName = name
-					}
-					// 在 Windows 上已安装文件通常带有 .exe 后缀；此处直接在工具列表中搜索路径
-					installed := toolsPkg.FindTools(verbose, gocliCtx.Config.Tools.GoCLIToolsPath)
-					var toDelete []string
-					for _, ti := range installed {
-						if strings.EqualFold(ti.Name, exeName) {
-							toDelete = append(toDelete, ti.Path)
-						}
-					}
-					if len(toDelete) == 0 {
-						fmt.Fprintf(out, "no installed binary file found for '%s'\n", exeName)
-						continue
-					}
-
-					for _, p := range toDelete {
-						// 确认删除
-						if !toolUninstallYes {
-							fmt.Fprintf(out, "Delete %s? [y/N]: ", p)
-							txt, _ := reader.ReadString('\n')
-							txt = strings.TrimSpace(strings.ToLower(txt))
-							if txt != "y" && txt != "yes" {
-								fmt.Fprintf(out, "skipped: %s\n", p)
-								continue
-							}
-						}
-
-						if toolUninstallDry {
-							fmt.Fprintf(out, "[dry-run] would remove: %s\n", p)
-							continue
-						}
-
-						// attempt removal
-						// 尝试删除文件
-						if err := os.Remove(p); err != nil {
-							fmt.Fprintf(cmd.ErrOrStderr(), "failed to remove %s: %v\n", p, err)
-						} else {
-							fmt.Fprintf(out, "removed: %s\n", p)
-							// clear tools cache so subsequent commands reflect removal
-							toolsPkg.ClearToolsCache()
-						}
-					}
-				}
+			if err := toolsPkg.ExecuteUninstallCommand(opts, out); err != nil {
+				cmd.PrintErrf("uninstall failed: %v\n", err)
+				return
 			}
 		},
 	}
+
 	toolSearchCmd = &cobra.Command{
 		Use:   "search [query]",
 		Short: "Search for a tool",
@@ -498,10 +408,9 @@ Behaviour change:
 			// load user tools then list all
 			for _, p := range gocliCtx.Config.Tools.ToolsConfigDir {
 				if err := toolsPkg.LoadUserTools(p); err != nil {
-					log.Warn().Err(err).Msgf("failed to load user tools from: %s", p)
-				} else {
-					log.Debug().Msgf("loaded user tools from: %s", p)
+					continue
 				}
+				log.Debug().Msgf("loaded user tools from: %s", p)
 			}
 		},
 	}
@@ -574,8 +483,9 @@ func addToolsRunFlags(_ *cobra.Command) {
 
 func addToolUninstallFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&toolUninstallYes, "yes", "y", false, "Answer yes to all confirmations")
-	cmd.Flags().BoolVar(&toolUninstallDry, "dry", false, "Dry-run mode: show what would be removed but do not delete files")
-	cmd.Flags().BoolVar(&toolUninstallFuzzy, "fuzzy", false, "Allow fuzzy substring matching when searching installed binaries (off by default)")
+	cmd.Flags().BoolVarP(&toolUninstallDry, "dry", "d", false, "Dry-run mode: show what would be removed but do not delete files")
+	cmd.Flags().BoolVarP(&toolUninstallFuzzy, "fuzzy", "z", false, "Allow fuzzy substring matching when searching installed binaries (off by default)")
+	cmd.Flags().BoolVarP(&toolUninstallAll, "all", "a", false, "When multiple instances are found, delete all matches (prompt once)")
 }
 
 func mustUserHome() string {

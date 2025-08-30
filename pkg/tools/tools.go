@@ -109,7 +109,7 @@ func cacheKey(gocliToolsPath string) string {
 	return gocliToolsPath
 }
 
-// FindTools 在内部使用按-key 的并发安全缓存（每个 key 使用 sync.Once 确保只初始化一次）
+// FindTools 在内部使用按 key 的并发安全缓存（每个 key 使用 sync.Once 确保只初始化一次）
 func FindTools(verbose bool, gocliToolsPath string) []ToolInfo {
 	key := cacheKey(gocliToolsPath)
 	v, _ := toolCachesMap.LoadOrStore(key, &cached{})
