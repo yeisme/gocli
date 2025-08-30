@@ -27,11 +27,13 @@ const (
 	FormatTOML OutputFormat = "toml"
 	// FormatText represents the plain text output format.
 	FormatText OutputFormat = "text"
+	// FormatTable represents the table output format.
+	FormatTable OutputFormat = "table"
 )
 
 // ValidFormats 返回所有有效的输出格式
 func ValidFormats() []string {
-	return []string{string(FormatYAML), string(FormatJSON), string(FormatTOML), string(FormatText)}
+	return []string{string(FormatYAML), string(FormatJSON), string(FormatTOML), string(FormatText), string(FormatTable)}
 }
 
 // ParseOutputFormat 解析输出格式字符串
@@ -45,6 +47,8 @@ func ParseOutputFormat(format string) (OutputFormat, error) {
 		return FormatTOML, nil
 	case "text", "txt":
 		return FormatText, nil
+	case "table":
+		return FormatTable, nil
 	default:
 		return "", fmt.Errorf("unsupported format '%s', supported formats: %s", format, strings.Join(ValidFormats(), ", "))
 	}
@@ -72,13 +76,16 @@ func GetOutputFormatFromFlags(cmd *cobra.Command) OutputFormat {
 	if text, _ := cmd.Flags().GetBool("text"); text {
 		return FormatText
 	}
+	if table, _ := cmd.Flags().GetBool("table"); table {
+		return FormatTable
+	}
 
 	// 默认格式
 	return FormatYAML
 }
 
 // OutputData 根据指定格式输出数据
-func OutputData(data any, format OutputFormat, out io.Writer) error {
+func OutputData(data any, format OutputFormat, out io.Writer, color bool) error {
 	switch format {
 	case FormatYAML:
 		var buf bytes.Buffer
@@ -92,22 +99,31 @@ func OutputData(data any, format OutputFormat, out io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("failed to close YAML encoder: %w", err)
 		}
-		_ = style.PrintYAML(out, buf.String())
-
+		if color {
+			_ = style.PrintYAML(out, buf.String())
+		} else {
+			fmt.Fprint(out, buf.String())
+		}
 	case FormatJSON:
 		jsonData, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal to JSON: %w", err)
 		}
-		_ = style.PrintJSON(out, jsonData)
-
+		if color {
+			_ = style.PrintJSON(out, jsonData)
+		} else {
+			fmt.Fprint(out, string(jsonData))
+		}
 	case FormatTOML:
 		tomlData, err := toml.Marshal(data)
 		if err != nil {
 			return fmt.Errorf("failed to marshal to TOML: %w", err)
 		}
-		_ = style.PrintTOML(out, string(tomlData))
-
+		if color {
+			_ = style.PrintTOML(out, string(tomlData))
+		} else {
+			fmt.Fprint(out, string(tomlData))
+		}
 	case FormatText:
 		// 简单的文本格式输出
 		fmt.Fprintf(out, "%+v\n", data)

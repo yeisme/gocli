@@ -1,0 +1,16 @@
+version: 1
+
+app:
+  name: gocli
+  debug: true
+  verbose: false
+  quiet: false
+  hotload:
+    enabled: true
+    dir: "."
+    filter:
+      - "*.go"
+      - "*.mod"
+      - "*.sum"
+    recursive: true
+    debounce: 300

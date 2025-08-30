@@ -875,7 +875,7 @@ func addDocFlags(cmd *cobra.Command, opts *project.DocOptions) {
 	cmd.Flags().BoolVarP(&opts.IncludeTests, "tests", "t", false, "Include *_test.go files (auto enables --examples if not set)")
 	cmd.Flags().BoolVarP(&opts.IncludeExamples, "examples", "e", false, "Include example functions (auto-enabled by --tests)")
 	cmd.Flags().BoolVar(&opts.TOC, "toc", true, "Generate table of contents where applicable")
-	cmd.Flags().StringVar(&opts.Theme, "theme", "", "Theme for styled output (markdown renderer)")
+	cmd.Flags().StringVarP(&opts.Theme, "theme", "T", "", "Theme for styled output (markdown renderer)")
 	cmd.Flags().IntVarP(&opts.Width, "width", "w", 0, "Render width (0 auto)")
 	cmd.Flags().BoolVarP(&opts.Detailed, "detailed", "d", false, "Enable detailed output")
 }
@@ -898,7 +898,7 @@ func registerProjectFlags() {
 	// 5) info
 	addInfoFlags(projectInfoCmd, &infoOptions)
 
-	// 6) add (no flags currently)
+	// 6) add
 	addAddFlags(projectAddCmd, &addOptions)
 
 	// 7) test
@@ -916,11 +916,13 @@ func registerProjectFlags() {
 	// 11) deps
 	addDepsFlags(projectDepsCmd, &depsOptions)
 
+	// 12) doc
+	addDocFlags(projectDocCmd, &docOptions)
+
 	// Keep build/run flag ordering as originally intended
 	projectBuildCmd.Flags().SortFlags = false
 	projectRunCmd.Flags().SortFlags = false
 
-	addDocFlags(projectDocCmd, &docOptions)
 }
 
 func init() {

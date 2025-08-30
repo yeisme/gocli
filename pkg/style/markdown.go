@@ -20,21 +20,27 @@ func RenderMarkdown(w io.Writer, input string, width int, theme string) error {
 	if theme == "" {
 		theme = "dracula"
 	}
+	// 解析并确定最终渲染宽度，优先级：显式参数(width>0) > 终端探测 > 默认80
 	termWidth := detectTerminalWidth(w)
 	if termWidth <= 0 {
 		termWidth = 80
 	}
-	// 如果传入 width <= 0 则使用探测到的终端宽度
+
 	if width <= 0 {
+		// 未传入宽度时，使用探测到的终端宽度
 		width = termWidth
 	}
-	// 将宽度限制到 [80, 120]
+
+	// 将宽度限制到 [80, 120]，且不超过探测到的终端宽度
 	if width < 80 {
 		width = 80
 	}
 	if width > 120 {
-		// 不要超过终端宽度
-		width = min(120, termWidth)
+		if termWidth > 0 {
+			width = min(120, termWidth)
+		} else {
+			width = 120
+		}
 	}
 
 	r, err := glamour.NewTermRenderer(

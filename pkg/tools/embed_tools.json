@@ -264,5 +264,32 @@
             "os": "",
             "arch": ""
         }
+    },
+    "mockgen": {
+        "name": "mockgen",
+        "url": "go.uber.org/mock/mockgen@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "protoc-gen-validator": {
+        "name": "protoc-gen-validator",
+        "url": "github.com/cloudwego/protoc-gen-validator@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "wazero": {
+        "name": "wazero",
+        "url": "github.com/tetratelabs/wazero/cmd/wazero@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
     }
 }

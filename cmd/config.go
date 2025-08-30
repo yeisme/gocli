@@ -11,6 +11,8 @@ import (
 )
 
 var (
+	noColor bool
+
 	configCmd = &cobra.Command{
 		Use:     "config",
 		Short:   "Manage gocli configuration",
@@ -76,10 +78,55 @@ Examples:
 			}
 
 			// 输出配置
-			if err := configs.OutputData(data, format, cmd.OutOrStdout()); err != nil {
+			if err := configs.OutputData(data, format, cmd.OutOrStdout(), !noColor); err != nil {
 				log.Error().Err(err).Msg("Error displaying config")
 			}
 		},
+		Aliases: []string{"ls"},
+	}
+	configInitCmd = &cobra.Command{
+		Use:   "init",
+		Short: "Initialize gocli configuration",
+		Long: `gocli config init creates a new configuration file with default settings.
+
+Examples:
+  gocli config init                    # Create .gocli.yaml in current directory
+  gocli config init --path ~/.gocli/config.yaml  # Specify custom path
+  gocli config init --format json      # Create JSON format config`,
+		Run: func(cmd *cobra.Command, _ []string) {
+			// 获取标志值
+			path, _ := cmd.Flags().GetString("path")
+			formatStr, _ := cmd.Flags().GetString("format")
+
+			// 解析格式
+			format, err := configs.ParseOutputFormat(formatStr)
+			if err != nil {
+				log.Error().Err(err).Msg("Invalid format specified")
+			}
+			if format == configs.FormatText {
+				log.Error().Msg("Text format is not supported for config files")
+			}
+
+			// 如果没有指定路径，使用默认路径
+			if path == "" {
+				switch format {
+				case configs.FormatYAML:
+					path = ".gocli.yaml"
+				case configs.FormatJSON:
+					path = ".gocli.json"
+				case configs.FormatTOML:
+					path = ".gocli.toml"
+				}
+			}
+
+			// 创建配置文件
+			if err := configs.CreateDefaultConfig(path, format); err != nil {
+				log.Error().Err(err).Msg("Failed to create config file")
+			}
+
+			log.Info().Msgf("Config file created successfully: %s\n", path)
+		},
+		Args: cobra.NoArgs,
 	}
 )
 
@@ -89,13 +136,19 @@ func init() {
 	configCmd.AddCommand(
 		configListCmd,
 		configValidateCmd,
+		configInitCmd,
 	)
 
-	// 添加输出格式标志
+	// 添加 config list 标志
+	configListCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable color output")
 	configListCmd.Flags().StringP("format", "f", "", fmt.Sprintf("Output format (%s)", strings.Join(configs.ValidFormats(), ", ")))
 	configListCmd.Flags().Bool("yaml", false, "Output in YAML format")
 	configListCmd.Flags().Bool("json", false, "Output in JSON format")
 	configListCmd.Flags().Bool("toml", false, "Output in TOML format")
 	configListCmd.Flags().Bool("text", false, "Output in plain text format")
 	configListCmd.Flags().BoolP("all", "a", false, "Show complete configuration with defaults (processed struct)")
+
+	// 添加 config init 标志
+	configInitCmd.Flags().StringP("path", "p", "", "Path to the config file")
+	configInitCmd.Flags().StringP("format", "f", "yaml", "Format of the config file (yaml, json, toml)")
 }
