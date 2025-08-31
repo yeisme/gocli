@@ -5,11 +5,13 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/yeisme/gocli/pkg/models"
 	"github.com/yeisme/gocli/pkg/tools"
 	"github.com/yeisme/gocli/pkg/utils/executor"
+	"github.com/yeisme/gocli/pkg/utils/gitignore"
 )
 
 // InitOptions 用于初始化项目的选项
@@ -58,7 +60,7 @@ func (i *InitList) String() string {
 }
 
 // ExecConfigInit 执行配置初始化
-func (o *InitOptions) ExecConfigInit(args []string) ([]string, error) {
+func (o *InitOptions) ExecConfigInit(args, initGitIgnore []string) ([]string, error) {
 	argsPath, err := NormalizeGoProjectName(args)
 	if err != nil {
 		return nil, err
@@ -70,6 +72,7 @@ func (o *InitOptions) ExecConfigInit(args []string) ([]string, error) {
 		str, err := o.execGitInit()
 		initList.AddOutput(str)
 		initList.AddError(err)
+
 	}
 	if o.GoTaskInit {
 		str, err := o.execGoTaskInit()
@@ -80,11 +83,13 @@ func (o *InitOptions) ExecConfigInit(args []string) ([]string, error) {
 		str, err := o.execGoCLIInit()
 		initList.AddOutput(str)
 		initList.AddError(err)
+		initGitIgnore = append(initGitIgnore, "gocli")
 	}
 	if o.GoreleaserInit {
 		str, err := o.execGoreleaserInit()
 		initList.AddOutput(str)
 		initList.AddError(err)
+		initGitIgnore = append(initGitIgnore, "goreleaser")
 	}
 	if o.DockerInit {
 		str, err := o.execDockerInit()
@@ -102,6 +107,15 @@ func (o *InitOptions) ExecConfigInit(args []string) ([]string, error) {
 		initList.AddError(err)
 	}
 
+	// 判断使用什么 gitignore 的模板
+	if len(initGitIgnore) > 0 {
+		if err := gitignore.CreateBaseGoGitignore(o.Dir, initGitIgnore...); err != nil {
+			// 把错误记录到 initList，确保返回的 error 包含有用的信息
+			initList.AddError(err)
+			return initList.BufList, &initList
+		}
+	}
+
 	if len(initList.ErrList) > 0 {
 		return initList.BufList, &initList
 	}
@@ -117,10 +131,12 @@ func (o *InitOptions) execGoTaskInit() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if _, err := os.Stat(o.Dir + "/Taskfile.yml"); os.IsNotExist(err) {
-		f, err := os.Open(o.Dir + "/Taskfile.yml")
-		if err != nil {
-			return "", err
+	taskfilePath := filepath.Join(o.Dir, "Taskfile.yml")
+	// 如果文件存在，打开以便后续根据语言类型修改（当前为 TODO）
+	if _, statErr := os.Stat(taskfilePath); statErr == nil {
+		f, openErr := os.Open(taskfilePath)
+		if openErr != nil {
+			return "", openErr
 		}
 		defer func() {
 			if closeErr := f.Close(); closeErr != nil {
@@ -129,6 +145,9 @@ func (o *InitOptions) execGoTaskInit() (string, error) {
 		}()
 
 		// TODO 根据项目语言类型生成不同的 Taskfile
+	} else if !os.IsNotExist(statErr) {
+		// 其他 stat 错误
+		return "", statErr
 	}
 	return out, nil
 }

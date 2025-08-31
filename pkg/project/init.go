@@ -52,6 +52,8 @@ type InitOptions struct {
 func ExecuteInitCommand(ctx *context.GocliContext, args []string, opts InitOptions, out io.Writer) error {
 	initLanguageTemplate(&opts)
 
+	var initGitIgnore []string
+
 	if err := initFormatCfg(&opts); err != nil {
 		return err
 	}
@@ -79,12 +81,13 @@ func ExecuteInitCommand(ctx *context.GocliContext, args []string, opts InitOptio
 		if err := ExecuteGoInitCommand(ctx, args, opts, out); err != nil {
 			return err
 		}
+		initGitIgnore = append(initGitIgnore, "base-go")
 	default:
 		// 未知类型，当前版本暂不支持，给出提示
 		return fmt.Errorf("unsupported project type: %s", opts.LangType)
 	}
 
-	_, err := opts.Project.ExecConfigInit(args)
+	_, err := opts.Project.ExecConfigInit(args, initGitIgnore)
 	if err != nil {
 		return err
 	}
@@ -103,6 +106,7 @@ func ExecuteGoInitCommand(_ *context.GocliContext, args []string, opts InitOptio
 
 	// 2. 确定目标目录：仅当显式提供 --dir 时创建/使用该目录；否则使用当前目录
 	targetDir := strings.TrimSpace(opts.Project.Dir)
+	log.Debug().Str("dir", targetDir).Msg("Target directory for project initialization")
 	if targetDir == "" {
 		targetDir = "." // 不创建新目录，go mod init 在当前目录执行
 	} else {
