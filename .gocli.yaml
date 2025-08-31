@@ -46,11 +46,11 @@ app:
 tools:
   deps:
     - type: go
-      cmd: go install golang.org/x/tools/cmd/goimports@latest
+      module: golang.org/x/tools/cmd/goimports@latest
 
   global:
     - type: go
-      cmd: go install github.com/goreleaser/goreleaser/v2@latest
+      cmd: goreleaser
 
   path: .gocli/tools
   tools_config_dir:

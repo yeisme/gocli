@@ -20,7 +20,7 @@ type ToolsConfig struct {
 // Tool represents a single tool configuration.
 type Tool struct {
 	Type string `mapstructure:"type" jsonschema:"title=Type,description=Tool install type: go|clone|git,enum=go,enum=clone,enum=git"` // 工具类型：go | clone | git（同义）
-	// 兼容：go 类型的安装命令，如 "go install module@ver"
+	// 兼容：go 类型的安装命令，如 "go install module@ver" "module@ver" 或者直接 "goreleaser" 内置json文件解析后的短名等
 	Cmd string `mapstructure:"cmd,omitempty" jsonschema:"title=Cmd,description=Legacy install command string (go install ...)"`
 
 	// go 类型直接指定模块路径（优先于 Cmd 的解析）例如：
@@ -51,18 +51,6 @@ type Tool struct {
 }
 
 func setToolsConfigDefaults() {
-	viper.SetDefault("tools.deps", []Tool{
-		{
-			Type: "go",
-			Cmd:  "go install github.com/go-task/task/v3/cmd/task@latest",
-		},
-	})
-	viper.SetDefault("tools.global", []Tool{
-		{
-			Type: "go",
-			Cmd:  "go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest",
-		},
-	})
 	viper.SetDefault("tools.path", home()+"/.gocli/tools")
 	viper.SetDefault("tools.tools_config_dir", []string{home() + "/.gocli/tools.json"})
 }

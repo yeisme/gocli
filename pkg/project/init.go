@@ -44,7 +44,7 @@ type InitOptions struct {
 	// Template
 	Template string
 
-	// Force 是否强制覆盖已存在的文件
+	// Force 是否强制覆盖已存在的文件 TODO 未完成
 	Force bool
 }
 

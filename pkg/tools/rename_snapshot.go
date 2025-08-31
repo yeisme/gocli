@@ -38,28 +38,6 @@ func DetermineGoBinDir() string {
 	return p
 }
 
-// SnapshotExecutables 获取目录下可执行文件的修改时间快照
-func SnapshotExecutables(dir string) map[string]time.Time {
-	m := make(map[string]time.Time)
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return m
-	}
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		name := e.Name()
-		if !isExecutable(name, dir) {
-			continue
-		}
-		if fi, err := e.Info(); err == nil {
-			m[name] = fi.ModTime()
-		}
-	}
-	return m
-}
-
 // RenameInstalledBinary 基于安装前后的快照在目录内查找新增/更新的可执行文件，并按需重命名
 func RenameInstalledBinary(dir string, pre map[string]time.Time, targetName string, _ bool) error {
 	if dir == "" || targetName == "" {

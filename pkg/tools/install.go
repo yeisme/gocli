@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"github.com/yeisme/gocli/pkg/configs"
 )
 
 // goInstallWithEnv 支持传入额外环境变量（如 GOBIN）
@@ -204,9 +205,24 @@ type InstallCommandOptions struct {
 
 // ExecuteInstallCommand 执行install命令的封装函数
 func ExecuteInstallCommand(opts InstallCommandOptions, outputWriter io.Writer) error {
-	// validate basic flags and batch case
+	// validate basic flags (mutual exclusions)
 	if err := validateInstallCmdOptions(opts); err != nil {
 		return err
+	}
+
+	// batch install: no args and no --clone => install configured tools
+	if opts.CloneURL == "" && len(opts.Args) == 0 {
+		// load user tools definitions so BatchInstall can resolve short names
+		for _, p := range opts.ToolsConfigDir {
+			_ = LoadUserTools(p)
+		}
+		// obtain app config (caller may have already loaded config but GetConfig is safe)
+		cfg := configs.GetConfig()
+		if opts.Global {
+			// install only global tools
+			return BatchInstallConfiguredGlobalTools(cfg, opts.Env, opts.Verbose)
+		}
+		return BatchInstallConfiguredTools(cfg, opts.Env, opts.Verbose)
 	}
 
 	// resolve install path
