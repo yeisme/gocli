@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 	toolsPkg "github.com/yeisme/gocli/pkg/tools"
@@ -14,6 +13,7 @@ import (
 var (
 	toolInstallOptions toolsPkg.InstallOptions
 	toolInstallGlobal  bool
+	toolInstallYes     bool
 	toolUninstallYes   bool
 	toolUninstallDry   bool
 	toolUninstallFuzzy bool
@@ -148,6 +148,7 @@ Notes:
 
 			// 1. 无参数 && 无 --clone -> 批量安装配置中工具
 			if cloneURL == "" && len(args) == 0 {
+				// batch install will load user tools and perform installation
 				if globalFlag {
 					if err := toolsPkg.BatchInstallConfiguredGlobalTools(gocliCtx.Config, envFlags, v); err != nil {
 						log.Error().Err(err).Msg("batch install (global) finished with errors")
@@ -175,77 +176,9 @@ Notes:
 
 			var spec string
 			if len(args) > 0 {
+				// 简化：直接使用用户传入的 spec，不在此处进行短名映射
+				// 短名解析/映射工作应由 pkg/tools 内的逻辑处理（例如 ExecuteInstallCommand）
 				spec = args[0]
-				// 支持内置工具短名：例如 `gocli tools install golangci-lint` -> 使用 pkg/tools.BuiltinTools 中配置的 URL
-				// 仅当输入不包含路径分隔符时才尝试映射（避免覆盖模块路径或本地路径）
-				if !strings.Contains(spec, "/") && !strings.Contains(spec, "\\") {
-					orig := spec
-					name := orig
-					ver := ""
-					if i := strings.Index(orig, "@"); i > 0 {
-						name = orig[:i]
-						ver = orig[i:] // keep leading '@'
-					}
-					// 1) 精确 key 匹配
-					bi := toolsPkg.SearchTools(name, gocliCtx.Config.Tools.ToolsConfigDir)
-					// 2) 若未命中，尝试按 Name 字段匹配（如 key 为 docker-compose, name 为 compose）
-					if bi == nil {
-						for _, t := range toolsPkg.BuiltinTools {
-							if t.Name == name {
-								tt := t
-								bi = &tt
-								break
-							}
-						}
-					}
-					if bi != nil {
-						if strings.TrimSpace(bi.CloneURL) != "" { // clone 模式
-							clone := bi.CloneURL
-							if ver != "" { // 将 @version（若有）映射为 #ref
-								ref := ver[1:]                              // strip '@'
-								if p := strings.Index(clone, "#"); p >= 0 { // 去掉旧 ref
-									clone = clone[:p]
-								}
-								clone = clone + "#" + ref
-							}
-							cloneURL = clone
-							if toolInstallOptions.BuildMethod == "" && strings.TrimSpace(bi.Build) != "" {
-								toolInstallOptions.BuildMethod = bi.Build
-							}
-							if toolInstallOptions.MakeTarget == "" && strings.TrimSpace(bi.MakeTarget) != "" {
-								toolInstallOptions.MakeTarget = bi.MakeTarget
-							}
-							if toolInstallOptions.WorkDir == "" && strings.TrimSpace(bi.WorkDir) != "" {
-								toolInstallOptions.WorkDir = bi.WorkDir
-							}
-							if len(bi.BinDirs) > 0 {
-								binDirs = append(binDirs, bi.BinDirs...)
-							}
-							if len(bi.Env) > 0 {
-								envFlags = append(envFlags, bi.Env...)
-							}
-							if toolInstallOptions.GoreleaserConfig == "" && strings.TrimSpace(bi.GoreleaserConfig) != "" {
-								toolInstallOptions.GoreleaserConfig = bi.GoreleaserConfig
-							}
-							if bi.BinaryName != "" && toolInstallOptions.BinaryName == "" {
-								toolInstallOptions.BinaryName = bi.BinaryName
-							}
-							spec = "" // 走 clone 路径
-							if v {
-								log.Info().Msgf("mapped builtin tool %s -> clone %s (build=%s)", orig, cloneURL, toolInstallOptions.BuildMethod)
-							}
-						} else { // go install 模式
-							mapped := bi.URL + ver
-							spec = mapped
-							if bi.BinaryName != "" && toolInstallOptions.BinaryName == "" {
-								toolInstallOptions.BinaryName = bi.BinaryName
-							}
-							if v {
-								log.Info().Msgf("mapped builtin tool %s -> %s", orig, spec)
-							}
-						}
-					}
-				}
 			}
 
 			// 同时给出 --clone 与 spec -> 不允许，避免歧义
@@ -277,6 +210,8 @@ Notes:
 				Quiet:          quiet,
 				GoCLIToolsPath: gocliCtx.Config.Tools.GoCLIToolsPath,
 				ToolsConfigDir: gocliCtx.Config.Tools.ToolsConfigDir,
+				Yes:            toolInstallYes,
+				Input:          cmd.InOrStdin(),
 			}
 
 			if err := toolsPkg.ExecuteInstallCommand(installOpts, cmd.OutOrStdout()); err != nil {
@@ -284,10 +219,6 @@ Notes:
 				return
 			}
 		},
-	}
-	toolUpdateCmd = &cobra.Command{
-		Use:   "update",
-		Short: "Update a tool",
 	}
 	toolAddCmd = &cobra.Command{
 		Use:   "add",
@@ -305,12 +236,12 @@ Basic usage:
 Examples:
   gocli tools uninstall golangci-lint
   gocli tools uninstall golangci-lint --yes
-  gocli tools uninstall golangci-lint --dry
+  gocli tools uninstall golangci-lint --dry-run
 
 Notes:
   - The command searches for tools by name using the same search logic as other commands.
   - For each match it will ask for confirmation before deleting unless -y/--yes is provided.
-  - Use --dry to perform a dry-run: actions will be logged but no file will be removed.
+  - Use --dry-run to perform a dry-run: actions will be logged but no file will be removed.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			out := cmd.OutOrStdout()
@@ -465,6 +396,7 @@ func addToolsInstallFlags(cmd *cobra.Command, opts *toolsPkg.InstallOptions, glo
 	cmd.Flags().StringVar(&opts.GoreleaserConfig, "goreleaser-config", "", "Path to goreleaser config file (relative to repo root or workdir)")
 	cmd.Flags().BoolVarP(&opts.RecurseSubmodules, "recurse-submodules", "r", false, "Clone Git submodules recursively when using --clone")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Force reinstallation even if the tool already exists (overwrites existing installation)")
+	cmd.Flags().BoolVarP(&toolInstallYes, "yes", "y", false, "Automatic yes to prompts; assume 'yes' for all confirmations")
 }
 
 // addToolsSearchFlags registers flags for the `tools search` command.
@@ -483,7 +415,7 @@ func addToolsRunFlags(_ *cobra.Command) {
 
 func addToolUninstallFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&toolUninstallYes, "yes", "y", false, "Answer yes to all confirmations")
-	cmd.Flags().BoolVarP(&toolUninstallDry, "dry", "d", false, "Dry-run mode: show what would be removed but do not delete files")
+	cmd.Flags().BoolVarP(&toolUninstallDry, "dry-run", "n", false, "Dry-run mode: show what would be removed but do not delete files")
 	cmd.Flags().BoolVarP(&toolUninstallFuzzy, "fuzzy", "z", false, "Allow fuzzy substring matching when searching installed binaries (off by default)")
 	cmd.Flags().BoolVarP(&toolUninstallAll, "all", "a", false, "When multiple instances are found, delete all matches (prompt once)")
 }
@@ -500,7 +432,6 @@ func init() {
 	toolsCmd.AddCommand(
 		toolListCmd,
 		toolInstallCmd,
-		toolUpdateCmd,
 		toolAddCmd,
 		toolUninstallCmd,
 		toolSearchCmd,

@@ -291,5 +291,14 @@
             "os": "",
             "arch": ""
         }
+    },
+    "gsa": {
+        "name": "gsa",
+        "url": "github.com/Zxilly/go-size-analyzer/cmd/gsa@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
     }
 }

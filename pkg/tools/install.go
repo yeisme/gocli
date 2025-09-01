@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"github.com/yeisme/gocli/pkg/configs"
 )
 
 // goInstallWithEnv 支持传入额外环境变量（如 GOBIN）
@@ -200,16 +202,22 @@ type InstallCommandOptions struct {
 	Quiet          bool
 	GoCLIToolsPath string
 	ToolsConfigDir []string
+
+	// Yes: 非交互模式直接执行
+	Yes bool
+	// Input: 交互输入源（默认 os.Stdin）
+	Input io.Reader
 }
 
 // ExecuteInstallCommand 执行install命令的封装函数
 func ExecuteInstallCommand(opts InstallCommandOptions, outputWriter io.Writer) error {
-	// validate basic flags and batch case
 	if err := validateInstallCmdOptions(opts); err != nil {
 		return err
 	}
+	if isBatchInstallCase(opts) {
+		return executeBatchInstall(opts)
+	}
 
-	// resolve install path
 	pathFlag, msg, err := resolveInstallPath(opts)
 	if err != nil {
 		return err
@@ -218,40 +226,156 @@ func ExecuteInstallCommand(opts InstallCommandOptions, outputWriter io.Writer) e
 		fmt.Fprintln(outputWriter, msg)
 	}
 
-	// prepare variables
-	cloneURL := opts.CloneURL
-	makeTarget := opts.MakeTarget
-	envFlags := append([]string{}, opts.Env...)
-	binDirs := append([]string{}, opts.BinDirs...)
-	releaseBuild := opts.ReleaseBuild
-	debugBuild := opts.DebugBuild
-	v := opts.Verbose
-
-	// map builtin short-name to spec/clone when applicable
-	var spec string
-	if len(opts.Args) > 0 {
-		spec = opts.Args[0]
+	cloneURL, makeTarget, envFlags, binDirs, releaseBuild, debugBuild, v := prepareInstallVariables(opts)
+	spec := firstArg(opts.Args)
+	spec, cloneURL, makeTarget, binDirs, envFlags, addBuildMethod, workDir, goreleaserConfig, binaryName := mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget, binDirs, envFlags, opts.ToolsConfigDir, v, outputWriter)
+	if err = maybeSuggestUnknownShortName(spec, opts, outputWriter); err != nil {
+		return err
 	}
-	spec, cloneURL, makeTarget, binDirs, envFlags, addBuildMethod, workDir, goreleaserConfig, binaryName :=
-		mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget, binDirs, envFlags, opts.ToolsConfigDir, v, outputWriter)
+	if err = checkMutualExclusion(cloneURL, spec); err != nil {
+		return err
+	}
+	installOpts := buildInstallOptions(spec, cloneURL, makeTarget, pathFlag, envFlags, binDirs,
+		v, releaseBuild, debugBuild, binaryName, addBuildMethod, opts.BuildArgs, workDir, goreleaserConfig, opts)
+	if err = validateFinalInstallOptions(installOpts); err != nil {
+		return err
+	}
+	if !opts.Yes {
+		proceed, confirmErr := confirmInstall(installOpts, opts, outputWriter)
+		if confirmErr != nil {
+			return confirmErr
+		}
+		if !proceed {
+			fmt.Fprintln(outputWriter, "aborted.")
+			return nil
+		}
+	}
+	res, err := InstallTool(installOpts)
+	printInstallResult(res, err, outputWriter)
+	return err
+}
 
-	// mutual exclusion check
+// isBatchInstallCase returns true if we should perform batch installation logic
+func isBatchInstallCase(opts InstallCommandOptions) bool {
+	return opts.CloneURL == "" && len(opts.Args) == 0
+}
+
+// executeBatchInstall performs batch installation of configured tools
+func executeBatchInstall(opts InstallCommandOptions) error {
+	for _, p := range opts.ToolsConfigDir {
+		_ = LoadUserTools(p)
+	}
+	cfg := configs.GetConfig()
+	if opts.Global {
+		return BatchInstallConfiguredGlobalTools(cfg, opts.Env, opts.Verbose)
+	}
+	return BatchInstallConfiguredTools(cfg, opts.Env, opts.Verbose)
+}
+
+// prepareInstallVariables extracts frequently used mutable copies
+func prepareInstallVariables(opts InstallCommandOptions) (cloneURL, makeTarget string, envFlags, binDirs []string, releaseBuild, debugBuild, verbose bool) {
+	cloneURL = opts.CloneURL
+	makeTarget = opts.MakeTarget
+	envFlags = append([]string{}, opts.Env...)
+	binDirs = append([]string{}, opts.BinDirs...)
+	releaseBuild = opts.ReleaseBuild
+	debugBuild = opts.DebugBuild
+	verbose = opts.Verbose
+	return
+}
+
+// firstArg returns first argument or empty string
+func firstArg(args []string) string {
+	if len(args) > 0 {
+		return args[0]
+	}
+	return ""
+}
+
+// maybeSuggestUnknownShortName prints fuzzy suggestions if short name not found; returns error when suggestions shown
+func maybeSuggestUnknownShortName(spec string, opts InstallCommandOptions, out io.Writer) error {
+	if spec == "" || strings.ContainsAny(spec, "/\\") {
+		return nil
+	}
+	for _, p := range opts.ToolsConfigDir {
+		_ = LoadUserTools(p)
+	}
+	if SearchTools(spec, opts.ToolsConfigDir) != nil {
+		return nil
+	}
+	matches := FindToolsFuzzy(spec, opts.ToolsConfigDir)
+	if len(matches) == 0 {
+		return nil
+	}
+	fmt.Fprintf(out, "Tool '%s' not found. Did you mean one of these?\n", spec)
+	for _, m := range matches {
+		fmt.Fprintf(out, "  - %s", m.Name)
+		if strings.TrimSpace(m.URL) != "" {
+			fmt.Fprintf(out, " (url=%s)", m.URL)
+		}
+		if strings.TrimSpace(m.CloneURL) != "" {
+			fmt.Fprintf(out, " (clone=%s)", m.CloneURL)
+		}
+		fmt.Fprintln(out)
+	}
+	return fmt.Errorf("unknown tool: %s", spec)
+}
+
+// checkMutualExclusion validates cloneURL and spec are not both set
+func checkMutualExclusion(cloneURL, spec string) error {
 	if cloneURL != "" && spec != "" {
 		return fmt.Errorf("please specify either a module/local path or --clone, not both")
 	}
+	return nil
+}
 
-	installOpts := buildInstallOptions(spec, cloneURL, makeTarget, pathFlag, envFlags, binDirs, v, releaseBuild, debugBuild, binaryName, addBuildMethod, opts.BuildArgs, workDir, goreleaserConfig, opts)
-
-	if installOpts.CloneURL == "" && installOpts.Spec == "" {
+// validateFinalInstallOptions ensures we have something to install
+func validateFinalInstallOptions(opts InstallOptions) error {
+	if opts.CloneURL == "" && opts.Spec == "" {
 		return fmt.Errorf("missing tool spec provide a module path or use --clone")
 	}
+	return nil
+}
 
-	res, err := InstallTool(installOpts)
-
-	// print outputs and results
-	printInstallResult(res, err, outputWriter)
-
-	return err
+// confirmInstall prints plan and asks for confirmation; returns proceed
+func confirmInstall(installOpts InstallOptions, opts InstallCommandOptions, outputWriter io.Writer) (bool, error) {
+	reader := bufio.NewReader(opts.Input)
+	if reader == nil {
+		reader = bufio.NewReader(os.Stdin)
+	}
+	fmt.Fprintln(outputWriter, "Planned installation:")
+	if installOpts.CloneURL != "" {
+		fmt.Fprintf(outputWriter, "  Mode      : clone_build (%s)\n", firstNonEmpty(installOpts.BuildMethod, "make"))
+		fmt.Fprintf(outputWriter, "  CloneURL  : %s\n", installOpts.CloneURL)
+		if installOpts.MakeTarget != "" {
+			fmt.Fprintf(outputWriter, "  MakeTarget: %s\n", installOpts.MakeTarget)
+		}
+	} else {
+		fmt.Fprintln(outputWriter, "  Mode      : go_install")
+		fmt.Fprintf(outputWriter, "  Spec      : %s\n", installOpts.Spec)
+	}
+	if installOpts.Path != "" {
+		fmt.Fprintf(outputWriter, "  InstallDir: %s\n", filepath.Clean(installOpts.Path))
+	}
+	if installOpts.BinaryName != "" {
+		fmt.Fprintf(outputWriter, "  BinaryName: %s\n", installOpts.BinaryName)
+	}
+	if len(installOpts.Env) > 0 {
+		fmt.Fprintf(outputWriter, "  Env       : %s\n", strings.Join(installOpts.Env, ", "))
+	}
+	if len(installOpts.BinDirs) > 0 {
+		fmt.Fprintf(outputWriter, "  BinDirs   : %s\n", strings.Join(installOpts.BinDirs, ", "))
+	}
+	if installOpts.ReleaseBuild {
+		fmt.Fprintln(outputWriter, "  Flags     : release-build")
+	}
+	if installOpts.DebugBuild {
+		fmt.Fprintln(outputWriter, "  Flags     : debug-build")
+	}
+	fmt.Fprint(outputWriter, "Proceed? [y/N]: ")
+	ans, _ := reader.ReadString('\n')
+	ans = strings.TrimSpace(strings.ToLower(ans))
+	return ans == "y" || ans == "yes", nil
 }
 
 // validateInstallCmdOptions checks mutual exclusions and batch-case handling
@@ -406,4 +530,14 @@ func printInstallResult(res InstallResult, err error, out io.Writer) {
 	if res.ProbableInstallDir != "" && res.InstallDir == "" {
 		fmt.Fprintf(out, "probable install dir: %s\n", filepath.Clean(res.ProbableInstallDir))
 	}
+}
+
+// firstNonEmpty returns first non-empty string else fallback
+func firstNonEmpty(s ...string) string {
+	for _, v := range s {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
 }

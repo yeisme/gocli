@@ -67,12 +67,7 @@ func InitLogger(ctx context.Context, config *configs.LogConfig, appConfig *confi
 	}
 
 	// 创建多重写入器
-	var output io.Writer
-	if len(writers) == 1 {
-		output = writers[0]
-	} else {
-		output = io.MultiWriter(writers...)
-	}
+	output := io.MultiWriter(writers...)
 
 	var logger zerolog.Logger
 

@@ -26,8 +26,8 @@ func CopyTemplateFSToDir(src fs.FS, destDir string, force bool) error {
 	if src == nil {
 		return fmt.Errorf("source fs is nil")
 	}
-	if destDir == "" {
-		return fmt.Errorf("destDir is empty")
+	if strings.TrimSpace(destDir) == "" {
+		destDir = "."
 	}
 	if err := os.MkdirAll(destDir, 0o755); err != nil {
 		return fmt.Errorf("create dest dir: %w", err)

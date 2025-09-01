@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -90,9 +91,10 @@ Notes:
 			if err := project.ExecuteInitCommand(gocliCtx, args, initOptions, cmd.OutOrStdout()); err != nil {
 				// 如果是 ExecError（包含 stderr），直接把格式化后的错误作为消息打印，避免 zerolog 将换行转义
 				if ee, ok := err.(*executor.ExecError); ok {
-					log.Error().Msgf("failed to initialize project: %s", ee.Error())
+					log.Warn().Msg("failed to initialize project: " + ee.Error())
 				} else {
-					log.Error().Err(err).Msg("failed to initialize project")
+					log.Warn().Msg("failed to initialize project")
+					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				}
 			}
 		},
@@ -218,6 +220,10 @@ Notes:
   - Use -n / --dry-run to only print the underlying commands.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				_ = cmd.Help()
+				return
+			}
 			runOptions.V = gocliCtx.Config.App.Verbose
 			if err := project.ExecuteRunCommand(gocliCtx, runOptions, args); err != nil {
 				cmd.PrintErrf("Error: %v\n", err)

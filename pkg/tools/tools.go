@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -204,33 +203,6 @@ func listExecutablesInDir(dir string, source toolSourceType) []ToolInfo {
 		})
 	}
 	return tools
-}
-
-func isExecutable(name, dir string) bool {
-	// Windows: 允许常见可执行后缀；非 Windows: 通过权限位判断
-	if runtime.GOOS == "windows" {
-		lower := strings.ToLower(name)
-		return strings.HasSuffix(lower, ".exe") || strings.HasSuffix(lower, ".bat") || strings.HasSuffix(lower, ".cmd") || strings.HasSuffix(lower, ".ps1")
-	}
-	// 非 Windows：检查是否设置了可执行位
-	info, err := os.Stat(filepath.Join(dir, name))
-	if err != nil {
-		return false
-	}
-	mode := info.Mode()
-	return mode&0o111 != 0
-}
-
-func stripExeSuffix(name string) string {
-	if runtime.GOOS == "windows" {
-		lower := strings.ToLower(name)
-		for _, ext := range []string{".exe", ".bat", ".cmd", ".ps1"} {
-			if strings.HasSuffix(lower, ext) {
-				return name[:len(name)-len(ext)]
-			}
-		}
-	}
-	return name
 }
 
 func sortTools(ts []ToolInfo) {

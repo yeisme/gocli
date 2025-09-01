@@ -4,21 +4,22 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"time"
 )
 
+// expandPath expands env vars and ~ to user home
 func expandPath(p string) string {
 	if p == "" {
 		return p
 	}
-	// 展开环境变量
 	p = os.ExpandEnv(p)
 	if strings.HasPrefix(p, "~") {
 		if home, err := os.UserHomeDir(); err == nil {
 			if p == "~" {
 				return home
 			}
-			// 处理 ~/xxx
 			if len(p) >= 2 && (p[1] == '/' || p[1] == '\\') {
 				return filepath.Join(home, p[2:])
 			}
@@ -35,30 +36,22 @@ func splitRepoAndRef(s string) (string, string) {
 	return s[:idx], s[idx+1:]
 }
 
-// ensureVersionSuffix 在满足以下条件时为 spec 追加 @latest：
-//   - 没有包含 '@'
-//   - 不是本地路径（不是绝对路径；不以 ./ 或 ../ 开头；路径在本地不存在）
+// ensureVersionSuffix appends @latest when appropriate
 func ensureVersionSuffix(spec string) string {
 	if spec == "" || strings.Contains(spec, "@") {
 		return spec
 	}
-
-	// 明显的本地路径：绝对路径、./ 或 ../
 	if filepath.IsAbs(spec) || strings.HasPrefix(spec, "./") || strings.HasPrefix(spec, "../") ||
 		strings.HasPrefix(spec, ".\\") || strings.HasPrefix(spec, "..\\") {
 		return spec
 	}
-
-	// 若文件系统上确实存在该路径（目录或文件），视为本地
 	if _, err := os.Stat(spec); err == nil {
 		return spec
 	}
-
-	// 其他情况，当作模块路径，追加 @latest
 	return spec + "@latest"
 }
 
-// envLookup 在形如 KEY=VAL 的切片中查找 KEY 的值
+// envLookup find KEY=VAL entry
 func envLookup(env []string, key string) string {
 	prefix := key + "="
 	for _, e := range env {
@@ -69,14 +62,11 @@ func envLookup(env []string, key string) string {
 	return ""
 }
 
-// extractRepoName 尽力从仓库 URL 中提取仓库名（去除 .git 尾缀）
 func extractRepoName(u string) string {
 	s := u
-	// 去掉片段
 	if i := strings.LastIndex(s, "#"); i >= 0 {
 		s = s[:i]
 	}
-	// 兼容 ssh/https：取最后一个路径分隔符后的名字
 	idx := strings.LastIndexAny(s, "/:")
 	if idx >= 0 && idx+1 < len(s) {
 		s = s[idx+1:]
@@ -88,9 +78,7 @@ func extractRepoName(u string) string {
 	return s
 }
 
-// sanitizeName 清理为文件夹安全名（Windows 也安全）
 func sanitizeName(s string) string {
-	// 替换常见非法字符
 	r := strings.NewReplacer(
 		"<", "-",
 		">", "-",
@@ -108,7 +96,7 @@ func sanitizeName(s string) string {
 	return s
 }
 
-// copyFile 以 0644 权限复制普通文件（若目标存在则覆盖）
+// copyFile copies file with 0644 permissions (overwrites target)
 func copyFile(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
@@ -116,7 +104,6 @@ func copyFile(src, dst string) error {
 	}
 	defer func() { _ = in.Close() }()
 
-	// 确保目标目录存在
 	if mkErr := os.MkdirAll(filepath.Dir(dst), 0o755); mkErr != nil {
 		return mkErr
 	}
@@ -131,4 +118,52 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	return out.Chmod(0o644)
+}
+
+// isExecutable checks if filename is executable in dir (platform specific)
+func isExecutable(name, dir string) bool {
+	if runtime.GOOS == "windows" {
+		lower := strings.ToLower(name)
+		return strings.HasSuffix(lower, ".exe") || strings.HasSuffix(lower, ".bat") || strings.HasSuffix(lower, ".cmd") || strings.HasSuffix(lower, ".ps1")
+	}
+	info, err := os.Stat(filepath.Join(dir, name))
+	if err != nil {
+		return false
+	}
+	mode := info.Mode()
+	return mode&0o111 != 0
+}
+
+func stripExeSuffix(name string) string {
+	if runtime.GOOS == "windows" {
+		lower := strings.ToLower(name)
+		for _, ext := range []string{".exe", ".bat", ".cmd", ".ps1"} {
+			if strings.HasSuffix(lower, ext) {
+				return name[:len(name)-len(ext)]
+			}
+		}
+	}
+	return name
+}
+
+// SnapshotExecutables quick snapshot of executable files modification time
+func SnapshotExecutables(dir string) map[string]time.Time {
+	m := make(map[string]time.Time)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return m
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !isExecutable(name, dir) {
+			continue
+		}
+		if fi, err := e.Info(); err == nil {
+			m[name] = fi.ModTime()
+		}
+	}
+	return m
 }
