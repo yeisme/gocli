@@ -68,6 +68,11 @@ func (o *InitOptions) ExecConfigInit(args, initGitIgnore []string) ([]string, er
 
 	var initList InitList
 
+	// Ensure directory is set; default to current directory when empty.
+	if strings.TrimSpace(o.Dir) == "" {
+		o.Dir = "."
+	}
+
 	if o.GitInit {
 		str, err := o.execGitInit()
 		initList.AddOutput(str)
