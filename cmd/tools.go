@@ -13,6 +13,7 @@ import (
 var (
 	toolInstallOptions toolsPkg.InstallOptions
 	toolInstallGlobal  bool
+	toolInstallYes     bool
 	toolUninstallYes   bool
 	toolUninstallDry   bool
 	toolUninstallFuzzy bool
@@ -209,6 +210,8 @@ Notes:
 				Quiet:          quiet,
 				GoCLIToolsPath: gocliCtx.Config.Tools.GoCLIToolsPath,
 				ToolsConfigDir: gocliCtx.Config.Tools.ToolsConfigDir,
+				Yes:            toolInstallYes,
+				Input:          cmd.InOrStdin(),
 			}
 
 			if err := toolsPkg.ExecuteInstallCommand(installOpts, cmd.OutOrStdout()); err != nil {
@@ -233,12 +236,12 @@ Basic usage:
 Examples:
   gocli tools uninstall golangci-lint
   gocli tools uninstall golangci-lint --yes
-  gocli tools uninstall golangci-lint --dry
+  gocli tools uninstall golangci-lint --dry-run
 
 Notes:
   - The command searches for tools by name using the same search logic as other commands.
   - For each match it will ask for confirmation before deleting unless -y/--yes is provided.
-  - Use --dry to perform a dry-run: actions will be logged but no file will be removed.
+  - Use --dry-run to perform a dry-run: actions will be logged but no file will be removed.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			out := cmd.OutOrStdout()
@@ -393,6 +396,7 @@ func addToolsInstallFlags(cmd *cobra.Command, opts *toolsPkg.InstallOptions, glo
 	cmd.Flags().StringVar(&opts.GoreleaserConfig, "goreleaser-config", "", "Path to goreleaser config file (relative to repo root or workdir)")
 	cmd.Flags().BoolVarP(&opts.RecurseSubmodules, "recurse-submodules", "r", false, "Clone Git submodules recursively when using --clone")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Force reinstallation even if the tool already exists (overwrites existing installation)")
+	cmd.Flags().BoolVarP(&toolInstallYes, "yes", "y", false, "Automatic yes to prompts; assume 'yes' for all confirmations")
 }
 
 // addToolsSearchFlags registers flags for the `tools search` command.
