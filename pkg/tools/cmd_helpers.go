@@ -190,6 +190,7 @@ func installFromInfo(bi *InstallToolsInfo, targetPath, category string, env []st
 			ReleaseBuild: false,
 			DebugBuild:   false,
 			BinaryName:   bi.BinaryName,
+			Tags:         bi.Tags,
 		})
 		PrintInstallOutput(res.Output, err, verbose)
 		if err != nil {
@@ -216,6 +217,7 @@ func installFromInfo(bi *InstallToolsInfo, targetPath, category string, env []st
 			DebugBuild:        false,
 			Path:              targetPath,
 			Verbose:           verbose,
+			Tags:              bi.Tags,
 		})
 		PrintInstallOutput(res.Output, err, verbose)
 		if err != nil {
@@ -253,6 +255,7 @@ func installFromConfigTool(t configs.Tool, targetPath, category string, env []st
 			ReleaseBuild: t.ReleaseBuild,
 			DebugBuild:   t.DebugBuild,
 			BinaryName:   t.BinaryName,
+			Tags:         t.Tags,
 		})
 		PrintInstallOutput(res.Output, err, verbose)
 		if err != nil {
@@ -281,6 +284,7 @@ func installFromConfigTool(t configs.Tool, targetPath, category string, env []st
 			DebugBuild:        t.DebugBuild,
 			Path:              targetPath,
 			Verbose:           verbose,
+			Tags:              t.Tags,
 		})
 		PrintInstallOutput(res.Output, err, verbose)
 		if err != nil {
@@ -331,6 +335,7 @@ func InstallConfiguredToolsFromList(list []configs.Tool, targetPath, category st
 				ReleaseBuild: t.ReleaseBuild,
 				DebugBuild:   t.DebugBuild,
 				BinaryName:   t.BinaryName,
+				Tags:         t.Tags,
 			})
 			PrintInstallOutput(res.Output, err, verbose)
 			if err != nil {
@@ -362,6 +367,7 @@ func InstallConfiguredToolsFromList(list []configs.Tool, targetPath, category st
 				DebugBuild:        t.DebugBuild,
 				Path:              targetPath,
 				Verbose:           verbose,
+				Tags:              t.Tags,
 			})
 			PrintInstallOutput(res.Output, err, verbose)
 			if err != nil {

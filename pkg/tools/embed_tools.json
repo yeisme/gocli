@@ -300,5 +300,89 @@
             "os": "",
             "arch": ""
         }
+    },
+    "go-swagger": {
+        "name": "swagger",
+        "url": "github.com/go-swagger/go-swagger/cmd/swagger@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "curlie": {
+        "name": "curlie",
+        "url": "github.com/rs/curlie@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "ent": {
+        "name": "ent",
+        "url": "entgo.io/ent/cmd/ent@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "go-sqlbuilder": {
+        "name": "go-sqlbuilder",
+        "url": "github.com/huandu/go-sqlbuilder@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "gorm-gentool": {
+        "name": "gentool",
+        "url": "gorm.io/gen/tools/gentool@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "sqlc": {
+        "name": "sqlc",
+        "url": "github.com/sqlc-dev/sqlc/cmd/sqlc@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        }
+    },
+    "usql-all": {
+        "name": "usql",
+        "url": "github.com/xo/usql@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        },
+        "tags": [
+            "all"
+        ],
+        "env": [
+            "CGO_ENABLED=1"
+        ]
+    },
+    "usql-most": {
+        "name": "usql",
+        "url": "github.com/xo/usql@latest",
+        "install_type": {
+            "name": "Go",
+            "os": "",
+            "arch": ""
+        },
+        "tags": [
+            "most"
+        ],
+        "env": [
+            "CGO_ENABLED=0"
+        ]
     }
 }

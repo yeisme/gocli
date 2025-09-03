@@ -55,6 +55,9 @@ type InstallOptions struct {
 
 	// Force: 强制模型，如果目标目录已存在则覆盖，否则就复用
 	Force bool
+
+	// Tags: 构建标签，用于 go install 的 -tags 参数
+	Tags []string
 }
 
 // InstallResult 统一返回值
@@ -152,6 +155,9 @@ func InstallTool(opts InstallOptions) (InstallResult, error) {
 	if opts.DebugBuild {
 		buildArgs = append(buildArgs, "-gcflags=all=-N -l")
 	}
+	if len(opts.Tags) > 0 {
+		buildArgs = append(buildArgs, "-tags="+strings.Join(opts.Tags, ","))
+	}
 	// 在 go install 前快照目标安装目录（若可确定），以便安装后重命名
 	var preSnap map[string]time.Time
 	var targetDir string
@@ -228,14 +234,14 @@ func ExecuteInstallCommand(opts InstallCommandOptions, outputWriter io.Writer) e
 
 	cloneURL, makeTarget, envFlags, binDirs, releaseBuild, debugBuild, v := prepareInstallVariables(opts)
 	spec := firstArg(opts.Args)
-	spec, cloneURL, makeTarget, binDirs, envFlags, addBuildMethod, workDir, goreleaserConfig, binaryName := mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget, binDirs, envFlags, opts.ToolsConfigDir, v, outputWriter)
+	spec, cloneURL, makeTarget, binDirs, envFlags, tags, addBuildMethod, workDir, goreleaserConfig, binaryName := mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget, binDirs, envFlags, opts.Tags, opts.ToolsConfigDir, v, outputWriter)
 	if err = maybeSuggestUnknownShortName(spec, opts, outputWriter); err != nil {
 		return err
 	}
 	if err = checkMutualExclusion(cloneURL, spec); err != nil {
 		return err
 	}
-	installOpts := buildInstallOptions(spec, cloneURL, makeTarget, pathFlag, envFlags, binDirs,
+	installOpts := buildInstallOptions(spec, cloneURL, makeTarget, pathFlag, envFlags, binDirs, tags,
 		v, releaseBuild, debugBuild, binaryName, addBuildMethod, opts.BuildArgs, workDir, goreleaserConfig, opts)
 	if err = validateFinalInstallOptions(installOpts); err != nil {
 		return err
@@ -372,6 +378,9 @@ func confirmInstall(installOpts InstallOptions, opts InstallCommandOptions, outp
 	if installOpts.DebugBuild {
 		fmt.Fprintln(outputWriter, "  Flags     : debug-build")
 	}
+	if len(installOpts.Tags) > 0 {
+		fmt.Fprintf(outputWriter, "  Tags      : %s\n", strings.Join(installOpts.Tags, ", "))
+	}
 	fmt.Fprint(outputWriter, "Proceed? [y/N]: ")
 	ans, _ := reader.ReadString('\n')
 	ans = strings.TrimSpace(strings.ToLower(ans))
@@ -407,13 +416,13 @@ func resolveInstallPath(opts InstallCommandOptions) (string, string, error) {
 }
 
 // mapBuiltinToolIfNeeded maps short builtin names to spec/clone and augments flags
-func mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget string, binDirs, envFlags []string, toolsConfigDir []string, v bool, outputWriter io.Writer) (string, string, string, []string, []string, string, string, string, string) {
+func mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget string, binDirs, envFlags, tags []string, toolsConfigDir []string, v bool, outputWriter io.Writer) (string, string, string, []string, []string, []string, string, string, string, string) {
 	var buildMethod, workDir, goreleaserConfig, binaryName string
 	if spec == "" {
-		return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+		return spec, cloneURL, makeTarget, binDirs, envFlags, tags, buildMethod, workDir, goreleaserConfig, binaryName
 	}
 	if strings.Contains(spec, "/") || strings.Contains(spec, "\\") {
-		return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+		return spec, cloneURL, makeTarget, binDirs, envFlags, tags, buildMethod, workDir, goreleaserConfig, binaryName
 	}
 
 	// load user tools
@@ -441,7 +450,7 @@ func mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget string, binDirs, envFlags
 	}
 
 	if bi == nil {
-		return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+		return spec, cloneURL, makeTarget, binDirs, envFlags, tags, buildMethod, workDir, goreleaserConfig, binaryName
 	}
 
 	if strings.TrimSpace(bi.CloneURL) != "" {
@@ -479,7 +488,7 @@ func mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget string, binDirs, envFlags
 		if v {
 			fmt.Fprintf(outputWriter, "mapped builtin tool %s -> clone %s (build=%s)\n", orig, cloneURL, buildMethod)
 		}
-		return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+		return spec, cloneURL, makeTarget, binDirs, envFlags, tags, buildMethod, workDir, goreleaserConfig, binaryName
 	}
 
 	// go install 模式
@@ -491,11 +500,11 @@ func mapBuiltinToolIfNeeded(spec, cloneURL, makeTarget string, binDirs, envFlags
 	if v {
 		fmt.Fprintf(outputWriter, "mapped builtin tool %s -> %s\n", orig, spec)
 	}
-	return spec, cloneURL, makeTarget, binDirs, envFlags, buildMethod, workDir, goreleaserConfig, binaryName
+	return spec, cloneURL, makeTarget, binDirs, envFlags, tags, buildMethod, workDir, goreleaserConfig, binaryName
 }
 
 // buildInstallOptions builds InstallOptions from resolved inputs
-func buildInstallOptions(spec, cloneURL, makeTarget, pathFlag string, envFlags, binDirs []string, verbose bool, releaseBuild, debugBuild bool, binaryName, buildMethod string, buildArgs []string, workDir, goreleaserConfig string, opts InstallCommandOptions) InstallOptions {
+func buildInstallOptions(spec, cloneURL, makeTarget, pathFlag string, envFlags, binDirs, tags []string, verbose bool, releaseBuild, debugBuild bool, binaryName, buildMethod string, buildArgs []string, workDir, goreleaserConfig string, opts InstallCommandOptions) InstallOptions {
 	return InstallOptions{
 		Spec:              spec,
 		CloneURL:          cloneURL,
@@ -513,6 +522,7 @@ func buildInstallOptions(spec, cloneURL, makeTarget, pathFlag string, envFlags, 
 		GoreleaserConfig:  goreleaserConfig,
 		RecurseSubmodules: opts.RecurseSubmodules,
 		Force:             opts.Force,
+		Tags:              tags,
 	}
 }
 

@@ -1048,6 +1048,21 @@
           "type": "boolean",
           "title": "DebugBuild",
           "description": "Enable debug build mode (extra symbols"
+        },
+        "tags": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Tags",
+              "description": "Build tags to pass to go install"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "type": "object"

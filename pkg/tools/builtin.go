@@ -39,6 +39,8 @@ type (
 		InstallType *InstallType `mapstructure:"install_type" jsonschema:"description=Platform constraints for installation; contains name/os/arch; may be null,nullable"`
 		// BinaryName 指定该工具生成的二进制文件名（可选）；
 		BinaryName string `mapstructure:"binary_name" jsonschema:"description=Optional binary filename produced by the tool; if empty default rules apply (e.g., go install),nullable"`
+		// Tags: 构建标签，用于 go install 的 -tags 参数
+		Tags []string `mapstructure:"tags" jsonschema:"description=Build tags to pass to go install,nullable,uniqueItems"`
 	}
 
 	// InstallType 定义了内置工具的安装类型

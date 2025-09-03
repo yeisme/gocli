@@ -48,6 +48,8 @@ type Tool struct {
 	// 预设构建模式
 	ReleaseBuild bool `mapstructure:"release_build,omitempty" jsonschema:"title=ReleaseBuild,description=Enable release build mode (may enable optimizations)"`
 	DebugBuild   bool `mapstructure:"debug_build,omitempty" jsonschema:"title=DebugBuild,description=Enable debug build mode (extra symbols, no optimizations)"`
+	// 构建标签，用于 go install 的 -tags 参数
+	Tags []string `mapstructure:"tags,omitempty" jsonschema:"title=Tags,description=Build tags to pass to go install,uniqueItems,nullable"`
 }
 
 func setToolsConfigDefaults() {

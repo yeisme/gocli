@@ -123,6 +123,20 @@
               "type": "null"
             }
           ]
+        },
+        "tags": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "description": "Build tags to pass to go install"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false,

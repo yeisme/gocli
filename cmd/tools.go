@@ -397,6 +397,7 @@ func addToolsInstallFlags(cmd *cobra.Command, opts *toolsPkg.InstallOptions, glo
 	cmd.Flags().BoolVarP(&opts.RecurseSubmodules, "recurse-submodules", "r", false, "Clone Git submodules recursively when using --clone")
 	cmd.Flags().BoolVarP(&opts.Force, "force", "f", false, "Force reinstallation even if the tool already exists (overwrites existing installation)")
 	cmd.Flags().BoolVarP(&toolInstallYes, "yes", "y", false, "Automatic yes to prompts; assume 'yes' for all confirmations")
+	cmd.Flags().StringSliceVarP(&opts.Tags, "tag", "t", nil, "Build tags to pass to go install, e.g.: --tag sqlite3 --tag postgres")
 }
 
 // addToolsSearchFlags registers flags for the `tools search` command.
