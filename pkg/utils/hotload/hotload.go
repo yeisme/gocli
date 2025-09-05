@@ -1,4 +1,4 @@
-// Package hotload provides high-performance utilities for monitoring file changes and triggering hot-reloading.
+// Package hotload 提供高性能的文件变更监控工具，用于触发热重载.
 package hotload
 
 import (
@@ -25,30 +25,30 @@ var (
 	logEventCountMap   = make(map[string]int)
 	logEventCountMutex sync.Mutex
 
-	// saveDetection tracks potential file saves (size 0 -> actual size pattern)
+	// saveDetection 跟踪可能的编辑器保存操作（先截断为 0 字节，然后写入实际内容）的时间点
 	saveDetectionMap   = make(map[string]time.Time)
 	saveDetectionMutex sync.Mutex
 )
 
-// Func defines the type for the hot-reloading hook function.
+// Func 定义热重载钩子函数的类型.
 type Func func()
 
-// fileState stores the essential metadata and content hash of a file to detect real changes.
+// fileState 存储用于检测真实变更的文件关键信息（修改时间、大小和内容哈希）.
 type fileState struct {
 	modTime time.Time
 	size    int64
-	hash    string // MD5 hash of file content for small files, or content-based checksum
+	hash    string // 对于小文件为内容的 MD5 哈希，对于大文件为基于内容的简单校验标识
 }
 
-// stateCache is a map from file path to its last known state.
+// stateCache 表示从文件路径到其上一次已知状态的映射.
 type stateCache map[string]fileState
 
-// calculateFileHash computes MD5 hash for small files (< 1MB) to detect content changes
+// calculateFileHash 为小文件（<1MB）计算 MD5 哈希以检测内容变更
 func calculateFileHash(filePath string, size int64) string {
-	// Only calculate hash for small files to avoid performance issues
+	// 仅为小文件计算哈希以避免性能问题
 	const maxHashSize = 1024 * 1024 // 1MB
 	if size > maxHashSize {
-		// For large files, use size + modtime as a simple checksum
+		// 对于大文件，使用大小作为简单校验标识
 		return fmt.Sprintf("large:%d", size)
 	}
 
@@ -71,11 +71,11 @@ func calculateFileHash(filePath string, size int64) string {
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
-// isSignificantFile checks if a file is significant enough to warrant hash-based change detection
+// isSignificantFile 检查文件是否足够重要以使用基于哈希的变更检测
 func isSignificantFile(filePath string) bool {
 	ext := strings.ToLower(filepath.Ext(filePath))
 
-	// Source code files and configuration files are significant
+	// 源代码文件和配置文件视为重要文件
 	significantExtensions := []string{
 		".go", ".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".c", ".cpp", ".h", ".hpp",
 		".rs", ".php", ".rb", ".cs", ".swift", ".kt", ".scala", ".clj", ".elm",
@@ -89,7 +89,7 @@ func isSignificantFile(filePath string) bool {
 		return true
 	}
 
-	// Also check for files without extensions that might be significant
+	// 也检查那些没有扩展名但可能重要的文件名
 	fileName := strings.ToLower(filepath.Base(filePath))
 	significantFiles := []string{
 		"dockerfile", "makefile", "rakefile", "gemfile", "pipfile",
@@ -133,8 +133,8 @@ func logIgnoreWithThrottle(reason, filename string) {
 	}
 }
 
-// newWatcherWithState performs an initial scan of a directory to build the initial state cache.
-// It walks the directory tree, runs os.Stat() on each file, and stores the metadata.
+// newWatcherWithState 对目录进行初始扫描以构建状态缓存.
+// 它遍历目录树，对每个文件读取元数据并记录状态.
 func newWatcherWithState(rootPath string, recursive bool) (stateCache, error) {
 	cache := make(stateCache)
 	walkFunc := func(path string, d fs.DirEntry, err error) error {
@@ -142,7 +142,7 @@ func newWatcherWithState(rootPath string, recursive bool) (stateCache, error) {
 			return err
 		}
 
-		// Skip .git directory and its contents
+		// 跳过 .git 目录及其内容
 		if strings.Contains(filepath.ToSlash(path), ".git/") {
 			if d.IsDir() {
 				return filepath.SkipDir
@@ -167,7 +167,7 @@ func newWatcherWithState(rootPath string, recursive bool) (stateCache, error) {
 				hash:    hash,
 			}
 		}
-		// If not recursive, skip subdirectories.
+		// 如果不递归，则跳过子目录.
 		if !recursive && d.IsDir() && path != rootPath {
 			return filepath.SkipDir
 		}
@@ -178,18 +178,20 @@ func newWatcherWithState(rootPath string, recursive bool) (stateCache, error) {
 		return nil, fmt.Errorf("failed to build initial state cache for %s: %w", rootPath, err)
 	}
 	return cache, nil
-} // shouldIgnoreFile checks if a file should be ignored based on the filters and ignore patterns
+}
+
+// shouldIgnoreFile 检查文件是否应基于过滤器或忽略模式被忽略
 func shouldIgnoreFile(filePath string, filters []string, ignorePatterns []string) bool {
 	// Convert path separators to forward slashes for consistent pattern matching
 	normalizedPath := filepath.ToSlash(filePath)
 	fileName := filepath.Base(filePath)
 
-	// Always ignore .git directory and its contents
+	// 始终忽略 .git 目录及其内容
 	if strings.Contains(normalizedPath, ".git/") || strings.HasPrefix(normalizedPath, ".git/") {
 		return true
 	}
 
-	// Always ignore common temporary and system files
+	// 始终忽略常见的临时或系统文件
 	commonIgnorePatterns := []string{
 		"*.tmp", "*.swp", "*.log", "~*", ".DS_Store", "Thumbs.db",
 		"*.lock", "*.pid", "*.temp",
@@ -197,13 +199,13 @@ func shouldIgnoreFile(filePath string, filters []string, ignorePatterns []string
 
 	allIgnorePatterns := append(ignorePatterns, commonIgnorePatterns...)
 
-	// Check ignore patterns first
+	// 先检查忽略模式
 	for _, pattern := range allIgnorePatterns {
-		// Remove leading ./ or .\ from pattern for consistency
+		// 移除前导 ./ 或 .\ 以保持一致性
 		cleanPattern := strings.TrimPrefix(strings.TrimPrefix(pattern, "./"), ".\\")
 		cleanPattern = filepath.ToSlash(cleanPattern)
 
-		// Check filename match
+		// 检查文件名是否匹配
 		if matched, _ := filepath.Match(cleanPattern, fileName); matched {
 			return true
 		}
@@ -213,7 +215,7 @@ func shouldIgnoreFile(filePath string, filters []string, ignorePatterns []string
 			if matched, _ := filepath.Match(cleanPattern, normalizedPath); matched {
 				return true
 			}
-			// Also check if the path starts with the pattern (for directory patterns)
+			// 也检查路径是否以该模式开头（用于目录模式）
 			if strings.HasSuffix(cleanPattern, "/") || strings.HasSuffix(cleanPattern, "*") {
 				if strings.HasPrefix(normalizedPath, strings.TrimSuffix(cleanPattern, "*")) {
 					return true
@@ -222,18 +224,18 @@ func shouldIgnoreFile(filePath string, filters []string, ignorePatterns []string
 		}
 	}
 
-	// If no filters specified, don't ignore (watch all files)
+	// 如果未指定过滤器，则不忽略（监视所有文件）
 	if len(filters) == 0 {
 		return false
 	}
 
-	// Check if file matches any filter
+	// 检查文件是否匹配任一过滤器
 	for _, filter := range filters {
 		cleanFilter := filepath.ToSlash(filter)
 		if matched, _ := filepath.Match(cleanFilter, fileName); matched {
 			return false // File matches filter, don't ignore
 		}
-		// Also check file extension patterns
+		// 也检查文件扩展名模式
 		if strings.HasPrefix(filter, "*.") {
 			ext := filepath.Ext(fileName)
 			if ext == filter[1:] { // Remove the * from *.go -> .go
@@ -242,22 +244,22 @@ func shouldIgnoreFile(filePath string, filters []string, ignorePatterns []string
 		}
 	}
 
-	// File doesn't match any filter, ignore it
+	// 文件未匹配任何过滤器，忽略它
 	return true
 }
 
-// shouldIgnoreDirectory checks if a directory should be ignored
+// shouldIgnoreDirectory 检查目录是否应被忽略
 func shouldIgnoreDirectory(dirPath string, ignorePatterns []string) bool {
-	// Convert path separators to forward slashes for consistent pattern matching
+	// 将路径分隔符规范为正斜杠以便匹配
 	normalizedPath := filepath.ToSlash(dirPath)
 	dirName := filepath.Base(dirPath)
 
-	// Always ignore .git directory
+	// 始终忽略 .git 目录
 	if strings.Contains(normalizedPath, ".git/") || strings.HasSuffix(normalizedPath, ".git") || dirName == ".git" {
 		return true
 	}
 
-	// Always ignore common directories
+	// 始终忽略常见的目录
 	commonIgnoreDirs := []string{
 		"node_modules", "vendor", ".vscode", ".idea", "dist", "build",
 		"tmp", "temp", ".cache", ".next", ".nuxt",
@@ -269,17 +271,17 @@ func shouldIgnoreDirectory(dirPath string, ignorePatterns []string) bool {
 		}
 	}
 
-	// Check user-defined ignore patterns
+	// 检查用户定义的忽略模式
 	for _, pattern := range ignorePatterns {
 		cleanPattern := strings.TrimPrefix(strings.TrimPrefix(pattern, "./"), ".\\")
 		cleanPattern = filepath.ToSlash(cleanPattern)
 
-		// Check directory name match
+		// 检查目录名是否匹配
 		if matched, _ := filepath.Match(cleanPattern, dirName); matched {
 			return true
 		}
 
-		// Check full path match for patterns with path separators
+		// 检查包含路径分隔符的模式是否匹配完整路径
 		if strings.Contains(cleanPattern, "/") {
 			if matched, _ := filepath.Match(cleanPattern, normalizedPath); matched {
 				return true
@@ -296,8 +298,8 @@ func shouldIgnoreDirectory(dirPath string, ignorePatterns []string) bool {
 	return false
 }
 
-// detectEditorSavePattern detects if the current file change is part of an editor save pattern
-// Many editors save files by truncating to 0 bytes first, then writing the actual content
+// detectEditorSavePattern 检测当前文件变更是否属于编辑器保存的模式
+// 许多编辑器保存文件时会先将文件截断为 0 字节，然后再写入实际内容
 func detectEditorSavePattern(filePath string, newSize int64) bool {
 	saveDetectionMutex.Lock()
 	defer saveDetectionMutex.Unlock()
@@ -325,7 +327,7 @@ func detectEditorSavePattern(filePath string, newSize int64) bool {
 	return false
 }
 
-// WatchWithConfig monitors directories with configuration-based behavior
+// WatchWithConfig 根据配置监控目录并触发热重载回调
 func WatchWithConfig(config configs.HotloadConfig, hotloadHook Func) error {
 	if !config.Enabled {
 		logger.Warn().Msg("Hot reload is disabled in configuration")
@@ -348,7 +350,7 @@ func WatchWithConfig(config configs.HotloadConfig, hotloadHook Func) error {
 	return baseDirWatcherWithConfig(watchDir, config, hotloadHook)
 }
 
-// Extract initialization of file state cache
+// initializeFileStateCache 初始化文件状态缓存
 func initializeFileStateCache(rootPath string, recursive bool) (map[string]fileState, error) {
 	cache, err := newWatcherWithState(rootPath, recursive)
 	if err != nil {
@@ -358,7 +360,7 @@ func initializeFileStateCache(rootPath string, recursive bool) (map[string]fileS
 	return cache, nil
 }
 
-// Extract loading of .gitignore
+// loadGitIgnore 加载目录下的 .gitignore（如果启用）
 func loadGitIgnore(rootPath string, enabled bool) (*gitignore.GitIgnore, error) {
 	if !enabled {
 		logger.Info().Msg("GitIgnore filtering disabled by configuration")
@@ -378,7 +380,7 @@ func loadGitIgnore(rootPath string, enabled bool) (*gitignore.GitIgnore, error) 
 	return gi, nil
 }
 
-// Extract recursive directory addition
+// addDirectoriesToWatcher 向 fsnotify 递归添加需要监视的目录（受配置与 .gitignore 约束）
 func addDirectoriesToWatcher(watcher *fsnotify.Watcher, rootPath string, config configs.HotloadConfig, gi *gitignore.GitIgnore) error {
 	var subdirs []string
 	var err error

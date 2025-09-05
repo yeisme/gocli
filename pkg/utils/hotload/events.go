@@ -10,7 +10,8 @@ import (
 	"github.com/yeisme/gocli/pkg/utils/gitignore"
 )
 
-// WatchContext carries runtime state for the watcher.
+// WatchContext 持有监视器的运行时状态.
+// 包含根路径、fsnotify 监视器、配置、.gitignore 解析器、缓存、去抖动计时器等.
 type WatchContext struct {
 	rootPath string
 	watcher  *fsnotify.Watcher
@@ -25,7 +26,7 @@ type WatchContext struct {
 	changeDetected bool
 }
 
-// runEventLoop processes fsnotify events and applies filtering, state tracking and debouncing.
+// runEventLoop 处理 fsnotify 事件，应用过滤、状态跟踪和去抖动逻辑.
 func runEventLoop(ctx *WatchContext, hook Func) error {
 	done := make(chan struct{})
 	go func() {
@@ -54,7 +55,7 @@ func runEventLoop(ctx *WatchContext, hook Func) error {
 	return nil
 }
 
-// handleEvent determines if an event is meaningful and updates cache/flags.
+// handleEvent 决定事件是否有意义并更新缓存与标志位.
 func handleEvent(ctx *WatchContext, event fsnotify.Event) {
 	logEventWithThrottle(event.Op.String(), event.Name)
 
@@ -78,7 +79,7 @@ func handleEvent(ctx *WatchContext, event fsnotify.Event) {
 	}
 }
 
-// isPathIgnored centralizes ignore logic and logs the reason once.
+// isPathIgnored 将忽略逻辑集中处理，并按原因（例如 .git、过滤器、.gitignore）记录一次性日志.
 func isPathIgnored(ctx *WatchContext, name string) bool {
 	// Ignore .git paths early
 	if stringsContainsGit(name) {
@@ -99,7 +100,8 @@ func isPathIgnored(ctx *WatchContext, name string) bool {
 	return false
 }
 
-// onCreate handles create events for files and directories.
+// onCreate 处理文件和目录的创建事件.
+// 对目录视情况自动添加到 watcher；对文件计算状态（必要时计算 hash）并更新缓存.
 func onCreate(ctx *WatchContext, name string) bool {
 	info, err := os.Stat(name)
 	if err != nil {
@@ -125,7 +127,8 @@ func onCreate(ctx *WatchContext, name string) bool {
 	return true
 }
 
-// onRemoveOrRename handles removal or rename events.
+// onRemoveOrRename 处理删除或重命名事件.
+// 如果文件之前被跟踪，则从缓存移除并返回 true 表示发生了实际变更.
 func onRemoveOrRename(ctx *WatchContext, name string) bool {
 	if _, wasTracked := ctx.cache[name]; wasTracked {
 		delete(ctx.cache, name)
@@ -134,7 +137,8 @@ func onRemoveOrRename(ctx *WatchContext, name string) bool {
 	return false
 }
 
-// onWrite handles write/update events and determines if it's a real change.
+// onWrite 处理写入/更新事件，并判断这是否为真实的文件内容或元数据变更.
+// 优先使用内容 hash 比较（针对重要文件），否则使用大小和修改时间的容差判断.
 func onWrite(ctx *WatchContext, name string) bool {
 	oldState, wasTracked := ctx.cache[name]
 	info, err := os.Stat(name)
