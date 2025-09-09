@@ -30,6 +30,8 @@ type GlobalFlags struct {
 	Quiet bool
 	// CPUProfile is the path to the CPU profile file
 	CPUProfile string
+	// Trace is the path to the execution trace file
+	Trace string
 	// VersionEnable enables version output
 	VersionEnable bool
 }
