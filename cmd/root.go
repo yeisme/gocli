@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/pprof"
+	"runtime/trace"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -23,6 +24,7 @@ var (
 	verboseFlag       = globalFlags.Verbose
 	quietFlag         = globalFlags.Quiet
 	cpuProfileFlag    = globalFlags.CPUProfile
+	traceFlag         = globalFlags.Trace
 	versionEnableFlag = globalFlags.VersionEnable
 )
 
@@ -51,6 +53,15 @@ var rootCmd = &cobra.Command{
 				log.Fatal().Err(err).Msg("could not start CPU profile")
 			}
 		}
+		if traceFlag != "" {
+			f, err := os.Create(traceFlag)
+			if err != nil {
+				log.Fatal().Err(err).Msg("could not create trace file")
+			}
+			if err := trace.Start(f); err != nil {
+				log.Fatal().Err(err).Msg("could not start trace")
+			}
+		}
 		ctx := context.InitGocliContext(configPathFlag, debugFlag, verboseFlag, quietFlag)
 
 		gocliCtx = ctx
@@ -61,6 +72,9 @@ var rootCmd = &cobra.Command{
 	PersistentPostRun: func(_ *cobra.Command, _ []string) {
 		if cpuProfileFlag != "" {
 			pprof.StopCPUProfile()
+		}
+		if traceFlag != "" {
+			trace.Stop()
 		}
 	},
 }
@@ -75,6 +89,7 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&configPathFlag, "config", "c", "", "config file")
 	rootCmd.PersistentFlags().StringVar(&cpuProfileFlag, "cpu-profile", "", "write cpu profile to `file`")
+	rootCmd.PersistentFlags().StringVar(&traceFlag, "trace", "trace.out", "write execution trace to `file`")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "enable debug mode (prints additional information)")
 	rootCmd.PersistentFlags().BoolVarP(&verboseFlag, "verbose", "V", false, "enable verbose output (prints more detailed information)")
 	rootCmd.PersistentFlags().BoolVar(&quietFlag, "quiet", false, "suppress all output except errors")
