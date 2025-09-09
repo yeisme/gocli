@@ -162,6 +162,12 @@ func (o *InitOptions) execGoCLIInit() (string, error) {
 }
 
 func (o *InitOptions) execGoreleaserInit() (string, error) {
+	goreleaserFile := []string{"goreleaser.yml", ".goreleaser.yml", "goreleaser.yaml", ".goreleaser.yaml"}
+	for _, f := range goreleaserFile {
+		if _, err := os.Stat(filepath.Join(o.Dir, f)); err == nil {
+			return "", fmt.Errorf("goreleaser config file %s already exists", f)
+		}
+	}
 	return executor.NewExecutor("goreleaser", "init").WithDir(o.Dir).Output()
 }
 
