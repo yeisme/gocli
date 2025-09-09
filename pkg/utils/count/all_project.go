@@ -119,7 +119,7 @@ func isSizeLimitError(err error) bool {
 	if err == nil {
 		return false
 	}
-	// Go 标准库中没有一个特定的错误类型来表示“文件过大"
+	// Go 标准库中没有一个特定的错误类型来表示"文件过大"
 	// 这是一个尝试性的检查，但目前没有稳定的方式来识别它，因此通常返回 false
 	var pathErr *fs.PathError
 	return errors.As(err, &pathErr) && strings.Contains(strings.ToLower(pathErr.Error()), "size")

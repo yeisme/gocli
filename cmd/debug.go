@@ -7,8 +7,9 @@ import (
 
 var (
 	debugCmd = &cobra.Command{
-		Use:   "debug",
-		Short: "Debug related commands",
+		Use:     "debug",
+		Short:   "Debug related commands",
+		Aliases: []string{"dbg", "d"},
 	}
 
 	debugExeInfoCmd = &cobra.Command{
@@ -59,6 +60,15 @@ var (
 	debugVersionCmd = &cobra.Command{
 		Use:   "version",
 		Short: "Show Go version information",
+		Long: `
+Show Go version information. If an executable is provided, it will display the Go version used to build that executable.
+
+Usage:
+  gocli debug version [executable_path]
+
+Examples:
+  gocli debug version /path/to/your/executable
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var exe string
 			if len(args) > 0 {
@@ -66,7 +76,7 @@ var (
 			}
 			return debugPkg.PrintVersionTable(cmd.OutOrStdout(), exe)
 		},
-		Args: cobra.MinimumNArgs(1),
+		Args: cobra.ExactArgs(1),
 	}
 )
 

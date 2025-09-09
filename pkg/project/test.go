@@ -17,7 +17,9 @@ type TestOptions struct {
 	V            bool     `cli:"-v"`            // -v: verbose output
 	Run          string   `cli:"-run"`          // -run: run only tests matching pattern
 	Bench        string   `cli:"-bench"`        // -bench: run benchmarks matching pattern
+	Benchtime    string   `cli:"-benchtime"`    // -benchtime: benchmark time or iterations
 	Count        int      `cli:"-count"`        // -count: run each test count times
+	CPU          string   `cli:"-cpu"`          // -cpu: list of GOMAXPROCS values
 	Timeout      string   `cli:"-timeout"`      // -timeout: timeout for test execution
 	Short        bool     `cli:"-short"`        // -short: tell long-running tests to shorten their run time
 	Failfast     bool     `cli:"-failfast"`     // -failfast: stop on first test failure
@@ -30,7 +32,29 @@ type TestOptions struct {
 	JSON         bool     `cli:"-json"`         // -json: output in JSON format
 	C            bool     `cli:"-c"`            // -c: compile test binary but do not run
 	O            string   `cli:"-o"`            // -o: output binary name
+	List         string   `cli:"-list"`         // -list: list tests/benchmarks matching pattern
+	Skip         string   `cli:"-skip"`         // -skip: skip tests matching pattern
+	Shuffle      string   `cli:"-shuffle"`      // -shuffle: shuffle tests/benchmarks order
+	Fullpath     bool     `cli:"-fullpath"`     // -fullpath: show full file names in error messages
+	Vet          string   `cli:"-vet"`          // -vet: configure go vet checks
 	Args         []string `cli:"-"`             // -args: pass remaining arguments to test binary
+
+	// --- Fuzzing flags ---
+	Fuzz             string `cli:"-fuzz"`             // -fuzz: run fuzz test matching pattern
+	Fuzztime         string `cli:"-fuzztime"`         // -fuzztime: total fuzzing time / iterations
+	Fuzzminimizetime string `cli:"-fuzzminimizetime"` // -fuzzminimizetime: time per minimization attempt
+
+	// --- Profiling / tracing flags ---
+	Benchmem             bool   `cli:"-benchmem"`             // -benchmem: print memory allocation stats
+	Blockprofile         string `cli:"-blockprofile"`         // -blockprofile: write goroutine blocking profile
+	Blockprofilerate     int    `cli:"-blockprofilerate"`     // -blockprofilerate: set block profile rate
+	Cpuprofile           string `cli:"-cpuprofile"`           // -cpuprofile: write CPU profile
+	Memprofile           string `cli:"-memprofile"`           // -memprofile: write memory profile
+	Memprofilerate       int    `cli:"-memprofilerate"`       // -memprofilerate: set memory profile rate
+	Mutexprofile         string `cli:"-mutexprofile"`         // -mutexprofile: write mutex profile
+	Mutexprofilefraction int    `cli:"-mutexprofilefraction"` // -mutexprofilefraction: sample 1 in n mutex holders
+	Outputdir            string `cli:"-outputdir"`            // -outputdir: directory for profile output files
+	Trace                string `cli:"-trace"`                // -trace: write execution trace
 
 	// --- Build-related flags ---
 	Tags      string `cli:"-tags"` // -tags: build tags

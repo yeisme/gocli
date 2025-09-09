@@ -828,25 +828,61 @@ func addAddFlags(cmd *cobra.Command, opts *project.AddOptions) {
 
 // addTestFlags registers flags for the `project test` command.
 func addTestFlags(cmd *cobra.Command, opts *project.TestOptions) {
-	cmd.Flags().BoolVarP(&opts.V, "verbose", "v", false, "Verbose output")
-	cmd.Flags().StringVarP(&opts.Run, "run", "r", "", "Run only tests matching pattern")
-	cmd.Flags().StringVarP(&opts.Bench, "bench", "b", "", "Run benchmarks matching pattern")
-	cmd.Flags().IntVarP(&opts.Count, "count", "C", 0, "Run each test count times")
-	cmd.Flags().StringVarP(&opts.Timeout, "timeout", "t", "", "Timeout for test execution")
-	cmd.Flags().BoolVarP(&opts.Short, "short", "s", false, "Tell long-running tests to shorten their run time")
-	cmd.Flags().BoolVarP(&opts.Failfast, "failfast", "f", false, "Stop on first test failure")
-	cmd.Flags().IntVarP(&opts.Parallel, "parallel", "p", 0, "Maximum test parallelism")
-	cmd.Flags().BoolVar(&opts.Cover, "cover", false, "Enable code coverage")
-	cmd.Flags().StringVar(&opts.Covermode, "covermode", "", "Coverage mode: set, count, atomic")
-	cmd.Flags().StringVar(&opts.Coverpkg, "coverpkg", "", "Apply coverage to packages matching pattern")
-	cmd.Flags().StringVar(&opts.Coverprofile, "coverprofile", "", "Write coverage profile to file")
-	cmd.Flags().BoolVar(&opts.Race, "race", false, "Enable race detection")
-	cmd.Flags().BoolVarP(&opts.JSON, "json", "j", false, "Output in JSON format")
-	cmd.Flags().BoolVar(&opts.C, "compile-only", false, "Compile test binary but do not run")
-	cmd.Flags().StringVarP(&opts.O, "output", "o", "", "Output binary name")
-	cmd.Flags().StringVarP(&opts.Tags, "tags", "g", "", "Build tags")
-	cmd.Flags().StringVarP(&opts.Mod, "mod", "m", "", "Module download mode")
-	cmd.Flags().StringVarP(&opts.ChangeDir, "changedir", "D", "", "Change to dir before running")
+	// Core selection & execution flags
+	cmd.Flags().BoolVarP(&opts.V, "verbose", "v", false, "Verbose output (alias of -v)")
+	cmd.Flags().StringVar(&opts.Run, "run", "", "Run only those tests matching the regular expression")
+	cmd.Flags().StringVar(&opts.Bench, "bench", "", "Run only benchmarks matching the regular expression (use '.' to run all)")
+	cmd.Flags().StringVar(&opts.Benchtime, "benchtime", "", "Run enough iterations of each benchmark to take this duration or N times (e.g. 2s, 100x)")
+	cmd.Flags().IntVar(&opts.Count, "count", 0, "Run each test, benchmark, and fuzz seed n times")
+	cmd.Flags().StringVar(&opts.CPU, "cpu", "", "Comma-separated list of GOMAXPROCS values to run tests/benchmarks with")
+	cmd.Flags().BoolVar(&opts.Short, "short", false, "Tell long-running tests to shorten their run time")
+	cmd.Flags().BoolVar(&opts.Failfast, "failfast", false, "Do not start new tests after the first test failure")
+	cmd.Flags().IntVar(&opts.Parallel, "parallel", 0, "Maximum test/benchmark functions to run in parallel (defaults to GOMAXPROCS)")
+	cmd.Flags().StringVar(&opts.List, "list", "", "List tests/benchmarks/fuzz targets/examples matching the pattern and exit")
+	cmd.Flags().StringVar(&opts.Skip, "skip", "", "Skip tests/benchmarks/fuzz targets/examples matching the pattern")
+	cmd.Flags().StringVar(&opts.Shuffle, "shuffle", "", "Shuffle the order of tests and benchmarks (off,on,seed)")
+	cmd.Flags().BoolVar(&opts.Fullpath, "fullpath", false, "Show full file paths in error messages")
+	cmd.Flags().StringVar(&opts.Vet, "vet", "", "Configure the invocation of 'go vet'; 'off' to disable")
+
+	// Coverage
+	cmd.Flags().BoolVar(&opts.Cover, "cover", false, "Enable coverage analysis")
+	cmd.Flags().StringVar(&opts.Covermode, "covermode", "", "Set coverage mode: set,count,atomic (implies -cover)")
+	cmd.Flags().StringVar(&opts.Coverpkg, "coverpkg", "", "Apply coverage analysis to packages matching patterns (implies -cover)")
+	cmd.Flags().StringVar(&opts.Coverprofile, "coverprofile", "", "Write a coverage profile to file (implies -cover)")
+
+	// Fuzzing
+	cmd.Flags().StringVar(&opts.Fuzz, "fuzz", "", "Run the fuzz test matching the regular expression")
+	cmd.Flags().StringVar(&opts.Fuzztime, "fuzztime", "", "Run fuzzing for the specified duration or iterations (e.g. 30s, 1000x)")
+	cmd.Flags().StringVar(&opts.Fuzzminimizetime, "fuzzminimizetime", "", "Time/iterations per minimization attempt (e.g. 60s, 100x)")
+
+	// JSON / output formatting
+	cmd.Flags().BoolVar(&opts.JSON, "json", false, "Log verbose output and test results in JSON (machine-readable)")
+
+	// Build / binary control
+	cmd.Flags().BoolVar(&opts.C, "compile-only", false, "Compile test binary to -o file but do not run tests (alias of -c)")
+	cmd.Flags().StringVar(&opts.O, "output", "", "Name of compiled test binary when using -c / --compile-only")
+	cmd.Flags().BoolVar(&opts.Race, "race", false, "Enable data race detection")
+	cmd.Flags().StringVar(&opts.Timeout, "timeout", "", "Timeout for each test binary (e.g. 30s, 10m). 0 disables")
+
+	// Profiling & tracing
+	cmd.Flags().BoolVar(&opts.Benchmem, "benchmem", false, "Print memory allocation stats for benchmarks")
+	cmd.Flags().StringVar(&opts.Blockprofile, "blockprofile", "", "Write a goroutine blocking profile to the file")
+	cmd.Flags().IntVar(&opts.Blockprofilerate, "blockprofilerate", 0, "Average nanoseconds between blocking events for profiling (1 records all if blockprofile set)")
+	cmd.Flags().StringVar(&opts.Cpuprofile, "cpuprofile", "", "Write a CPU profile to the file")
+	cmd.Flags().StringVar(&opts.Memprofile, "memprofile", "", "Write an allocation profile to the file")
+	cmd.Flags().IntVar(&opts.Memprofilerate, "memprofilerate", 0, "Set runtime.MemProfileRate (1 for all allocations)")
+	cmd.Flags().StringVar(&opts.Mutexprofile, "mutexprofile", "", "Write a mutex contention profile to the file")
+	cmd.Flags().IntVar(&opts.Mutexprofilefraction, "mutexprofilefraction", 0, "Sample 1 in n stack traces of goroutines holding a contended mutex")
+	cmd.Flags().StringVar(&opts.Outputdir, "outputdir", "", "Directory to place profile output files")
+	cmd.Flags().StringVar(&opts.Trace, "trace", "", "Write an execution trace to the file")
+
+	// Build related (pass-through) flags reused from build/run for consistency
+	cmd.Flags().StringVar(&opts.Tags, "tags", "", "A comma-separated list of build tags to consider satisfied")
+	cmd.Flags().StringVar(&opts.Mod, "mod", "", `Module download mode to use: "readonly", "vendor", or "mod"`)
+	cmd.Flags().StringVarP(&opts.ChangeDir, "changedir", "C", "", "Change to dir before running the command")
+
+	// Hidden / internal mapping of alias -c to --compile-only for user clarity
+	_ = cmd.Flags().MarkHidden("compile-only")
 }
 
 // addLintFlags registers flags for the `project lint` command.
