@@ -286,10 +286,10 @@ Examples:
 				if len(pkgs) > 0 {
 					_ = style.PrintPackageList(cmd.OutOrStdout(), pkgs)
 				}
-				if verbose && !quiet {
+				if verboseFlag && !quietFlag {
 					cmd.Printf("Total: %d packages\n", len(pkgs))
 				}
-			} else if verbose && !quiet {
+			} else if verboseFlag && !quietFlag {
 				cmd.Println("No packages found")
 			}
 		},
@@ -398,7 +398,7 @@ Notes:
 			noGitignore, _ := cmd.Flags().GetBool("no-gitignore")
 			infoOptions.RespectGitignore = !noGitignore
 
-			if err := project.ExecuteInfoCommand(gocliCtx, infoOptions, args, jsonOut, !quiet, cmd.OutOrStdout()); err != nil {
+			if err := project.ExecuteInfoCommand(gocliCtx, infoOptions, args, jsonOut, !quietFlag, cmd.OutOrStdout()); err != nil {
 				cmd.PrintErrf("Error: %v\n", err)
 				os.Exit(1)
 			}

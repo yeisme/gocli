@@ -17,13 +17,13 @@ var (
 	log      log2.Logger
 
 	// Global flags
-	globalFlags   = context.GlobalFlags{}
-	configPath    = globalFlags.ConfigPath
-	debug         = globalFlags.Debug
-	verbose       = globalFlags.Verbose
-	quiet         = globalFlags.Quiet
-	cpuProfile    = globalFlags.CPUProfile
-	versionEnable = globalFlags.VersionEnable
+	globalFlags       = context.GlobalFlags{}
+	configPathFlag    = globalFlags.ConfigPath
+	debugFlag         = globalFlags.Debug
+	verboseFlag       = globalFlags.Verbose
+	quietFlag         = globalFlags.Quiet
+	cpuProfileFlag    = globalFlags.CPUProfile
+	versionEnableFlag = globalFlags.VersionEnable
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -32,7 +32,7 @@ var rootCmd = &cobra.Command{
 	Short: "gocli is a CLI application for managing your Go projects",
 	Long:  `gocli is a command line interface application that helps you manage your Go projects efficiently.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if versionEnable {
+		if versionEnableFlag {
 			fmt.Fprintln(cmd.OutOrStdout(), version.GetShortVersionString())
 			os.Exit(0)
 		}
@@ -42,8 +42,8 @@ var rootCmd = &cobra.Command{
 		}
 	},
 	PersistentPreRun: func(_ *cobra.Command, _ []string) {
-		if cpuProfile != "" {
-			f, err := os.Create(cpuProfile)
+		if cpuProfileFlag != "" {
+			f, err := os.Create(cpuProfileFlag)
 			if err != nil {
 				log.Fatal().Err(err).Msg("could not create CPU profile")
 			}
@@ -51,7 +51,7 @@ var rootCmd = &cobra.Command{
 				log.Fatal().Err(err).Msg("could not start CPU profile")
 			}
 		}
-		ctx := context.InitGocliContext(configPath, debug, verbose, quiet)
+		ctx := context.InitGocliContext(configPathFlag, debugFlag, verboseFlag, quietFlag)
 
 		gocliCtx = ctx
 		log = ctx.Logger
@@ -59,7 +59,7 @@ var rootCmd = &cobra.Command{
 		log.Info().Msgf("Execute Command: %s %s", "gocli", strings.Join(os.Args[1:], " "))
 	},
 	PersistentPostRun: func(_ *cobra.Command, _ []string) {
-		if cpuProfile != "" {
+		if cpuProfileFlag != "" {
 			pprof.StopCPUProfile()
 		}
 	},
@@ -73,10 +73,10 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file")
-	rootCmd.PersistentFlags().StringVar(&cpuProfile, "cpu-profile", "", "write cpu profile to `file`")
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode (prints additional information)")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "V", false, "enable verbose output (prints more detailed information)")
-	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "suppress all output except errors")
-	rootCmd.Flags().BoolVarP(&versionEnable, "version", "v", false, "show version information")
+	rootCmd.PersistentFlags().StringVarP(&configPathFlag, "config", "c", "", "config file")
+	rootCmd.PersistentFlags().StringVar(&cpuProfileFlag, "cpu-profile", "", "write cpu profile to `file`")
+	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "enable debug mode (prints additional information)")
+	rootCmd.PersistentFlags().BoolVarP(&verboseFlag, "verbose", "V", false, "enable verbose output (prints more detailed information)")
+	rootCmd.PersistentFlags().BoolVar(&quietFlag, "quiet", false, "suppress all output except errors")
+	rootCmd.Flags().BoolVarP(&versionEnableFlag, "version", "v", false, "show version information")
 }

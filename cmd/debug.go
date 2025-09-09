@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	debugPkg "github.com/yeisme/gocli/pkg/debug"
 )
 
 var (
@@ -54,6 +55,19 @@ var (
 		Use:   "bininfo",
 		Short: "Show binary build info (module, vcs, etc)",
 	}
+
+	debugVersionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Show Go version information",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var exe string
+			if len(args) > 0 {
+				exe = args[0]
+			}
+			return debugPkg.PrintVersionTable(cmd.OutOrStdout(), exe)
+		},
+		Args: cobra.MinimumNArgs(1),
+	}
 )
 
 func init() {
@@ -69,5 +83,6 @@ func init() {
 		debugGoroutineCmd,
 		debugDumpCmd,
 		debugBinInfoCmd,
+		debugVersionCmd,
 	)
 }

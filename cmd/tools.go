@@ -39,7 +39,7 @@ Examples:
 		Run: func(cmd *cobra.Command, _ []string) {
 			listJSON, _ := cmd.Flags().GetBool("json")
 			// 优先使用全局 verbose；若未设置，则读取本地 flags
-			v := verbose
+			v := verboseFlag
 
 			gocliToolsPath := gocliCtx.Config.Tools.GoCLIToolsPath
 			tools := toolsPkg.FindTools(v, gocliToolsPath)
@@ -138,7 +138,7 @@ Notes:
 			debugBuild := toolInstallOptions.DebugBuild
 			globalFlag := toolInstallGlobal
 
-			v := verbose
+			v := verboseFlag
 
 			// 校验互斥选项
 			if releaseBuild && debugBuild {
@@ -207,7 +207,7 @@ Notes:
 					Verbose:           v,
 				},
 				Global:         globalFlag,
-				Quiet:          quiet,
+				Quiet:          quietFlag,
 				GoCLIToolsPath: gocliCtx.Config.Tools.GoCLIToolsPath,
 				ToolsConfigDir: gocliCtx.Config.Tools.ToolsConfigDir,
 				Yes:            toolInstallYes,
@@ -256,7 +256,7 @@ Notes:
 				Dry:            toolUninstallDry,
 				Fuzzy:          toolUninstallFuzzy,
 				All:            toolUninstallAll,
-				Verbose:        verbose,
+				Verbose:        verboseFlag,
 				GoCLIToolsPath: gocliCtx.Config.Tools.GoCLIToolsPath,
 				ToolsConfigDir: gocliCtx.Config.Tools.ToolsConfigDir,
 				Input:          cmd.InOrStdin(),
@@ -359,7 +359,7 @@ Behaviour change:
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			gocliToolsPath := gocliCtx.Config.Tools.GoCLIToolsPath
-			if err := toolsPkg.ExecuteToolRun(args, cmd.OutOrStdout(), verbose, gocliToolsPath); err != nil {
+			if err := toolsPkg.ExecuteToolRun(args, cmd.OutOrStdout(), verboseFlag, gocliToolsPath); err != nil {
 				log.Error().Err(err).Msg("failed to execute tool")
 			}
 		},
