@@ -24,6 +24,14 @@ var (
 	nmSort    string
 	nmVerbose bool
 
+	// mem flags (bound in init)
+	memLevel   int
+	memOnly    string
+	memTags    string
+	memMod     string
+	memJSON    bool
+	memVerbose bool
+
 	debugCmd = &cobra.Command{
 		Use:     "debug",
 		Short:   "Debug related commands",
@@ -155,8 +163,56 @@ This is a thin wrapper over 'go tool nm' with flags mapped 1:1:
 	}
 
 	debugMemCmd = &cobra.Command{
-		Use:   "mem",
-		Short: "Show memory statistics",
+		Use:   "memory",
+		Short: "Static memory/escape diagnostics from Go compiler",
+		Long: `
+Run static memory and escape analysis via 'go build -gcflags=all=-m[=2]' and group the diagnostics for readability.
+
+Examples:
+  # Basic diagnostics in the current package/module
+  gocli debug memory
+
+  # More verbose (level 2) including detailed inline/escape info
+  gocli debug memory -m 2 ./...
+
+  # Show only escape-related diagnostics
+  gocli debug memory --only escape,noescape ./pkg/...
+
+  # Show only inlining-related diagnostics
+  gocli debug memory --only inline ./...
+
+  # JSON output for tooling integration
+  gocli debug memory --json ./cmd/app
+
+  # Include build tags and use a specific module mode
+  gocli debug memory -m 2 --tags "prod,amd64" --mod=mod ./...
+
+  # Analyze multiple targets in one run
+  gocli debug memory -m 2 ./pkg/a ./cmd/b
+
+  # Print the underlying go build command being executed
+  gocli debug memory -v -m 2 .
+
+  # Use wildcard packages (pattern expansion is handled by the shell/go tool)
+  gocli debug memory -m 2 ./...
+
+Notes:
+  - Diagnostics are produced by the Go compiler on stderr during build.
+  - A temporary build output is used and cleaned up automatically to avoid polluting your workspace.
+  - Use --tags/--mod to match your real build context.
+`,
+		Args: cobra.ArbitraryArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			opt := debug.MemStaticOptions{
+				Level:   memLevel,
+				Only:    memOnly,
+				Tags:    memTags,
+				Mod:     memMod,
+				JSON:    memJSON,
+				Verbose: memVerbose,
+			}
+			return debug.RunMemStatic(cmd.ErrOrStderr(), cmd.OutOrStdout(), opt, args...)
+		},
 	}
 
 	debugGoroutineCmd = &cobra.Command{
@@ -229,6 +285,17 @@ func registerNMFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&nmVerbose, "verbose", "v", false, "Show underlying 'go tool nm' command")
 }
 
+// registerMemFlags binds flags for the mem command
+func registerMemFlags(cmd *cobra.Command) {
+	cmd.Flags().IntVarP(&memLevel, "level", "m", 1, "Escape analysis verbosity: 1 (-m) or 2 (-m=2)")
+	_ = cmd.Flags().MarkHidden("level")
+	cmd.Flags().StringVar(&memOnly, "only", "", "Filter kinds: escape,noescape,inline,other (comma-separated)")
+	cmd.Flags().StringVar(&memTags, "tags", "", "Build tags (passed to 'go build -tags')")
+	cmd.Flags().StringVar(&memMod, "mod", "", "Module download mode (passed to 'go build -mod')")
+	cmd.Flags().BoolVar(&memJSON, "json", false, "Output diagnostics in JSON format")
+	cmd.Flags().BoolVarP(&memVerbose, "verbose", "v", false, "Show underlying 'go build' command")
+}
+
 func init() {
 	rootCmd.AddCommand(debugCmd)
 
@@ -250,4 +317,6 @@ func init() {
 	registerTraceFlags(debugTraceCmd)
 	// nm flags
 	registerNMFlags(debugNMCmd)
+	// mem flags
+	registerMemFlags(debugMemCmd)
 }
